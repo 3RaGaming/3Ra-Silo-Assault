@@ -40,12 +40,10 @@ Event.register(defines.events.on_gui_click, function(event)
 	if player.gui.left.score_board then
 		player.gui.left.score_board.destroy()
 	else
-		for k = 1, global.config.number_of_teams do
-		end	
-		local frame = player.gui.left.add{name = "score_board", type = "frame", direction = "vertical", caption = "Score Board"}
+		local frame = player.gui.left.add{name = "score_board", type = "frame", direction = "vertical", caption = "Player Count"}
 		local score_board_table = frame.add{type = "table", name = "score_board_table", colspan = 2}
 			score_board_table.add{type = "label", name = "score_board_table_force_name", caption = {"team-name"}}
-			score_board_table.add{type = "label", name = "score_board_table_kill_count", caption = "Players Joined"}
+			score_board_table.add{type = "label", name = "score_board_table_player_count", caption = "Players Joined"}
 		  for k = 1, global.config.number_of_teams do
 			local team = global.force_list[k]
 			local force = game.forces[team.name]
@@ -54,7 +52,7 @@ Event.register(defines.events.on_gui_click, function(event)
 			  local color = {r = 1 - (1 - c[1]) * 0.5, g = 1 - (1 - c[2]) * 0.5, b = 1 - (1 - c[3]) * 0.5, a = 1}
 			  local name = score_board_table.add{type = "label", name = force.name.."_label", caption = force.name}
 			  name.style.font_color = color
-			  score_board_table.add{type = "label", name = force.name.."_kill_count", caption = #force.players}
+			  score_board_table.add{type = "label", name = force.name.."_count", caption = #force.players}
 			end
 		  end
 	end
