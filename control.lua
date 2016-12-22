@@ -2,29 +2,23 @@
 --A 3Ra Gaming revision
 if not scenario then scenario = {} end
 if not scenario.config then scenario.config = {} end
-require("config")
+require "config"
 require "locale/utils/event"
 require "locale/utils/admin"
 require "locale/utils/undecorator"
-require("balance")
-require "server"
+require "balance"
 require "technologies"
 require "locale/utils/gravestone"
 require "gui"
 require "tag"
 require "locale/utils/bot"
 
---Starting Variables
-global.kill_count_troy = 0
-global.kill_count_sparta = 0
-
-
 -- controls how much slower you run as you lose health
 global.crippling_factor = 1
 
-black = {r= 0/255, g=	0/255, b=	0/255}
+black = {r = 0, g = 0, b = 0}
 
-script.on_init(function ()
+Event.register(-1, function ()
 	load_config()
 	global.copy_surface = game.surfaces[1]
 	global.round_number = 0
@@ -113,7 +107,7 @@ function create_next_surface()
 	log_scenario("End create_next_surface")
 end
 
-script.on_event(defines.events.on_rocket_launched, function (event)
+Event.register(defines.events.on_rocket_launched, function (event)
 	local force = event.rocket.force
 	if event.rocket.get_item_count("satellite") == 0 then
 		force.print({"rocket-launched-without-satellite"})
@@ -268,7 +262,7 @@ Event.register(defines.events.on_player_respawned, function(event)
 end)
 
 -- for backwards compatibility
-script.on_configuration_changed(function(data)
+Event.register(-3, function(data)
 	if global.attack_data == nil then
 		init_attack_data()
 		if global.attack_count ~= nil then
@@ -396,7 +390,7 @@ function show_health()
 end	
 	
 
-script.on_event(defines.events.on_gui_checked_state_changed, function (event)
+Event.register(defines.events.on_gui_checked_state_changed, function (event)
 	local player = game.players[event.player_index]
 	local gui = event.element
 	if gui.parent.name == "research_level_option_table" then
@@ -570,7 +564,7 @@ function set_player(player,force,color)
 	give_equipment(player)
 	game.print({"joined", player.name, player.force.name})
 	player.print({"objective"})
-	print("PLAYER$force," .. player.index .. "," .. player.name .. "," .. player.force)
+	print("PLAYER$force," .. player.index .. "," .. player.name .. "," .. player.force.name)
 end
 
 function give_inventory(player)
