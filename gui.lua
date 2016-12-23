@@ -3,30 +3,28 @@ Event.register(defines.events.on_gui_click, function(event)
 	local s = global.surface
 	local gui = event.element
 	local player = game.players[event.player_index]
-	local index = event.player_index
+		local index = event.player_index
 	
 	if not event.element.valid then
 		return
 	end
-
 	-- Turns on/off Flashlight
 	if (event.element.name == "flashlight_button") then
 		if player.character == nil then return end
-		global.player_flashlight_state = global.player_flashlight_state or {}
-		if global.player_flashlight_state == true then
-			player.character.enable_flashlight()
-			global.player_flashlight_state = false
-		else
-			player.character.disable_flashlight()
-			global.player_flashlight_state = true
-		end
-		return
+			global.player_flashlight_state = global.player_flashlight_state or {}
+			if global.player_flashlight_state == true then
+				player.character.enable_flashlight()
+				global.player_flashlight_state = false
+			else
+				player.character.disable_flashlight()
+				global.player_flashlight_state = true
+			end
+			return
 	end
-
 	if (event.element.name == "crouch_button") then
 		if player.character == nil then return end
 		global.player_crouch_state = global.player_crouch_state or {}
-		global.player_crouch_color = global.player_crouch_color or {}
+				global.player_crouch_color = global.player_crouch_color or {}
 		if global.player_crouch_state == true then
 			global.player_crouch_state = false
 			player.character_running_speed_modifier = 0
@@ -34,35 +32,34 @@ Event.register(defines.events.on_gui_click, function(event)
 		else 
 			global.player_crouch_state = true
 			player.character_running_speed_modifier = -0.6
-			global.player_crouch_color = player.color
+						global.player_crouch_color = player.color
 			player.color = black				
 		end
 	end
-
 	if (event.element.name == "score_button") then
-		if player.gui.left.score_board then
-			player.gui.left.score_board.destroy()
-		else
-			local frame = player.gui.left.add{name = "score_board", type = "frame", direction = "vertical", caption = "Player Count"}
-			local score_board_table = frame.add{type = "table", name = "score_board_table", colspan = 4}
-				score_board_table.add{type = "label", name = "score_board_table_force_name", caption = {"team-name"}}
-				score_board_table.add{type = "label", name = "score_board_table_player_count", caption = "Players Joined"}
-				score_board_table.add{type = "label", name = "score_board_table_players_online", caption = "Players Online"}
-				score_board_table.add{type = "label", name = "score_board_kill_counter", caption = "Kill Count"}
+	if player.gui.left.score_board then
+		player.gui.left.score_board.destroy()
+	else
+		local frame = player.gui.left.add{name = "score_board", type = "frame", direction = "vertical", caption = "Player Count"}
+		local score_board_table = frame.add{type = "table", name = "score_board_table", colspan = 4}
+			score_board_table.add{type = "label", name = "score_board_table_force_name", caption = {"team-name"}}
+			score_board_table.add{type = "label", name = "score_board_table_player_count", caption = "Players Joined"}
+			score_board_table.add{type = "label", name = "score_board_table_players_online", caption = "Players Online"}
+			score_board_table.add{type = "label", name = "score_board_kill_counter", caption = "Kill Count"}
 			for k = 1, global.config.number_of_teams do
-				local team = global.force_list[k]
-				local force = game.forces[team.name]
-				if force ~= nil then
-					local c = team.color
-					local color = {r = 1 - (1 - c[1]) * 0.5, g = 1 - (1 - c[2]) * 0.5, b = 1 - (1 - c[3]) * 0.5, a = 1}
-					local name = score_board_table.add{type = "label", name = force.name.."_label", caption = force.name}
-					name.style.font_color = color
-					score_board_table.add{type = "label", name = force.name.."_count", caption = #force.players}
-					score_board_table.add{type = "label", name = force.name.."_online", caption = #force.connected_players}
-					score_board_table.add{type = "label", name = force.name.."_kill_count", caption = global.kill_counts[force.name] or 0}
-				end
+			local team = global.force_list[k]
+			local force = game.forces[team.name]
+			if force ~= nil then
+				local c = team.color
+				local color = {r = 1 - (1 - c[1]) * 0.5, g = 1 - (1 - c[2]) * 0.5, b = 1 - (1 - c[3]) * 0.5, a = 1}
+				local name = score_board_table.add{type = "label", name = force.name.."_label", caption = force.name}
+				name.style.font_color = color
+				score_board_table.add{type = "label", name = force.name.."_count", caption = #force.players}
+				score_board_table.add{type = "label", name = force.name.."_online", caption = #force.connected_players}
+				score_board_table.add{type = "label", name = force.name.."_kill_count", caption = global.kill_counts[force.name] or 0}
 			end
-		end
+			end
+	end
 	end	
 	
 	if gui.name == "balance_options_confirm" then
@@ -74,24 +71,29 @@ Event.register(defines.events.on_gui_click, function(event)
 		gui.parent.destroy()
 		return
 	end
+	
 	if gui.name == "balance_options" then
 		create_balance_option(player.gui.left)
 		return
 	end
+	
 	if gui.name == "config_confirm" then
 		config_confirm(gui)
 		return
 	end
+	
 	if gui.name == "random_join_button" then
 		gui.parent.destroy()
 		random_join(player)
 		return
 	end	 
+	
 	if gui.name == "auto_assign_button" then
 		gui.parent.destroy()
 		auto_assign(player)
 		return
 	end 
+	
 	if gui.name == "player_pick_confirm" then
 		for k = 1, global.config.number_of_teams do
 			local team = global.force_list[k]
@@ -111,6 +113,7 @@ Event.register(defines.events.on_gui_click, function(event)
 			end
 		end
 	end
+	
 end)
 
 --using this to order the gui'
@@ -119,27 +122,33 @@ function create_buttons(event)
 		if (not player.gui.top["flashlight_button"]) then
 		player.gui.top.add{type="button", name="flashlight_button", caption="Flashlight"}
 	end
+
 	if (not player.gui.top["crouch_button"]) then
 		local frame = player.gui.top.add{name = "crouch_button", type = "button", direction = "horizontal", caption = "Crouch"}
 	end
+	
 	if (not player.gui.top["score_button"]) then
 		player.gui.top.add{type="button", name="score_button", caption="Score"}
 	end
 end	
 
 function choose_joining_gui(player)
+
 	if global.team_joining == "random" then
 		create_random_join_gui(player.gui.center)
 		return
 	end
+
 	if global.team_joining == "player_pick" then
 		create_pick_join_gui(player.gui.center)
 		return
 	end
+	
 	if global.team_joining == "auto_assign" then
 		create_auto_assign_gui(player.gui.center)
 		return
 	end
+	
 end
 
 function destroy_joining_guis(gui)
@@ -196,6 +205,8 @@ function create_pick_join_gui(gui)
 	button.style.font = "default"
 end
 
+
+
 function create_config_gui(player)
 	local gui = player.gui.left
 	if gui.config_gui then
@@ -225,7 +236,9 @@ function create_config_gui(player)
 	frame.add{type = "button", name = "config_confirm", caption = {"config-confirm"}}.style.font = "default"
 end
 
+
 function create_balance_option(gui)
+
 	if gui.balance_options_frame then
 		gui.balance_options_frame.destroy()
 	end
@@ -249,12 +262,14 @@ function create_balance_option(gui)
 				table.add{name = name.."label", type = "label", caption = {name}}
 			end
 			
+
 			local input = table.add{name = name.."text", type = "textfield"}
 			input.text = modifier
 		end
 	end
 	frame.add{type = "button", name = "balance_options_confirm", caption = {"config-confirm"}}.style.font = "default"
 	frame.add{type = "button", name = "balance_options_cancel", caption = {"cancel"}}.style.font = "default"
+	
 end
 
 function set_balance_settings(gui)
@@ -277,6 +292,7 @@ function set_balance_settings(gui)
 end
 
 function config_confirm(gui)
+
 	local parent = gui.parent
 	local config = parent.config_table
 	for name, value in pairs (global.config) do
@@ -306,6 +322,7 @@ function config_confirm(gui)
 	end
 	destroy_config_for_all(gui.parent.name)
 	prepare_next_round()
+
 end
 
 function destroy_config_for_all(name)
@@ -318,25 +335,24 @@ end
 
 --Kill Counts
 Event.register(-1, function()
-	global.kill_count = {}
+	global.kill_counts = {}
 end)
 
---gui update function
+Event.register(defines.events.on_entity_died, function(event)
+	local entity = event.entity
+	local force = event.force
+	if entity.type == "player" and force and force.name ~= entity.force.name then
+		if not global.kill_counts[force.name] then global.kill_counts[force.name] = 1
+		else global.kill_counts[force.name] = global.kill_counts[force.name] + 1 end
+	end
+	update_kill_counts(force)
+end)
+
 function update_kill_counts(force)
 	for _,player in pairs(game.players) do
 		if player.gui.left.score_board then
-			local force_kill_counter = force .. "_kill_count"
-			player.gui.left.score_board.score_board_table[force_kill_counter].caption = global.kill_count[force.name]
+			local force_kill_counter = force.name .. "_kill_count"
+			player.gui.left.score_board.score_board_table[force_kill_counter].caption = global.kill_counts[force.name]
 		end
 	end
-end
-
---kill counter increment and update event
-Event.register(defines.events.on_entity_died, function(event)
-	if event.entity == player and event.force.name ~= then
-		if event.entity.force.name ~= event.force.name and event.force.name ~= "player" and event.force.name ~= "enemy" then
-			global.kill_count[event.force.name] = global.kill_count[event.force.name] + 1 or 1
-			update_kill_counts(event.force.name)
-		end
-	end	
 end
