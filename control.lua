@@ -2,6 +2,11 @@
 --A 3Ra Gaming revision
 if not scenario then scenario = {} end
 if not scenario.config then scenario.config = {} end
+
+normal_attack_sent_event = script.generate_event_name()
+landing_attack_sent_event = script.generate_event_name()
+team_eliminated = script.generate_event_name()
+
 require "config"
 require "locale/utils/event"
 require "locale/utils/admin"
@@ -81,10 +86,6 @@ remote.add_interface("admin_control",
 		end
 	end
 })
-
-normal_attack_sent_event = script.generate_event_name()
-landing_attack_sent_event = script.generate_event_name()
-
 
 function create_next_surface()
 	log_scenario("Begin create_next_surface")
@@ -278,7 +279,7 @@ Event.register(-3, function(data)
 end)
 
 Event.register(defines.events.on_entity_died, function(event)
-
+	local killing_force = event.force
 	local silo = event.entity
 	if silo.name ~= "rocket-silo" then return end
 	log_scenario("rocket silo died")
@@ -451,28 +452,19 @@ end)
 
 
 function auto_assign(player)
-	local force
-	local team
-	repeat
-		local index = math.random(global.config.number_of_teams)
-		team = global.force_list[index]
-		force = game.forces[team.name]
-	until force ~= nil
-	local count = #force.connected_players
-	for k = 1, global.config.number_of_teams do
-		this_team = global.force_list[k]
-		local other_force = game.forces[this_team.name]
-		if other_force ~= nil then
-			if #other_force.connected_players < count then
-				count = #other_force.connected_players
-				force = other_force
-				team = this_team
-			end
+	local lowest_team = game.forces[global.force_list[1].name]
+	local lowest_count = #lowest_team.connected_players
+	for k = 2, global.config.number_of_teams do
+		local current_team = game.forces[global.force_list[k].name]
+		local current_count = #current_team.connected_players
+		if current_count < lowest_count then
+			lowest_team = current_team
+			lowest_count = current_count
 		end
 	end
-	local c = team.color
+	local c = lowest_team.color
 	local color = {r = fpn(c[1]), g = fpn(c[2]), b = fpn(c[3]), a = fpn(c[4])}
-	set_player(player,force,color)
+	set_player(player,lowest_team,color)
 end
 
 

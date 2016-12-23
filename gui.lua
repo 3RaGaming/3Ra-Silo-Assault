@@ -3,28 +3,27 @@ Event.register(defines.events.on_gui_click, function(event)
 	local s = global.surface
 	local gui = event.element
 	local player = game.players[event.player_index]
-		local index = event.player_index
+	local index = event.player_index
 	
-	if not event.element.valid then
-		return
-	end
+	if not event.element.valid then return end
 	-- Turns on/off Flashlight
 	if (event.element.name == "flashlight_button") then
 		if player.character == nil then return end
-			global.player_flashlight_state = global.player_flashlight_state or {}
-			if global.player_flashlight_state == true then
-				player.character.enable_flashlight()
-				global.player_flashlight_state = false
-			else
-				player.character.disable_flashlight()
-				global.player_flashlight_state = true
-			end
-			return
+		global.player_flashlight_state = global.player_flashlight_state or {}
+		if global.player_flashlight_state == true then
+			player.character.enable_flashlight()
+			global.player_flashlight_state = false
+		else
+			player.character.disable_flashlight()
+			global.player_flashlight_state = true
+		end
+		return
 	end
+	
 	if (event.element.name == "crouch_button") then
 		if player.character == nil then return end
 		global.player_crouch_state = global.player_crouch_state or {}
-				global.player_crouch_color = global.player_crouch_color or {}
+		global.player_crouch_color = global.player_crouch_color or {}
 		if global.player_crouch_state == true then
 			global.player_crouch_state = false
 			player.character_running_speed_modifier = 0
@@ -32,34 +31,34 @@ Event.register(defines.events.on_gui_click, function(event)
 		else 
 			global.player_crouch_state = true
 			player.character_running_speed_modifier = -0.6
-						global.player_crouch_color = player.color
+			global.player_crouch_color = player.color
 			player.color = black				
 		end
 	end
 	if (event.element.name == "score_button") then
-	if player.gui.left.score_board then
-		player.gui.left.score_board.destroy()
-	else
-		local frame = player.gui.left.add{name = "score_board", type = "frame", direction = "vertical", caption = "Player Count"}
-		local score_board_table = frame.add{type = "table", name = "score_board_table", colspan = 4}
+		if player.gui.left.score_board then
+			player.gui.left.score_board.destroy()
+		else
+			local frame = player.gui.left.add{name = "score_board", type = "frame", direction = "vertical", caption = "Player Count"}
+			local score_board_table = frame.add{type = "table", name = "score_board_table", colspan = 4}
 			score_board_table.add{type = "label", name = "score_board_table_force_name", caption = {"team-name"}}
 			score_board_table.add{type = "label", name = "score_board_table_player_count", caption = "Players Joined"}
 			score_board_table.add{type = "label", name = "score_board_table_players_online", caption = "Players Online"}
 			score_board_table.add{type = "label", name = "score_board_kill_counter", caption = "Kill Count"}
 			for k = 1, global.config.number_of_teams do
-			local team = global.force_list[k]
-			local force = game.forces[team.name]
-			if force ~= nil then
-				local c = team.color
-				local color = {r = 1 - (1 - c[1]) * 0.5, g = 1 - (1 - c[2]) * 0.5, b = 1 - (1 - c[3]) * 0.5, a = 1}
-				local name = score_board_table.add{type = "label", name = force.name.."_label", caption = force.name}
-				name.style.font_color = color
-				score_board_table.add{type = "label", name = force.name.."_count", caption = #force.players}
-				score_board_table.add{type = "label", name = force.name.."_online", caption = #force.connected_players}
-				score_board_table.add{type = "label", name = force.name.."_kill_count", caption = global.kill_counts[force.name] or 0}
+				local team = global.force_list[k]
+				local force = game.forces[team.name]
+				if force ~= nil then
+					local c = team.color
+					local color = {r = 1 - (1 - c[1]) * 0.5, g = 1 - (1 - c[2]) * 0.5, b = 1 - (1 - c[3]) * 0.5, a = 1}
+					local name = score_board_table.add{type = "label", name = force.name.."_label", caption = force.name}
+					name.style.font_color = color
+					score_board_table.add{type = "label", name = force.name.."_count", caption = #force.players}
+					score_board_table.add{type = "label", name = force.name.."_online", caption = #force.connected_players}
+					score_board_table.add{type = "label", name = force.name.."_kill_count", caption = global.kill_counts[force.name] or 0}
+				end
 			end
-			end
-	end
+		end
 	end	
 	
 	if gui.name == "balance_options_confirm" then
@@ -67,6 +66,7 @@ Event.register(defines.events.on_gui_click, function(event)
 		gui.parent.destroy()
 		return
 	end
+	
 	if gui.name == "balance_options_cancel" then
 		gui.parent.destroy()
 		return
@@ -119,7 +119,7 @@ end)
 --using this to order the gui'
 function create_buttons(event)
 	local player = game.players[event.player_index]
-		if (not player.gui.top["flashlight_button"]) then
+	if (not player.gui.top["flashlight_button"]) then
 		player.gui.top.add{type="button", name="flashlight_button", caption="Flashlight"}
 	end
 
@@ -204,8 +204,6 @@ function create_pick_join_gui(gui)
 	local button = frame.add{type = "button", name = "player_pick_confirm", caption = {"confirm"}}
 	button.style.font = "default"
 end
-
-
 
 function create_config_gui(player)
 	local gui = player.gui.left
