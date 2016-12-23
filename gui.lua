@@ -341,17 +341,18 @@ end)
 Event.register(defines.events.on_entity_died, function(event)
 	local entity = event.entity
 	local force = event.force
-	if entity.type == "player" and force and force.name ~= entity.force.name then
+	if entity.type == "player" and force and force.name ~= entity.force.name if player.character.health == nil and force.name ~= "enemy" then
 		if not global.kill_counts[force.name] then global.kill_counts[force.name] = 1
 		else global.kill_counts[force.name] = global.kill_counts[force.name] + 1 end
+		update_kill_counts(force)
 	end
-	update_kill_counts(force)
 end)
 
 function update_kill_counts(force)
 	for _,player in pairs(game.players) do
 		if player.gui.left.score_board then
 			local force_kill_counter = force.name .. "_kill_count"
+			if not player.gui.left.score_board.score_board_table[force_kill_counter] then return end
 			player.gui.left.score_board.score_board_table[force_kill_counter].caption = global.kill_counts[force.name]
 		end
 	end

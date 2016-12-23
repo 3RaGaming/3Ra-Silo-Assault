@@ -279,27 +279,6 @@ end)
 
 Event.register(defines.events.on_entity_died, function(event)
 
-	local killing_force = event.force
-	if event.entity == player then
-		if killing_force ~= nil and killing_force.name ~= event.entity.force.name then
-				for _,team in pairs(global.force_list[k]) do
-					if(team ~= "player") then
-					global.kill_count[force.name] =
-					global.kill_count[force.name] or 0
-					end
-				end
-			for k = 1, global.config.number_of_kills do
-				local team = global.force_list[k]
-				local force = game.forces[team.name]
-				if killing_force[force.name] then
-					global.kill_count[force.name] =
-					global.kill_count[force.name] + 1
-				end
-			end	
-		end
-	end
-	
-	
 	local silo = event.entity
 	if silo.name ~= "rocket-silo" then return end
 	log_scenario("rocket silo died")
