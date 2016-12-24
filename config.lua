@@ -15,7 +15,7 @@ function load_config()
 			["map_height"] = 2048,
 			["map_width"] = 2048,
 			["copy_starting_area"] = true,
-			["reveal_team_positions"] = true,
+			["reveal_team_positions"] = false,
 			["team_walls"] = true,
 			["continuous_play"] = true,
 			["research_level"] = {"science-pack-1", "science-pack-2", "science-pack-3", "alien-science-pack"}, --TODO fix for 0.15 packs when needed
