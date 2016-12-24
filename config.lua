@@ -1,7 +1,7 @@
 
 function load_config()
 	global.shrink_from_edge_constant = 0.75
-	global.starting_inventory = "small"
+	global.starting_inventory = "none"
 	global.starting_equipment = "none"
 	global.team_joining = "auto_assign"
 	global.setup_finished = false
