@@ -1,8 +1,8 @@
 
 function load_config()
 	global.shrink_from_edge_constant = 0.75
-	global.starting_inventory = "medium"
-	global.starting_equipment = "small"
+	global.starting_inventory = "small"
+	global.starting_equipment = "none"
 	global.team_joining = "auto_assign"
 	global.setup_finished = false
 	global.time_between_rounds = 60 -- seconds
@@ -32,8 +32,8 @@ function load_config()
 	global.research_ingredient_list = 
 		{
 			--false means disabled.
-			["science-pack-1"] = true,
-			["science-pack-2"] = true,
+			["science-pack-1"] = false,
+			["science-pack-2"] = false,
 			["science-pack-3"] = false,
 			["alien-science-pack"] = false
 		}
@@ -58,8 +58,8 @@ function load_config()
 		["none"] = 
 		{
 			["iron-plate"] = 8,
-			["burner-mining-drill"] = 1,
-			["stone-furnace"] = 1
+			["burner-mining-drill"] = 2,
+			["stone-furnace"] = 2
 		},
 		["small"] =
 		{

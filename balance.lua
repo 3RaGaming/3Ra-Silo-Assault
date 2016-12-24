@@ -39,7 +39,7 @@ global.modifier_list =
 	{ 
 		["character_modifiers"] = 
 			{
-				["character_running_speed_modifier"] = 0.25,
+				["character_running_speed_modifier"] = 0.3,
 				["character_health_bonus"] = 100
 			},
 		["turret_attack_modifier"] = 
@@ -55,17 +55,17 @@ global.modifier_list =
 				["cannon-shell"] =	0.5,
 				["rocket"] =	0.5,
 				["flame-thrower"] =	0,
-				["grenade"] =	-0.5,
+				["grenade"] =	-0.3,
 				["combat-robot-beam"] =	0,
 				["combat-robot-laser"] =	0,
 				["laser-turret"] =	0
 			},
 		["gun_speed_modifier"] = 
 			{
-				["bullet"] =	-0.25,
+				["bullet"] =	0,
 				["shotgun-shell"] =	0,
 				["cannon-shell"] =	0.5,
-				["rocket"] =	0.5,
+				["rocket"] =	0,
 				["flame-thrower"] =	0,
 				["laser-turret"] =	0
 			}
