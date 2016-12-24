@@ -155,9 +155,11 @@ function end_round()
 		log_scenario("Delete Battle_surface")
 		game.delete_surface(game.surfaces["Battle_surface"])
 	end
+	global.kill_counts = {}
 	game.print{"next-round-start", global.time_between_rounds}
 	global.next_round_start_tick = game.tick + global.time_between_rounds * 60
 	global.setup_finished = false
+			
 	game.evolution_factor = 0
 	log_scenario("End end_round()")
 end
