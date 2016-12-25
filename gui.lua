@@ -197,7 +197,7 @@ function create_pick_join_gui(gui)
 			local color = {r = 1 - (1 - c[1]) * 0.5, g = 1 - (1 - c[2]) * 0.5, b = 1 - (1 - c[3]) * 0.5, a = 1}
 			local name = pick_join_table.add{type = "label", name = force.name.."_label", caption = force.name}
 			name.style.font_color = color
-			pick_join_table.add{type = "label", name = force.name.."_count", caption = #force.players}
+			pick_join_table.add{type = "label", name = force.name.."_count", caption = #force.connected_players}
 			pick_join_table.add{type = "checkbox", name = force.name,state = false}
 		end
 	end
