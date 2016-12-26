@@ -217,7 +217,7 @@ Event.register(defines.events.on_tick, function(event)
 end)
 
 Event.register(defines.events.on_player_joined_game, function(event)
- if game.tick < 10 then 
+	if game.tick < 10 then 
 		global.next_round_start_tick = nil
 		return
 	end
@@ -454,19 +454,30 @@ end)
 
 
 function auto_assign(player)
-	local lowest_team = game.forces[global.force_list[1].name]
-	local lowest_count = #lowest_team.connected_players
-	for k = 2, global.config.number_of_teams do
-		local current_team = game.forces[global.force_list[k].name]
-		local current_count = #current_team.connected_players
-		if current_count < lowest_count then
-			lowest_team = current_team
-			lowest_count = current_count
+	local force
+	local team
+	repeat
+		local index = math.random(global.config.number_of_teams)
+		team = global.force_list[index]
+		force = game.forces[team.name]
+	until force ~= nil
+	local count = #force.connected_players
+	local total = #force.players
+	for k = 1, global.config.number_of_teams do
+		this_team = global.force_list[k]
+		local other_force = game.forces[this_team.name]
+		if other_force ~= nil then
+			if #other_force.connected_players < count and #other_force.players < total then
+				count = #other_force.connected_players
+				total = #other_force.players
+				force = other_force
+				team = this_team
+			end
 		end
 	end
-	local c = lowest_team.color
+	local c = team.color
 	local color = {r = fpn(c[1]), g = fpn(c[2]), b = fpn(c[3]), a = fpn(c[4])}
-	set_player(player,lowest_team,color)
+	set_player(player,force,color)
 end
 
 
