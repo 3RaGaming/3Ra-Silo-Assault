@@ -345,7 +345,7 @@ end)
 Event.register(defines.events.on_entity_died, function(event)
 	local entity = event.entity
 	local force = event.force
-	if entity.type == "player" and force and force.name ~= entity.force.name and force.name ~= "enemy" then
+	if entity and entity.valid and entity.type == "player" and force and force.name ~= entity.force.name and force.name ~= "enemy" then
 		if not global.kill_counts[force.name] then global.kill_counts[force.name] = 1
 		else global.kill_counts[force.name] = global.kill_counts[force.name] + 1 end
 		update_kill_counts(force)

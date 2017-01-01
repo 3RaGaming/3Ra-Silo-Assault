@@ -283,6 +283,7 @@ end)
 Event.register(defines.events.on_entity_died, function(event)
 	local killing_force = event.force
 	local silo = event.entity
+	if not silo or not silo.valid then return end
 	if silo.name ~= "rocket-silo" then return end
 	log_scenario("rocket silo died")
 	local force = silo.force
