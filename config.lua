@@ -45,7 +45,6 @@ function load_config()
 			{name = "Yellow", color = {0.8, 0.8, 0.0, 0.6}},
 			{name = "Pink", color = {0.8, 0.2, 0.8, 0.2}},
 			{name = "Cyan", color = {0.1, 0.9, 0.9, 0.8}},
-			{name = "Red", color = {0.9, 0.1, 0.1, 0.8}},
 			{name = "Purple", color = {0.8, 0.2, 0.8, 0.9}},
 			{name = "White", color = {0.8, 0.8, 0.8, 0.5}},
 			{name = "Black", color = {0.1, 0.1, 0.1, 0.8}},
