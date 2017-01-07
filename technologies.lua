@@ -7,7 +7,7 @@ Event.register(defines.events.on_research_finished, function (event)
 
 	local research = event.research
 	
-	if research.name == "alien_technology" then
+	if research.name == "alien-technology" then
 		if global.config.biters_disabled then
 		for i,v in pairs(game.players) do v.insert{name="alien-artifact", count=100} end
 		end
