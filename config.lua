@@ -63,20 +63,21 @@ function load_config()
 		},
 		["small"] =
 		{
-			["iron-plate"] = 20,
+			["iron-plate"] = 50,
 			["pipe"] = 100,
 			["pipe-to-ground"] = 20,
 			["copper-plate"] = 10,
 			["transport-belt"] = 200,
 			["repair-pack"] = 20,
-			["inserter"] = 50,
+			["inserter"] = 20,
+			["fast-inserter"] = 20,
 			["small-electric-pole"] = 40,
 			["burner-mining-drill"] = 16,
 			["stone-furnace"] = 12,
 			["burner-inserter"] = 30,
 			["assembling-machine-1"] = 8,
 			["electric-mining-drill"] = 2,
-			["boiler"] = 8,
+			["boiler"] = 7,
 			["steam-engine"] = 5
 		},
 		["medium"] =
@@ -86,17 +87,17 @@ function load_config()
 			["pipe-to-ground"] = 20,
 			["iron-gear-wheel"] = 100,
 			["copper-plate"] = 100,
-			["steel-plate"] = 100,
+			["steel-plate"] = 50,
 			["electronic-circuit"] = 100,
 			["transport-belt"] = 300,
 			["underground-belt"] = 20,
 			["splitter"] = 20,
 			["repair-pack"] = 20,
-			["inserter"] = 100,
+			["inserter"] = 20,
+			["fast-inserter"] = 70,
+			["burner-inserter"] = 20,
 			["small-electric-pole"] = 40,
-			["fast-inserter"] = 50,
-			["burner-inserter"] = 50,
-			["burner-mining-drill"] = 20,
+			["burner-mining-drill"] = 10,
 			["electric-mining-drill"] = 20,
 			["stone-furnace"] = 50,
 			["steel-furnace"] = 20,
@@ -104,8 +105,8 @@ function load_config()
 			["assembling-machine-2"] = 8,
 			["boiler"] = 14,
 			["steam-engine"] = 10,
-			["chemical-plant"] = 20,
-			["oil-refinery"] = 5,
+			["chemical-plant"] = 5,
+			["oil-refinery"] = 2,
 			["pumpjack"] = 8
 		},
 		["large"] =
@@ -137,7 +138,7 @@ function load_config()
 			["substation"] = 10,
 			["boiler"] = 30,
 			["steam-engine"] = 20,
-			["chemical-plant"] = 20,
+			["chemical-plant"] = 10,
 			["oil-refinery"] = 5,
 			["pumpjack"] = 10
 		}
@@ -147,18 +148,17 @@ end
 function give_equipment(player)
 
 	if global.starting_equipment == "none" then
-		player.insert{name = "pistol", count = 1}
-		player.insert{name = "firearm-magazine", count = 10}
+		player.insert{name = "submachine-gun", count = 1}
+		player.insert{name = "firearm-magazine", count = 30}
+		player.insert{name = "iron-axe", count = 1}
 		return
 	end
 	
 	if global.starting_equipment == "small" then
-		player.insert{name = "submachine-gun", count = 1}
-		player.insert{name = "firearm-magazine", count = 30}
-		player.insert{name = "shotgun", count = 1}
-		player.insert{name = "shotgun-shell", count = 20}
-		player.insert{name = "iron-axe", count = 1}
 		player.insert{name = "light-armor", count = 1}
+		player.insert{name = "steel-axe", count = 1}
+		player.insert{name = "submachine-gun", count = 1}
+		player.insert{name = "firearm-magazine", count = 40}
 		return
 	end
 	
@@ -166,10 +166,7 @@ function give_equipment(player)
 		player.insert{name = "heavy-armor", count = 1}
 		player.insert{name = "steel-axe", count = 3}
 		player.insert{name = "submachine-gun", count = 1}
-		player.insert{name = "firearm-magazine", count = 40}
-		player.insert{name = "shotgun", count = 1}
-		player.insert{name = "shotgun-shell", count = 20}
-		player.insert{name = "car", count = 1}
+		player.insert{name = "piercing-rounds-magazine", count = 40}
 		return
 	end
 	
@@ -196,6 +193,14 @@ function give_equipment(player)
 		return
 	end
 
+end
+
+function give_respwan_equipment(player)
+
+	player.insert{name = "submachine-gun", count = 1}
+	player.insert{name = "firearm-magazine", count = 30}
+	player.insert{name = "iron-axe", count = 1}
+	return
 end
 
 starting_area_constant =
