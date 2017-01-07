@@ -261,7 +261,7 @@ Event.register(defines.events.on_player_left_game, function(event)
 end)
  
 Event.register(defines.events.on_player_respawned, function(event)
-	give_equipment(game.players[event.player_index])
+	give_respawn_equipment(game.players[event.player_index])
 end)
 
 -- for backwards compatibility
