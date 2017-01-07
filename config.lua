@@ -39,18 +39,19 @@ function load_config()
 		}
 	global.force_list =
 		{
-			{name = "Red", color = {0.9, 0.1, 0.1, 0.8}},
 			{name = "Blue", color = {0.2, 0.2, 0.8, 0.7}},
 			{name = "Green", color = {0.1, 0.8, 0.1, 0.8}},
 			{name = "Orange", color = {0.8, 0.4, 0.0, 0.8}},
 			{name = "Yellow", color = {0.8, 0.8, 0.0, 0.6}},
 			{name = "Pink", color = {0.8, 0.2, 0.8, 0.2}},
+			{name = "Cyan", color = {0.1, 0.9, 0.9, 0.8}},
+			{name = "Red", color = {0.9, 0.1, 0.1, 0.8}},
 			{name = "Purple", color = {0.8, 0.2, 0.8, 0.9}},
 			{name = "White", color = {0.8, 0.8, 0.8, 0.5}},
 			{name = "Black", color = {0.1, 0.1, 0.1, 0.8}},
 			{name = "Gray", color = {0.6, 0.6, 0.6, 0.8}},
 			{name = "Brown", color = {0.5, 0.3, 0.1, 0.8}},
-			{name = "Cyan", color = {0.1, 0.9, 0.9, 0.8}}
+			{name = "Red", color = {0.9, 0.1, 0.1, 0.8}}
 		}
 		
 	global.inventory_list = 
