@@ -5,7 +5,7 @@ function load_config()
 	global.starting_equipment = "none"
 	global.team_joining = "auto_assign"
 	global.setup_finished = false
-	global.time_between_rounds = 60 -- seconds
+	global.time_between_rounds = 120 -- seconds
 	global.config =
 		{
 			["number_of_teams"] = 2,
