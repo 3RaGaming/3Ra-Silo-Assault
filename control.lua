@@ -11,6 +11,7 @@ require "config"
 require "locale/utils/event"
 require "locale/utils/admin"
 require "locale/utils/undecorator"
+require "locale/utils/utils"
 require "balance"
 require "technologies"
 require "locale/utils/gravestone"
@@ -96,7 +97,7 @@ function create_next_surface()
 	settings.seed = math.random(1, 2000000)
 	if global.config.biters_disabled then
 		settings.autoplace_controls["enemy-base"].size = "none"
-	end	
+	end
 	settings.height = global.config.map_height
 	settings.width = global.config.map_width
 	if game.surfaces["Battle_surface"] then
@@ -115,7 +116,7 @@ Event.register(defines.events.on_rocket_launched, function (event)
 		return
 	end
 	game.print({"team-won",force.name})
-	
+
 	if global.config.continuous_play then
 		end_round()
 	else
@@ -125,7 +126,7 @@ end)
 
 function end_round()
 	log_scenario("Begin end_round()")
-	
+
 	local player_count = 0
 	for k, player in pairs (game.players) do
 		player.force = game.forces.player
@@ -133,9 +134,9 @@ function end_round()
 		if player.connected then
 			local character = player.character
 			player.character = nil
-			if character then 
+			if character then
 				player_count = player_count + 1
-				character.destroy() 
+				character.destroy()
 			end
 			player.teleport({0,1000}, game.surfaces.Lobby)
 			if player.admin then
@@ -147,10 +148,10 @@ function end_round()
 			end
 		end
 	end
-	
+
 	log_scenario("Characters destroyed: " .. player_count)
 	log_scenario("Characters still on map: " .. #game.surfaces["Battle_surface"].find_entities_filtered{type="player"})
-	
+
 	if game.surfaces["Battle_surface"] then
 		log_scenario("Delete Battle_surface")
 		game.delete_surface(game.surfaces["Battle_surface"])
@@ -159,7 +160,7 @@ function end_round()
 	game.print{"next-round-start", global.time_between_rounds}
 	global.next_round_start_tick = game.tick + global.time_between_rounds * 60
 	global.setup_finished = false
-			
+
 	game.evolution_factor = 0
 	log_scenario("End end_round()")
 end
@@ -184,8 +185,8 @@ Event.register(defines.events.on_tick, function(event)
 	end
 	--runs every second
 	if(game.tick % 60 == 0) then
-	
-	end	
+
+	end
 	-- Runs every 30 seconds
 	if(game.tick % 1800 == 0) then
 		if not game.forces["Spectators"] then game.create_force("Spectators") end
@@ -217,7 +218,7 @@ Event.register(defines.events.on_tick, function(event)
 end)
 
 Event.register(defines.events.on_player_joined_game, function(event)
-	if game.tick < 10 then 
+	if game.tick < 10 then
 		global.next_round_start_tick = nil
 		return
 	end
@@ -238,7 +239,7 @@ Event.register(defines.events.on_player_joined_game, function(event)
 	local p = game.players[event.player_index]
 	create_buttons(event)
  end)
- 
+
 Event.register(defines.events.on_player_created, function(event)
 	create_buttons(event)
 	if event.player_index ~= 1 then return end
@@ -251,15 +252,15 @@ Event.register(defines.events.on_player_created, function(event)
 	local radius = math.ceil(starting_area_constant[size]/2) --radius in tiles
 	game.forces.player.chart(player.surface, {{-radius,-radius},{radius, radius}})
 	create_config_gui(player)
-	
+
 	player.print({"msg-intro1"})
 	player.print({"msg-intro2"})
 end)
 
 Event.register(defines.events.on_player_left_game, function(event)
-	
+
 end)
- 
+
 Event.register(defines.events.on_player_respawned, function(event)
 	give_respawn_equipment(game.players[event.player_index])
 end)
@@ -288,7 +289,7 @@ Event.register(defines.events.on_entity_died, function(event)
 	log_scenario("rocket silo died")
 	local force = silo.force
 	global.silos[force.name] = nil
-	if not killing_force then 
+	if not killing_force then
 		killing_force = {}
 		killing_force.name = "neutral"
 	end
@@ -365,13 +366,13 @@ function show_health()
 						else
 							player.surface.create_entity{name="flying-text", color={b = 0.1, r= 1, g = 0, a = 0.8}, text=(health), position= {player.position.x, player.position.y-2}}
 						end
-					end	
+					end
 				end
 			end
 				end
-		end 
-end	
-	
+		end
+end
+
 
 Event.register(defines.events.on_gui_checked_state_changed, function (event)
 	local player = game.players[event.player_index]
@@ -380,7 +381,7 @@ Event.register(defines.events.on_gui_checked_state_changed, function (event)
 		--TODO fix this for 0.15 non-linear research system
 		local check_index = 1
 		for k, checkbox in pairs (gui.parent.children_names) do
-			if checkbox == gui.name then 
+			if checkbox == gui.name then
 				check_index = k
 			end
 		end
@@ -407,7 +408,7 @@ Event.register(defines.events.on_gui_checked_state_changed, function (event)
 	if gui.parent.name == "starting_inventory_option_table" then
 		for k, checkbox in pairs (gui.parent.children_names) do
 			local check = gui.parent[checkbox]
-			if check ~= gui then 
+			if check ~= gui then
 				check.state = false
 			end
 		end
@@ -417,7 +418,7 @@ Event.register(defines.events.on_gui_checked_state_changed, function (event)
 	if gui.parent.name == "starting_equipment_option_table" then
 		for k, checkbox in pairs (gui.parent.children_names) do
 			local check = gui.parent[checkbox]
-			if check ~= gui then 
+			if check ~= gui then
 				check.state = false
 			end
 		end
@@ -427,13 +428,13 @@ Event.register(defines.events.on_gui_checked_state_changed, function (event)
 	if gui.parent.name == "team_joining_option_table" then
 		for k, checkbox in pairs (gui.parent.children_names) do
 			local check = gui.parent[checkbox]
-			if check ~= gui then 
+			if check ~= gui then
 				check.state = false
 			end
 		end
 		global.team_joining = gui.name
 		return
-	end 
+	end
 	if gui.parent.name == "pick_join_table" then
 		for k = 1, global.config.number_of_teams do
 			local team = global.force_list[k]
@@ -500,7 +501,7 @@ function set_evolution_factor()
 	if n >= 1 then
 		n = 1
 	end
-	if n <= 0 then 
+	if n <= 0 then
 		n = 0
 	end
 	game.evolution_factor = n
@@ -537,7 +538,7 @@ function random_join(player)
 	set_player(player,force,color)
 end
 
-function set_player(player,force,color) 
+function set_player(player,force,color)
 	local surface = global.surface
 	if not surface.valid then return end
 	local position = surface.find_non_colliding_position("player", force.get_spawn_position(surface),32,1)
@@ -610,13 +611,13 @@ function set_spawn_position(k, n, force,surface)
 	local height_scale = settings.height/settings.width
 	local max_distance = starting_area_constant[copy_settings.starting_area] + (config.team_max_variance*displacement)
 	local elevator_set = false
-	
-	if height_scale == 1 then 
+
+	if height_scale == 1 then
 		if max_distance > surface.map_gen_settings.width then
 			displacement = surface.map_gen_settings.width*global.shrink_from_edge_constant
 		end
 	end
-	
+
 	if height_scale < 1 then
 		if config.number_of_teams == 2 then
 			if max_distance > surface.map_gen_settings.width then
@@ -628,8 +629,8 @@ function set_spawn_position(k, n, force,surface)
 			displacement = surface.map_gen_settings.height*global.shrink_from_edge_constant
 		end
 	end
-	
-	if height_scale > 1 then 
+
+	if height_scale > 1 then
 		if config.number_of_teams == 2 then
 			if max_distance > surface.map_gen_settings.height then
 				displacement = surface.map_gen_settings.height*global.shrink_from_edge_constant
@@ -641,18 +642,18 @@ function set_spawn_position(k, n, force,surface)
 			displacement = surface.map_gen_settings.width*global.shrink_from_edge_constant
 		end
 	end
-	
+
 	local team_displacement_variance = math.random(global.config.team_min_variance*100,global.config.team_max_variance*100)/100
 	local distance = 0.5*displacement*team_displacement_variance
 	local X = 32*(math.floor((math.cos(rotation)*distance+0.5)/32))
 	local Y = 32*(math.floor((math.sin(rotation)*distance+0.5)/32))
-	
+
 	if elevator_set then
 		--Swap X and Y for elevators
 		Y = 32*(math.floor((math.cos(rotation)*distance+0.5)/32))
 		X = 32*(math.floor((math.sin(rotation)*distance+0.5)/32))
 	end
-	
+
 	force.set_spawn_position({X,Y}, surface)
 	-- surface.create_entity{name = "construction-robot", position = {X,Y}, force = game.forces.player }
 	-- game.print(height_scale.." - "..force.name.."	"..X.."-"..Y.." "..(X/32).."-"..(Y/32).." "..height_scale.." "..max_distance)
@@ -694,8 +695,8 @@ function check_starting_area_chunks_are_generated()
 			for X = -check_radius, check_radius -1 do
 				for Y = -check_radius, check_radius -1 do
 					total = total + 1
-					if (surface.is_chunk_generated({X+origin_X,Y+origin_Y})) then 
-						generated = generated + 1 
+					if (surface.is_chunk_generated({X+origin_X,Y+origin_Y})) then
+						generated = generated + 1
 					end
 				end
 			end
@@ -723,7 +724,7 @@ function check_player_color()
 				end
 				break
 			end
-	 end 
+	 end
 		end
 	end
 end
@@ -733,12 +734,12 @@ function check_round_start()
 	if game.tick ~= global.next_round_start_tick then return end
 	prepare_next_round()
 end
-	
+
 function clear_starting_area_enemies()
 	if not global.clear_starting_area_enemies then return end
 	local index = global.clear_starting_area_enemies - game.tick
 	local surface = global.surface
-	if index == 0 then 
+	if index == 0 then
 		global.clear_starting_area_enemies = nil
 		global.finish_setup = game.tick + global.config.number_of_teams
 		return
@@ -758,7 +759,7 @@ function finish_setup()
 	if not global.finish_setup then return end
 	local index = global.finish_setup - game.tick
 	local surface = global.surface
-	if index == 0 then 
+	if index == 0 then
 		global.finish_setup = nil
 		game.print({"map-ready"})
 		global.setup_finished = true
@@ -780,11 +781,11 @@ end
 
 function chart_area_for_force(surface, origin, radius, force)
 	if not force.valid then return end
-	if (not origin.x) or (not origin.y) then 
+	if (not origin.x) or (not origin.y) then
 		game.print ("No valid value in position array")
-		return 
+		return
 	end
-	
+
 	local area = {{origin.x-radius, origin.y-radius},{origin.x+radius, origin.y+radius}}
 	force.chart(surface, area)
 
@@ -794,7 +795,7 @@ function setup_start_area_copy()
 	local size = global.copy_surface.map_gen_settings.starting_area
 	if size == "none" then
 		global.finish_setup = game.tick + global.config.number_of_teams
-		return 
+		return
 	end
 	local radius = math.ceil(starting_area_constant[size]/64) --radius in chunks
 	global.chunk_offsets = {}
@@ -819,7 +820,7 @@ function copy_paste_starting_area_tiles()
 	end
 	local offset = global.chunk_offsets[offset_index]
 	if not offset then return end
-	if not surface.is_chunk_generated({offset[1],offset[2]}) then 
+	if not surface.is_chunk_generated({offset[1],offset[2]}) then
 		global.copy_paste_starting_area_tiles_end = global.copy_paste_starting_area_tiles_end + 1
 		return
 	end
@@ -857,7 +858,7 @@ function copy_paste_starting_area_entities()
 	end
 	local offset = global.chunk_offsets[offset_index]
 	if not offset then return end
-	if not surface.is_chunk_generated({offset[1],offset[2]}) then 
+	if not surface.is_chunk_generated({offset[1],offset[2]}) then
 		global.copy_paste_starting_area_entities_end = global.copy_paste_starting_area_entities_end + 1
 		return
 	end
@@ -978,7 +979,7 @@ function create_wall_for_force(force)
 		else
 			surface.create_entity{name = "stone-wall", position = {position[1],position[2]}, force = force}
 		end
-		
+
 	end
 	surface.set_tiles(tiles_grass)
 	surface.set_tiles(tiles)
