@@ -50,11 +50,11 @@ global.modifier_list =
 			},
 		["ammo_damage_modifier"] = 
 			{
-				["bullet"] = 0,
+				["bullet"] = 0.5,
 				["shotgun-shell"] =	0,
 				["cannon-shell"] =	0.5,
 				["rocket"] =	0.5,
-				["flame-thrower"] =	0,
+				["flame-thrower"] =	-0.3,
 				["grenade"] =	-0.3,
 				["combat-robot-beam"] =	0,
 				["combat-robot-laser"] =	0,
@@ -67,7 +67,7 @@ global.modifier_list =
 				["cannon-shell"] =	0.5,
 				["rocket"] =	0,
 				["flame-thrower"] =	0,
-				["laser-turret"] =	0
+				["laser-turret"] =	-1
 			}
 	}
 
