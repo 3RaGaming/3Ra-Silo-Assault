@@ -331,15 +331,6 @@ end)
 
 
 
-function starting_inventory(event)
-	local player = game.players[event.player_index]
-	player.insert{name="iron-plate", count=8}
-	player.insert{name="submachine-gun", count=1}
-	player.insert{name="piercing-rounds-magazine", count=100}
-	player.insert{name="burner-mining-drill", count = 5}
-	player.insert{name="stone-furnace", count = 10}
-	player.insert{name="raw-fish", count = 10}
-end
 
 -- shows player health as a text float.
 function show_health()

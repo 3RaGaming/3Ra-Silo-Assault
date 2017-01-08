@@ -13,7 +13,7 @@ Event.register(defines.events.on_research_finished, function (event)
 		end
 	end	
 
-	research.force.recipes["laser-turret"].enabled=false
+	--research.force.recipes["laser-turret"].enabled=false
 	research.force.recipes["discharge-defense-equipment"].enabled=false
 	research.force.recipes["construction-robot"].enabled=false
 	research.force.recipes["discharge-defense-remote"].enabled=false
