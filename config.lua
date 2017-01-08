@@ -6,7 +6,7 @@ function load_config()
 	global.team_joining = "auto_assign"
 	global.setup_finished = false
 	global.time_between_rounds = 60 -- seconds
-	global.config = 
+	global.config =
 		{
 			["number_of_teams"] = 2,
 			["average_team_displacement"] = 75*32,
@@ -23,13 +23,13 @@ function load_config()
 			["starting_inventory"] = {"none", "small", "medium", "large"},
 			["starting_equipment"] = {"none", "small", "medium", "large"},
 			["team_joining"] = {"player_pick", "random", "auto_assign"},
-			["biters_disabled"] = false, 
+			["biters_disabled"] = false,
 			["peaceful_mode"] = false,
 			["ceasefire"] = false,
 			["evolution_factor"] = 0
 		}
-		
-	global.research_ingredient_list = 
+
+	global.research_ingredient_list =
 		{
 			--false means disabled.
 			["science-pack-1"] = false,
@@ -52,10 +52,10 @@ function load_config()
 			{name = "Brown", color = {0.5, 0.3, 0.1, 0.8}},
 			{name = "Red", color = {0.9, 0.1, 0.1, 0.8}}
 		}
-		
-	global.inventory_list = 
+
+	global.inventory_list =
 	{
-		["none"] = 
+		["none"] =
 		{
 			["iron-plate"] = 8,
 			["burner-mining-drill"] = 2,
@@ -143,6 +143,7 @@ function load_config()
 			["pumpjack"] = 10
 		}
 	}
+	global.scenario = {custom_functions={}}
 end
 
 function give_equipment(player)
@@ -153,7 +154,7 @@ function give_equipment(player)
 		player.insert{name = "iron-axe", count = 1}
 		return
 	end
-	
+
 	if global.starting_equipment == "small" then
 		player.insert{name = "light-armor", count = 1}
 		player.insert{name = "steel-axe", count = 1}
@@ -161,7 +162,7 @@ function give_equipment(player)
 		player.insert{name = "firearm-magazine", count = 40}
 		return
 	end
-	
+
 	if global.starting_equipment == "medium" then
 		player.insert{name = "heavy-armor", count = 1}
 		player.insert{name = "steel-axe", count = 3}
@@ -169,7 +170,7 @@ function give_equipment(player)
 		player.insert{name = "piercing-rounds-magazine", count = 40}
 		return
 	end
-	
+
 	if global.starting_equipment == "large" then
 		player.insert{name = "steel-axe", count = 3}
 		player.insert{name = "submachine-gun", count = 1}
@@ -195,7 +196,7 @@ function give_equipment(player)
 
 end
 
-function give_respwan_equipment(player)
+function give_respawn_equipment(player)
 
 	player.insert{name = "submachine-gun", count = 1}
 	player.insert{name = "firearm-magazine", count = 30}
@@ -212,4 +213,3 @@ starting_area_constant =
 		["high"] = 4*120,
 		["very-high"] = 5*120
 	}
-	
