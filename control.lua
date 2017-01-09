@@ -183,10 +183,19 @@ Event.register(defines.events.on_tick, function(event)
 	if(game.tick % 30 == 0) then
 		show_health()
 	end
+	
 	--runs every second
 	if(game.tick % 60 == 0) then
-
+		if global.team_preparing_period then
+			team_prepare()
+		end
 	end
+	
+	-- Runs every 5 seconds
+	if game.tick % 300 == 0 then
+		check_player_color()
+	end
+
 	-- Runs every 30 seconds
 	if(game.tick % 1800 == 0) then
 		if not game.forces["Spectators"] then game.create_force("Spectators") end
@@ -207,7 +216,6 @@ Event.register(defines.events.on_tick, function(event)
 		end
 		global.timer_value = game.tick / 60
 	end
-	check_player_color()
 	if global.setup_finished then return end
 	check_round_start()
 	copy_paste_starting_area_tiles()
@@ -329,8 +337,42 @@ Event.register(defines.events.on_entity_died, function(event)
 	end
 end)
 
-
-
+-- Give everyone some time with their team to discuss strategy before anyone is allowed to do anything.
+function team_prepare()
+	if game.tick < global.prepare_period * 60 + global.match_start_time then
+		-- The following essentially freezes all players.
+		for k, player in pairs (game.connected_players) do
+			if player.character then
+				player.character_crafting_speed_modifier = -1
+				player.character_mining_speed_modifier = -1
+				player.character_running_speed_modifier = -1
+				--Unfortunately, the following gave errors that said the minimum value for each is zero.
+				--player.character_build_distance_bonus = -1
+				--player.character_item_drop_distance_bonus = -1
+				--player.character_reach_distance_bonus = -1
+				--player.character_item_pickup_distance_bonus = -1
+				--player.character_loot_pickup_distance_bonus = -1
+			end
+		end
+	else
+		-- Unfreezes players.
+		for k, player in pairs (game.connected_players) do
+			if player.character then
+				player.character_crafting_speed_modifier = 0
+				player.character_mining_speed_modifier = 0
+				player.character_running_speed_modifier = 0
+				--player.character_build_distance_bonus = 0
+				--player.character_item_drop_distance_bonus = 0
+				--player.character_reach_distance_bonus = 0
+				--player.character_resource_reach_distance_bonus = 0
+				--player.character_item_pickup_distance_bonus = 0
+				--player.character_loot_pickup_distance_bonus = 0
+			end
+		end
+		global.team_preparing_period = false
+		game.print("Start match!")
+	end
+end
 
 -- shows player health as a text float.
 function show_health()
@@ -509,6 +551,7 @@ function update_players_on_team_count(player)
 		local force = game.forces[team.name]
 		if force then
 			if gui.pick_join_frame.pick_join_table[force.name.."_count"] then
+				--Should the following be #force.connected_players instead of #force.players ?
 				gui.pick_join_frame.pick_join_table[force.name.."_count"].caption = #force.players
 			end
 		end
@@ -704,7 +747,6 @@ end
 
 
 function check_player_color()
-	if game.tick % 300 ~= 0 then return end
 	for k, player in pairs (game.connected_players) do
 	if global.player_crouch_state == false then
 	 for i, force in pairs (global.force_list) do
@@ -754,6 +796,10 @@ function finish_setup()
 		global.finish_setup = nil
 		game.print({"map-ready"})
 		global.setup_finished = true
+		global.team_preparing_period = true
+		game.print({"team-preparing-period-start",global.prepare_period})
+
+		global.match_start_time = game.tick
 		for k, player in pairs (game.connected_players) do
 			choose_joining_gui(player)
 		end
