@@ -350,6 +350,7 @@ function team_prepare()
 				--player.character_build_distance_bonus = -1
 				--player.character_item_drop_distance_bonus = -1
 				--player.character_reach_distance_bonus = -1
+				--player.character_resource_reach_distance_bonus = -1
 				--player.character_item_pickup_distance_bonus = -1
 				--player.character_loot_pickup_distance_bonus = -1
 			end
