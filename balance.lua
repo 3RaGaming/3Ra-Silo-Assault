@@ -67,7 +67,7 @@ global.modifier_list =
 				["cannon-shell"] =	0.5,
 				["rocket"] =	0,
 				["flame-thrower"] =	0,
-				["laser-turret"] =	-1
+				["laser-turret"] =	0
 			}
 	}
 
