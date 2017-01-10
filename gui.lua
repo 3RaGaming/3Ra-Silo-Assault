@@ -171,6 +171,7 @@ function create_buttons(event)
 		player.gui.top.add{type="button", name="score_button", caption="Score"}
 	end
 	if (not player.gui.top["surrender_button"]) then
+		player.gui.top.add{type="button", name="surrender_button", caption="Surrender Menu"}
 	end
 end	
 
