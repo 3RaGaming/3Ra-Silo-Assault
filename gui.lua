@@ -35,6 +35,7 @@ Event.register(defines.events.on_gui_click, function(event)
 			player.color = black				
 		end
 	end
+	
 	if (event.element.name == "score_button") then
 		if player.gui.left.score_board then
 			player.gui.left.score_board.destroy()
@@ -60,6 +61,40 @@ Event.register(defines.events.on_gui_click, function(event)
 			end
 		end
 	end	
+	
+	--Brings up vote-to-surrender dialog
+	if (event.element.name == "surrender_button") then
+		if player.gui.left.surrender_dialog then
+			player.gui.left.surrender_dialog.destroy()
+		else
+			if not global.surrender_votes then global.surrender_votes = {} end  --this contains the surrender votes for all teams
+			if not global.surrender_votes[player.force.name] then
+				--This is run the first time the Surrender Options button is clicked on a force each match.
+				local new_vote = {}
+				new_vote.yes_votes_count = 0
+				new_vote.no_votes_count = 0
+				new_vote.not_yet_voted_count = #player.force.connected_players
+				global.surrender_votes[player.force.name] = new_vote
+			end
+			local vote = global.surrender_votes[player.force.name]
+			local frame = player.gui.left.add{name = "surrender_dialog", type = "frame", direction = "vertical", caption = "Vote: Do you wish to surrender?"}
+			--the following line was the only way I could figure out how to cause elements to appear vertically instead of horizontally, there has got to be a better way
+			local surrender_table = frame.add{type = "table", name = "surrender_table", colspan = 1}
+			local button_table = surrender_table.add{type = "table", name = "button_table", colspan = 2}
+			button_table.add{type = "button", name = "vote_yes", caption = "Yes"}
+			button_table.add{type = "button", name = "vote_no", caption = "No"}
+			local surrender_tally_table = surrender_table.add{type = "table", name = "surrender_tally_table", colspan = 3}
+			surrender_tally_table.add{type = "label", name = "surrender_tally_table_yes_votes", caption = "Yes votes"}
+			surrender_tally_table.add{type = "label", caption = "      "}  --adds whitespace between the two actual columns... there has got to be a better way to do this...
+			surrender_tally_table.add{type = "label", name = "surrender_tally_table_yes_votes_count", caption = vote.yes_votes_count}
+			surrender_tally_table.add{type = "label", name = "surrender_tally_table_no_votes", caption = "No votes"}
+			surrender_tally_table.add{type = "label", caption = "      "}
+			surrender_tally_table.add{type = "label", name = "surrender_tally_table_no_votes_count", caption = vote.no_votes_count}
+			surrender_tally_table.add{type = "label", name = "surrender_tally_table_not_yet_voted", caption = "Not yet voted"}
+			surrender_tally_table.add{type = "label", caption = "      "}
+			surrender_tally_table.add{type = "label", name = "surrender_tally_table_not_yet_voted_count", caption = vote.not_yet_voted_count}
+		end
+	end
 	
 	if gui.name == "balance_options_confirm" then
 		set_balance_settings(gui.parent.balance_options_scrollpane)
@@ -134,6 +169,8 @@ function create_buttons(event)
 	
 	if (not player.gui.top["score_button"]) then
 		player.gui.top.add{type="button", name="score_button", caption="Score"}
+	end
+	if (not player.gui.top["surrender_button"]) then
 	end
 end	
 
