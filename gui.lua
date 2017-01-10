@@ -67,33 +67,48 @@ Event.register(defines.events.on_gui_click, function(event)
 		if player.gui.left.surrender_dialog then
 			player.gui.left.surrender_dialog.destroy()
 		else
-			if not global.surrender_votes then global.surrender_votes = {} end  --this contains the surrender votes for all teams
-			if not global.surrender_votes[player.force.name] then
-				--This is run the first time the Surrender Options button is clicked on a force each match.
-				local new_vote = {}
-				new_vote.yes_votes_count = 0
-				new_vote.no_votes_count = 0
-				new_vote.not_yet_voted_count = #player.force.connected_players
-				global.surrender_votes[player.force.name] = new_vote
-			end
-			local vote = global.surrender_votes[player.force.name]
 			local frame = player.gui.left.add{name = "surrender_dialog", type = "frame", direction = "vertical", caption = "Vote: Do you wish to surrender?"}
 			--the following line was the only way I could figure out how to cause elements to appear vertically instead of horizontally, there has got to be a better way
 			local surrender_table = frame.add{type = "table", name = "surrender_table", colspan = 1}
 			local button_table = surrender_table.add{type = "table", name = "button_table", colspan = 2}
-			button_table.add{type = "button", name = "vote_yes", caption = "Yes"}
-			button_table.add{type = "button", name = "vote_no", caption = "No"}
-			local surrender_tally_table = surrender_table.add{type = "table", name = "surrender_tally_table", colspan = 3}
-			surrender_tally_table.add{type = "label", name = "surrender_tally_table_yes_votes", caption = "Yes votes"}
-			surrender_tally_table.add{type = "label", caption = "      "}  --adds whitespace between the two actual columns... there has got to be a better way to do this...
-			surrender_tally_table.add{type = "label", name = "surrender_tally_table_yes_votes_count", caption = vote.yes_votes_count}
-			surrender_tally_table.add{type = "label", name = "surrender_tally_table_no_votes", caption = "No votes"}
-			surrender_tally_table.add{type = "label", caption = "      "}
-			surrender_tally_table.add{type = "label", name = "surrender_tally_table_no_votes_count", caption = vote.no_votes_count}
-			surrender_tally_table.add{type = "label", name = "surrender_tally_table_not_yet_voted", caption = "Not yet voted"}
-			surrender_tally_table.add{type = "label", caption = "      "}
-			surrender_tally_table.add{type = "label", name = "surrender_tally_table_not_yet_voted_count", caption = vote.not_yet_voted_count}
+			button_table.add{type = "button", name = "surrender_vote_yes", caption = "Yes"}
+			button_table.add{type = "button", name = "surrender_vote_no", caption = "No"}
+			
+			if not global.surrender_votes then global.surrender_votes = {} end  --this contains the surrender votes for all teams
+			if not global.surrender_votes[player.force.name] then 
+				global.surrender_votes[player.force.name] = {}
+				global.surrender_votes[player.force.name].in_progress = false
+			end
+			if global.surrender_votes[player.force.name].in_progress then add_surrender_vote_tally_table(player) end
+			local surrender_info_label = surrender_table.add{type = "label", name = "70% Yes vote required for surrender."}
+			
+			local too_early = is_too_early_in_match_to_surrender()
+			local too_soon = is_too_soon_since_last_surrender_vote(player.force)
+			if too_early then
+				local surrender_error_message = "You can not surrender during the first " .. time_before_first_surrender_available .. " minutes of a match."
+			end
+			if too_soon then
+				local surrender_error_message = "You can not surrender until " .. minimum_time_between_surrender_votes .. " minutes have passed since the last vote."
+			end
+
+			if too_early or too_soon then
+				surrender_vote_yes.style.font_color = colors.grey
+				surrender_vote_no.style.font_color = colors.grey
+				local surrender_error_label = surrender_table.add{type = "label", name = surrender_error_message, style.font_color = colors.red}
+			end
 		end
+	end
+	
+	if (event.element.name == "surrender_vote_yes") then
+		if is_too_early_in_match_to_surrender() or is_too_soon_since_last_surrender_vote(player.force) then return end
+
+		local votes = global.surrender_votes[player.force.name]
+		if not votes.in_progress then
+			votes.yes_votes_count = 0
+			votes.no_votes_count = 0
+			votes.not_yet_voted_count = #player.force.connected_players
+			votes.in_progress = true
+		end		
 	end
 	
 	if gui.name == "balance_options_confirm" then
@@ -155,6 +170,24 @@ Event.register(defines.events.on_gui_click, function(event)
 	end
 	
 end)
+
+function is_too_early_in_match_to_surrender()
+	return game.tick < global.match_start_time + time_before_first_surrender_available * 3600
+end
+
+function add_surrender_vote_tally_table(player)
+	local votes = global.surrender_votes[player.force.name]
+	local surrender_tally_table = surrender_table.add{type = "table", name = "surrender_tally_table", colspan = 3}
+	surrender_tally_table.add{type = "label", name = "surrender_tally_table_yes_votes", caption = "Yes votes"}
+	surrender_tally_table.add{type = "label", caption = "      "}  --adds whitespace between the two actual columns... there has got to be a better way to do this...
+	surrender_tally_table.add{type = "label", name = "surrender_tally_table_yes_votes_count", caption = votes.yes_votes_count}
+	surrender_tally_table.add{type = "label", name = "surrender_tally_table_no_votes", caption = "No votes"}
+	surrender_tally_table.add{type = "label", caption = "      "}
+	surrender_tally_table.add{type = "label", name = "surrender_tally_table_no_votes_count", caption = votes.no_votes_count}
+	surrender_tally_table.add{type = "label", name = "surrender_tally_table_not_yet_voted", caption = "Not yet voted"}
+	surrender_tally_table.add{type = "label", caption = "      "}
+	surrender_tally_table.add{type = "label", name = "surrender_tally_table_not_yet_voted_count", caption = votes.not_yet_voted_count}
+end
 
 --using this to order the gui'
 function create_buttons(event)

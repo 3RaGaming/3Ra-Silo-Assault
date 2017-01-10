@@ -762,6 +762,7 @@ function finish_setup()
 		global.finish_setup = nil
 		game.print({"map-ready"})
 		global.setup_finished = true
+		global.match_start_time = game.tick
 		for k, player in pairs (game.connected_players) do
 			choose_joining_gui(player)
 		end

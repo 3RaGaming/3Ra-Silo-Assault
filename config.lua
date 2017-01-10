@@ -6,6 +6,7 @@ function load_config()
 	global.team_joining = "auto_assign"
 	global.setup_finished = false
 	global.time_between_rounds = 60 -- seconds
+	global.time_before_first_surrender_available = 15 -- minutes
 	global.config = 
 		{
 			["number_of_teams"] = 2,
