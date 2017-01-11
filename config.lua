@@ -8,6 +8,7 @@ function load_config()
 	global.team_preparing_period = false
 	global.time_between_rounds = 120 -- seconds
 	global.prepare_period = 60 -- seconds
+	global.number_alien_artifacts_distributed = 200
 	global.config =
 		{
 			["number_of_teams"] = 2,

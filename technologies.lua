@@ -7,10 +7,10 @@ Event.register(defines.events.on_research_finished, function (event)
 
 	local research = event.research
 	
-	if research.name == "alien-technology" then
+	if research.name == "alien-technology" and not global.disable_alien_tech_distribution then
 		if global.config.biters_disabled then
-		for i,v in pairs(game.players) do v.insert{name="alien-artifact", count=100} end
-		game.print({"alien-artifacts-distributed-announcement"})
+			for i,v in pairs(research.force.players) do v.insert{name="alien-artifact", count=global.number_alien_artifacts_distributed} end
+			game.print({"alien-artifacts-distributed-announcement",global.number_alien_artifacts_distributed})
 		end
 	end	
 

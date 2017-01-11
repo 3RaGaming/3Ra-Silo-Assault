@@ -337,38 +337,46 @@ Event.register(defines.events.on_entity_died, function(event)
 	end
 end)
 
+function freeze_player(player)
+	if player.character then
+		player.character_crafting_speed_modifier = -1
+		player.character_mining_speed_modifier = -1
+		player.character_running_speed_modifier = -1
+		--Unfortunately, the following gave errors that said the minimum value for each is zero.
+		--player.character_build_distance_bonus = -1
+		--player.character_item_drop_distance_bonus = -1
+		--player.character_reach_distance_bonus = -1
+		--player.character_resource_reach_distance_bonus = -1
+		--player.character_item_pickup_distance_bonus = -1
+		--player.character_loot_pickup_distance_bonus = -1
+	end
+end
+
+function unfreeze_player(player)
+	if player.character then
+		player.character_crafting_speed_modifier = 0
+		player.character_mining_speed_modifier = 0
+		player.character_running_speed_modifier = 0
+		--player.character_build_distance_bonus = 0
+		--player.character_item_drop_distance_bonus = 0
+		--player.character_reach_distance_bonus = 0
+		--player.character_resource_reach_distance_bonus = 0
+		--player.character_item_pickup_distance_bonus = 0
+		--player.character_loot_pickup_distance_bonus = 0
+	end
+end
+
 -- Give everyone some time with their team to discuss strategy before anyone is allowed to do anything.
 function team_prepare()
 	if game.tick < global.prepare_period * 60 + global.match_start_time then
 		-- The following essentially freezes all players.
 		for k, player in pairs (game.connected_players) do
-			if player.character then
-				player.character_crafting_speed_modifier = -1
-				player.character_mining_speed_modifier = -1
-				player.character_running_speed_modifier = -1
-				--Unfortunately, the following gave errors that said the minimum value for each is zero.
-				--player.character_build_distance_bonus = -1
-				--player.character_item_drop_distance_bonus = -1
-				--player.character_reach_distance_bonus = -1
-				--player.character_resource_reach_distance_bonus = -1
-				--player.character_item_pickup_distance_bonus = -1
-				--player.character_loot_pickup_distance_bonus = -1
-			end
+			freeze_player(player)
 		end
 	else
 		-- Unfreezes players.
 		for k, player in pairs (game.connected_players) do
-			if player.character then
-				player.character_crafting_speed_modifier = 0
-				player.character_mining_speed_modifier = 0
-				player.character_running_speed_modifier = 0
-				--player.character_build_distance_bonus = 0
-				--player.character_item_drop_distance_bonus = 0
-				--player.character_reach_distance_bonus = 0
-				--player.character_resource_reach_distance_bonus = 0
-				--player.character_item_pickup_distance_bonus = 0
-				--player.character_loot_pickup_distance_bonus = 0
-			end
+			unfreeze_player(player)
 		end
 		global.team_preparing_period = false
 		game.print("Start match!")
@@ -954,6 +962,7 @@ function setup_research(force)
 	if not force then return end
 	if not force.valid then return end
 	--Unlocks all research, and then unenables them based on a blacklist
+	global.disable_alien_tech_distribution = true
 	force.research_all_technologies()
 	for k, technology in pairs (force.technologies) do
 		for j, ingredient in pairs (technology.research_unit_ingredients) do
@@ -963,6 +972,7 @@ function setup_research(force)
 			end
 		end
 	end
+	global.disable_alien_tech_distribution = false
 end
 
 function create_wall_for_force(force)
