@@ -381,8 +381,8 @@ function team_prepare()
 		end
 	else
 		-- Unfreezes players.
-		for k, player in pairs (game.connected_players) do
-			unfreeze_player(player)
+		for k, player in pairs (game.players) do
+			pcall(unfreeze_player(player))
 		end
 		global.team_preparing_period = false
 		game.print({"start-match"})
