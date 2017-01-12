@@ -95,7 +95,7 @@ function create_next_surface()
 	settings.starting_area = "very-low"
 	settings.peaceful_mode = global.config.peaceful_mode
 	settings.seed = math.random(1, 2000000)
-	if global.config.biters_disabled then
+	if global.alien_artifacts_source ~= "biters_enabled" then
 		settings.autoplace_controls["enemy-base"].size = "none"
 	end
 	settings.height = global.config.map_height
@@ -157,8 +157,8 @@ function end_round()
 		game.delete_surface(game.surfaces["Battle_surface"])
 	end
 	global.kill_counts = {}
-	game.print{"next-round-start", global.time_between_rounds}
-	global.next_round_start_tick = game.tick + global.time_between_rounds * 60
+	game.print{"next-round-start", global.config.time_between_rounds, global.config.team_prepare_period}
+	global.next_round_start_tick = game.tick + global.config.time_between_rounds * 60
 	global.setup_finished = false
 
 	game.evolution_factor = 0
@@ -200,6 +200,12 @@ Event.register(defines.events.on_tick, function(event)
 	if(game.tick % 1800 == 0) then
 		if not game.forces["Spectators"] then game.create_force("Spectators") end
 		game.forces.Spectators.chart_all()
+		if global.alien_artifacts_source == "gradual_distribution" then
+			gradual_plus_remainder = global.config.num_alien_artifacts_gradual + global.alien_artifacts_gradual_remainder
+			local give_amount = math.floor(gradual_plus_remainder / 120)
+			global.alien_artifacts_gradual_remainder = gradual_plus_remainder % 120
+			for i,v in pairs(game.connected_players) do v.insert{name="alien-artifact", count=give_amount} end
+		end
 	end
 	local current_time = game.tick / 60 - global.timer_value
 	local message_display = "test"
@@ -368,7 +374,7 @@ end
 
 -- Give everyone some time with their team to discuss strategy before anyone is allowed to do anything.
 function team_prepare()
-	if game.tick < global.prepare_period * 60 + global.match_start_time then
+	if game.tick < global.config.team_prepare_period * 60 + global.match_start_time then
 		-- The following essentially freezes all players.
 		for k, player in pairs (game.connected_players) do
 			freeze_player(player)
@@ -379,7 +385,7 @@ function team_prepare()
 			unfreeze_player(player)
 		end
 		global.team_preparing_period = false
-		game.print("Start match!")
+		game.print({"start-match"})
 	end
 end
 
@@ -494,6 +500,15 @@ Event.register(defines.events.on_gui_checked_state_changed, function (event)
 			end
 		end
 	end
+	if gui.parent.name == "alien_artifacts_source_option_table" then
+		for k, checkbox in pairs (gui.parent.children_names) do
+			local check = gui.parent[checkbox]
+			if check ~= gui then
+				check.state = false
+			end
+		end
+		global.alien_artifacts_source = gui.name
+	end
 end)
 
 
@@ -593,6 +608,10 @@ function set_player(player,force,color)
 	give_equipment(player)
 	game.print({"joined", player.name, player.force.name})
 	player.print({"objective"})
+	if     global.alien_artifacts_source == "biters_enabled"       then player.print({"biters_enabled_message"})
+	elseif global.alien_artifacts_source == "alien_tech_research"  then player.print({"alien_tech_research_message",global.config.num_alien_artifacts_on_tech})
+	elseif global.alien_artifacts_source == "gradual_distribution" then player.print({"gradual_distribution_message",global.config.num_alien_artifacts_gradual})
+	else game.print("error in set_player()!") end
 	print("PLAYER$force," .. player.index .. "," .. player.name .. "," .. player.force.name)
 end
 
@@ -805,13 +824,12 @@ function finish_setup()
 		global.finish_setup = nil
 		game.print({"map-ready"})
 		global.setup_finished = true
-		global.team_preparing_period = true
-		game.print({"team-preparing-period-start",global.prepare_period})
-
 		global.match_start_time = game.tick
 		for k, player in pairs (game.connected_players) do
 			choose_joining_gui(player)
 		end
+		global.team_preparing_period = true
+		game.print({"team-preparing-period-start",global.config.team_prepare_period})
 		return
 	end
 	local name = global.force_list[index].name
