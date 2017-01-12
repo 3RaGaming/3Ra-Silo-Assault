@@ -159,6 +159,7 @@ function end_round()
 	global.kill_counts = {}
 	game.print{"next-round-start", global.config.time_between_rounds, global.config.team_prepare_period}
 	global.next_round_start_tick = game.tick + global.config.time_between_rounds * 60
+	global.teams_currently_preparing = false
 	global.setup_finished = false
 
 	game.evolution_factor = 0
@@ -186,7 +187,7 @@ Event.register(defines.events.on_tick, function(event)
 	
 	--runs every second
 	if(game.tick % 60 == 0) then
-		if global.team_preparing_period then
+		if global.teams_currently_preparing then
 			team_prepare()
 		end
 	end
@@ -382,9 +383,9 @@ function team_prepare()
 	else
 		-- Unfreezes players.
 		for k, player in pairs (game.players) do
-			pcall(unfreeze_player(player))
+			pcall(unfreeze_player, player)
 		end
-		global.team_preparing_period = false
+		global.teams_currently_preparing = false
 		game.print({"start-match"})
 	end
 end
@@ -828,7 +829,7 @@ function finish_setup()
 		for k, player in pairs (game.connected_players) do
 			choose_joining_gui(player)
 		end
-		global.team_preparing_period = true
+		global.teams_currently_preparing = true
 		game.print({"team-preparing-period-start",global.config.team_prepare_period})
 		return
 	end

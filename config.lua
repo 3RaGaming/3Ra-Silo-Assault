@@ -7,7 +7,7 @@ function load_config()
 	global.alien_artifacts_source = "alien_tech_research"
 	global.alien_artifacts_gradual_remainder = 0
 	global.setup_finished = false
-	global.team_preparing_period = false
+	global.teams_currently_preparing = false
 	global.config =
 		{
 			["number_of_teams"] = 3,
