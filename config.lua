@@ -1,16 +1,16 @@
 
 function load_config()
 	global.shrink_from_edge_constant = 0.75
-	global.starting_inventory = "none"
-	global.starting_equipment = "none"
-	global.team_joining = "auto_assign"
+	global.starting_inventory = "medium"
+	global.starting_equipment = "small"
+	global.team_joining = "player_pick"
 	global.alien_artifacts_source = "alien_tech_research"
 	global.alien_artifacts_gradual_remainder = 0
 	global.setup_finished = false
 	global.team_preparing_period = false
 	global.config =
 		{
-			["number_of_teams"] = 2,
+			["number_of_teams"] = 3,
 			["average_team_displacement"] = 75*32,
 			["team_max_variance"] = 1,
 			["team_min_variance"] = 1,
@@ -29,7 +29,7 @@ function load_config()
 			["team_joining"] = {"player_pick", "random", "auto_assign"},
 			["alien_artifacts_source"] = {"biters_enabled", "alien_tech_research", "gradual_distribution"},
 			["num_alien_artifacts_on_tech"] = 200, -- give this amount to each player on a force when they research alien technology
-			["num_alien_artifacts_gradual"] = 60, -- per hour
+			["num_alien_artifacts_gradual"] = 100, -- per hour
 			["peaceful_mode"] = false,
 			["ceasefire"] = false,
 			["evolution_factor"] = 0
