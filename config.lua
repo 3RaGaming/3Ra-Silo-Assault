@@ -1,12 +1,15 @@
 
 function load_config()
 	global.shrink_from_edge_constant = 0.75
+	global.percentage_needed_to_surrender = 70 -- percentage
 	global.starting_inventory = "none"
 	global.starting_equipment = "none"
 	global.team_joining = "auto_assign"
 	global.setup_finished = false
 	global.time_between_rounds = 60 -- seconds
-	global.time_before_first_surrender_available = 15 -- minutes
+	global.time_before_first_surrender_available = 0.2 -- minutes
+	global.surrender_vote_cooldown_period = 1 -- minutes
+	global.surrender_voting_period = 0.5 -- minutes
 	global.config = 
 		{
 			["number_of_teams"] = 2,
