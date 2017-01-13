@@ -67,6 +67,7 @@ Event.register(defines.events.on_gui_click, function(event)
 		if player.gui.left.surrender_dialog then
 			player.gui.left.surrender_dialog.destroy()
 		else
+			game.print("surrender dialog open")
 			local frame = player.gui.left.add{name = "surrender_dialog", type = "frame", direction = "vertical", caption = "Vote: Do you wish to surrender?"}
 			--the following line was the only way I could figure out how to cause elements to appear vertically instead of horizontally, there has got to be a better way
 			local surrender_table = frame.add{type = "table", name = "surrender_table", colspan = 1}
@@ -80,21 +81,25 @@ Event.register(defines.events.on_gui_click, function(event)
 				global.surrender_votes[player.force.name].in_progress = false
 			end
 			if global.surrender_votes[player.force.name].in_progress then add_surrender_vote_tally_table(player) end
-			local surrender_info_label = surrender_table.add{type = "label", name = "70% Yes vote required for surrender."}
+			local surrender_info_label = surrender_table.add{type = "label", name = surrender_info_label, caption = "70% Yes vote required for surrender."}
 			
 			local too_early = is_too_early_in_match_to_surrender()
 			local too_soon = is_too_soon_since_last_surrender_vote(player.force)
+			local surrender_error_message = ""
 			if too_early then
-				local surrender_error_message = "You can not surrender during the first " .. time_before_first_surrender_available .. " minutes of a match."
+				surrender_error_message = "You can not surrender during the first " .. global.time_before_first_surrender_available .. " minutes of a match."
 			end
 			if too_soon then
-				local surrender_error_message = "You can not surrender until " .. minimum_time_between_surrender_votes .. " minutes have passed since the last vote."
+				surrender_error_message = "You can not surrender until " .. global.minimum_time_between_surrender_votes .. " minutes have passed since the last vote."
 			end
 
-			if too_early or too_soon then
+			if (too_early or too_soon) then
+				game.print("too early or too soon")
 				surrender_vote_yes.style.font_color = colors.grey
 				surrender_vote_no.style.font_color = colors.grey
-				local surrender_error_label = surrender_table.add{type = "label", name = surrender_error_message, style.font_color = colors.red}
+				
+				local surrender_error_label = surrender_table.add{type = "label", name = surrender_error_label, caption = surrender_error_message}
+				surrender_error_label.style.font_color = colors.red
 			end
 		end
 	end
@@ -172,7 +177,11 @@ Event.register(defines.events.on_gui_click, function(event)
 end)
 
 function is_too_early_in_match_to_surrender()
-	return game.tick < global.match_start_time + time_before_first_surrender_available * 3600
+	return game.tick < global.match_start_time + global.time_before_first_surrender_available * 3600
+end
+
+function is_too_soon_since_last_surrender_vote(force)
+	return false
 end
 
 function add_surrender_vote_tally_table(player)
