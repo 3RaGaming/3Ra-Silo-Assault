@@ -128,9 +128,20 @@ function end_round()
 	log_scenario("Begin end_round()")
 	
 	local player_count = 0
+	for j, force in pairs (game.forces) do
+		local votes = global.surrender_votes[force.name]
+		if votes then
+			votes.voted_at_least_once = false
+			votes.already_surrendered = false
+			votes.in_progress = false
+		end
+	end
 	for k, player in pairs (game.players) do
 		player.force = game.forces.player
+		--global.surrender_votes = nil
 		destroy_joining_guis(player.gui.center)
+		if player.gui.left.surrender_dialog then player.gui.left.surrender_dialog.destroy() end
+		player.gui.top.surrender_button.style.font_color = colors.white
 		if player.connected then
 			local character = player.character
 			player.character = nil
