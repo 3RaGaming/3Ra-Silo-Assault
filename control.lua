@@ -238,6 +238,7 @@ Event.register(defines.events.on_player_joined_game, function(event)
 		return
 	end
 	local player = game.players[event.player_index]
+	unfreeze_player(player)
 	if player.force.name ~= "player" then return end
 	local character = player.character
 	player.character = nil
