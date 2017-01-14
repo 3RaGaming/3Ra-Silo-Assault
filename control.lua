@@ -339,6 +339,7 @@ Event.register(defines.events.on_entity_died, function(event)
 	end
 	if index > 1 then return end
 	game.print({"team-won",winner_name})
+	game.print("Match lasted " .. match_elapsed_time() .. ".")
 	if global.config.continuous_play then
 		end_round()
 	end
@@ -388,6 +389,18 @@ function team_prepare()
 		global.teams_currently_preparing = false
 		game.print({"start-match"})
 	end
+end
+
+function match_elapsed_time()
+	local ticks = game.tick - global.match_start_time
+	local hours = math.floor(ticks / 60^3)
+	local minutes = math.floor((ticks % 60^3) / 60^2)
+	local seconds = math.floor((ticks % 60^2) / 60)
+	local returnstring = ""
+	if hours > 0 then returnstring = hours .. " hours, " end
+	if minutes > 0 then returnstring = returnstring .. minutes .. " minutes, and " end
+	returnstring = returnstring .. seconds .. " seconds"
+	return returnstring
 end
 
 -- shows player health as a text float.
