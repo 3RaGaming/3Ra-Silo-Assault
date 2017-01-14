@@ -2,38 +2,44 @@
 function load_config()
 	global.shrink_from_edge_constant = 0.75
 	global.percentage_needed_to_surrender = 70 -- percentage
-	global.starting_inventory = "none"
-	global.starting_equipment = "none"
-	global.team_joining = "auto_assign"
+	global.starting_inventory = "medium"
+	global.starting_equipment = "small"
+	global.team_joining = "player_pick"
+	global.alien_artifacts_source = "alien_tech_research"
+	global.alien_artifacts_gradual_remainder = 0
 	global.setup_finished = false
-	global.time_between_rounds = 60 -- seconds
+	global.teams_currently_preparing = false
 	global.time_before_first_surrender_available = 0.2 -- minutes
 	global.surrender_vote_cooldown_period = 1 -- minutes
 	global.surrender_voting_period = 0.5 -- minutes
-	global.config = 
+	global.config =
 		{
-			["number_of_teams"] = 2,
+			["number_of_teams"] = 3,
 			["average_team_displacement"] = 75*32,
 			["team_max_variance"] = 1,
 			["team_min_variance"] = 1,
-			["map_height"] = 2048,
-			["map_width"] = 2048,
+			["map_height"] = 100*32,
+			["map_width"] = 100*32,
 			["copy_starting_area"] = true,
 			["reveal_team_positions"] = false,
 			["team_walls"] = true,
 			["continuous_play"] = true,
+			["time_between_rounds"] = 60, -- seconds
+			["team_prepare_period"] = 60, -- seconds
 			["research_level"] = {"science-pack-1", "science-pack-2", "science-pack-3", "alien-science-pack"}, --TODO fix for 0.15 packs when needed
 			["unlock_combat_research"] = false,
 			["starting_inventory"] = {"none", "small", "medium", "large"},
 			["starting_equipment"] = {"none", "small", "medium", "large"},
 			["team_joining"] = {"player_pick", "random", "auto_assign"},
-			["biters_disabled"] = false, 
+			["alien_artifacts_source"] = {"biters_enabled", "alien_tech_research", "gradual_distribution"},
+			["num_alien_artifacts_on_tech"] = 200, -- give this amount to each player on a force when they research alien technology
+			["num_alien_artifacts_gradual"] = 100, -- per hour
 			["peaceful_mode"] = false,
 			["ceasefire"] = false,
 			["evolution_factor"] = 0
 		}
-		
-	global.research_ingredient_list = 
+
+	global.research_ingredient_list =
 		{
 			--false means disabled.
 			["science-pack-1"] = false,
@@ -43,23 +49,23 @@ function load_config()
 		}
 	global.force_list =
 		{
-			{name = "Red", color = {0.9, 0.1, 0.1, 0.8}},
 			{name = "Blue", color = {0.2, 0.2, 0.8, 0.7}},
 			{name = "Green", color = {0.1, 0.8, 0.1, 0.8}},
 			{name = "Orange", color = {0.8, 0.4, 0.0, 0.8}},
 			{name = "Yellow", color = {0.8, 0.8, 0.0, 0.6}},
 			{name = "Pink", color = {0.8, 0.2, 0.8, 0.2}},
+			{name = "Cyan", color = {0.1, 0.9, 0.9, 0.8}},
 			{name = "Purple", color = {0.8, 0.2, 0.8, 0.9}},
 			{name = "White", color = {0.8, 0.8, 0.8, 0.5}},
 			{name = "Black", color = {0.1, 0.1, 0.1, 0.8}},
 			{name = "Gray", color = {0.6, 0.6, 0.6, 0.8}},
 			{name = "Brown", color = {0.5, 0.3, 0.1, 0.8}},
-			{name = "Cyan", color = {0.1, 0.9, 0.9, 0.8}}
+			{name = "Red", color = {0.9, 0.1, 0.1, 0.8}}
 		}
-		
-	global.inventory_list = 
+
+	global.inventory_list =
 	{
-		["none"] = 
+		["none"] =
 		{
 			["iron-plate"] = 8,
 			["burner-mining-drill"] = 2,
@@ -67,20 +73,21 @@ function load_config()
 		},
 		["small"] =
 		{
-			["iron-plate"] = 20,
+			["iron-plate"] = 50,
 			["pipe"] = 100,
 			["pipe-to-ground"] = 20,
 			["copper-plate"] = 10,
 			["transport-belt"] = 200,
 			["repair-pack"] = 20,
-			["inserter"] = 50,
+			["inserter"] = 20,
+			["fast-inserter"] = 20,
 			["small-electric-pole"] = 40,
 			["burner-mining-drill"] = 16,
 			["stone-furnace"] = 12,
 			["burner-inserter"] = 30,
 			["assembling-machine-1"] = 8,
 			["electric-mining-drill"] = 2,
-			["boiler"] = 8,
+			["boiler"] = 7,
 			["steam-engine"] = 5
 		},
 		["medium"] =
@@ -90,17 +97,17 @@ function load_config()
 			["pipe-to-ground"] = 20,
 			["iron-gear-wheel"] = 100,
 			["copper-plate"] = 100,
-			["steel-plate"] = 100,
+			["steel-plate"] = 50,
 			["electronic-circuit"] = 100,
 			["transport-belt"] = 300,
 			["underground-belt"] = 20,
 			["splitter"] = 20,
 			["repair-pack"] = 20,
-			["inserter"] = 100,
+			["inserter"] = 20,
+			["fast-inserter"] = 70,
+			["burner-inserter"] = 20,
 			["small-electric-pole"] = 40,
-			["fast-inserter"] = 50,
-			["burner-inserter"] = 50,
-			["burner-mining-drill"] = 20,
+			["burner-mining-drill"] = 10,
 			["electric-mining-drill"] = 20,
 			["stone-furnace"] = 50,
 			["steel-furnace"] = 20,
@@ -108,8 +115,8 @@ function load_config()
 			["assembling-machine-2"] = 8,
 			["boiler"] = 14,
 			["steam-engine"] = 10,
-			["chemical-plant"] = 20,
-			["oil-refinery"] = 5,
+			["chemical-plant"] = 5,
+			["oil-refinery"] = 2,
 			["pumpjack"] = 8
 		},
 		["large"] =
@@ -141,42 +148,39 @@ function load_config()
 			["substation"] = 10,
 			["boiler"] = 30,
 			["steam-engine"] = 20,
-			["chemical-plant"] = 20,
+			["chemical-plant"] = 10,
 			["oil-refinery"] = 5,
 			["pumpjack"] = 10
 		}
 	}
+	global.scenario = {custom_functions={}}
 end
 
 function give_equipment(player)
 
 	if global.starting_equipment == "none" then
-		player.insert{name = "pistol", count = 1}
-		player.insert{name = "firearm-magazine", count = 10}
-		return
-	end
-	
-	if global.starting_equipment == "small" then
 		player.insert{name = "submachine-gun", count = 1}
 		player.insert{name = "firearm-magazine", count = 30}
-		player.insert{name = "shotgun", count = 1}
-		player.insert{name = "shotgun-shell", count = 20}
 		player.insert{name = "iron-axe", count = 1}
-		player.insert{name = "light-armor", count = 1}
 		return
 	end
-	
+
+	if global.starting_equipment == "small" then
+		player.insert{name = "light-armor", count = 1}
+		player.insert{name = "steel-axe", count = 1}
+		player.insert{name = "submachine-gun", count = 1}
+		player.insert{name = "firearm-magazine", count = 40}
+		return
+	end
+
 	if global.starting_equipment == "medium" then
 		player.insert{name = "heavy-armor", count = 1}
 		player.insert{name = "steel-axe", count = 3}
 		player.insert{name = "submachine-gun", count = 1}
-		player.insert{name = "firearm-magazine", count = 40}
-		player.insert{name = "shotgun", count = 1}
-		player.insert{name = "shotgun-shell", count = 20}
-		player.insert{name = "car", count = 1}
+		player.insert{name = "piercing-rounds-magazine", count = 40}
 		return
 	end
-	
+
 	if global.starting_equipment == "large" then
 		player.insert{name = "steel-axe", count = 3}
 		player.insert{name = "submachine-gun", count = 1}
@@ -200,6 +204,14 @@ function give_equipment(player)
 		return
 	end
 
+end
+
+function give_respawn_equipment(player)
+
+	player.insert{name = "submachine-gun", count = 1}
+	player.insert{name = "firearm-magazine", count = 30}
+	player.insert{name = "iron-axe", count = 1}
+	return
 end
 
 starting_area_constant =
