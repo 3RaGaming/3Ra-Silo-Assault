@@ -183,13 +183,13 @@ Event.register(defines.events.on_tick, function(event)
 	--runs every 500ms
 	if(game.tick % 30 == 0) then
 		show_health()
+		if global.teams_currently_preparing then
+			team_prepare()
+		end
 	end
 	
 	--runs every second
 	if(game.tick % 60 == 0) then
-		if global.teams_currently_preparing then
-			team_prepare()
-		end
 	end
 	
 	-- Runs every 5 seconds
