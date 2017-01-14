@@ -18,9 +18,8 @@ Event.register(defines.events.on_gui_click, function(event)
 			global.player_flashlight_state = true
 		end
 		return
-	end
-	
-	if (event.element.name == "crouch_button") then
+
+	elseif (event.element.name == "crouch_button") then
 		if player.character == nil then return end
 		global.player_crouch_state = global.player_crouch_state or {}
 		global.player_crouch_color = global.player_crouch_color or {}
@@ -34,9 +33,8 @@ Event.register(defines.events.on_gui_click, function(event)
 			global.player_crouch_color = player.color
 			player.color = black				
 		end
-	end
-	
-	if (event.element.name == "score_button") then
+
+	elseif (event.element.name == "score_button") then
 		if player.gui.left.score_board then
 			player.gui.left.score_board.destroy()
 		else
@@ -60,18 +58,16 @@ Event.register(defines.events.on_gui_click, function(event)
 				end
 			end
 		end
-	end	
-	
-	--Brings up vote-to-surrender dialog
-	if (event.element.name == "surrender_button") then
+
+		--Brings up vote-to-surrender dialog
+	elseif (event.element.name == "surrender_button") then
 		if player.gui.left.surrender_dialog then
 			player.gui.left.surrender_dialog.destroy()
 		else
 			open_surrender_window(player)
 		end
-	end
-	
-	if (event.element.name == "surrender_vote_yes") then
+
+	elseif (event.element.name == "surrender_vote_yes") then
 		log("start surrender_vote_yes button handling")
 		local votes = global.surrender_votes[player.force.name]
 		local voted_initiated = false
@@ -121,9 +117,8 @@ Event.register(defines.events.on_gui_click, function(event)
 			check_surrender_vote_complete(player.force)
 		end
 		log("end surrender_vote_yes button handling")
-	end
-	
-	if (event.element.name == "surrender_vote_no") then
+
+	elseif (event.element.name == "surrender_vote_no") then
 		log("start surrender_vote_no button handling")
 		local votes = global.surrender_votes[player.force.name]
 		if not votes.in_progress then
@@ -158,46 +153,39 @@ Event.register(defines.events.on_gui_click, function(event)
 			end
 		end
 		log("end surrender_vote_no button handling")
-	end
-	if gui.name == "balance_options_confirm" then
+
+	elseif gui.name == "balance_options_confirm" then
 		set_balance_settings(gui.parent.balance_options_scrollpane)
 		gui.parent.destroy()
 		return
-	end
-	
-	if gui.name == "balance_options_cancel" then
+
+	elseif gui.name == "balance_options_cancel" then
 		gui.parent.destroy()
 		return
-	end
-	
-	if gui.name == "balance_options" then
+
+	elseif gui.name == "balance_options" then
 		create_balance_option(player.gui.left)
 		return
-	end
-	
-	if gui.name == "config_confirm" then
+
+	elseif gui.name == "config_confirm" then
 		config_confirm(gui)
 		return
-	end
-	
-	if gui.name == "close_config" then
+
+	elseif gui.name == "close_config" then
 		destroy_config_for_all(gui.parent.name)
 		return
-	end
-	
-	if gui.name == "random_join_button" then
+
+	elseif gui.name == "random_join_button" then
 		gui.parent.destroy()
 		random_join(player)
 		return
-	end	 
-	
-	if gui.name == "auto_assign_button" then
+
+	elseif gui.name == "auto_assign_button" then
 		gui.parent.destroy()
 		auto_assign(player)
 		return
-	end 
-	
-	if gui.name == "player_pick_confirm" then
+
+	elseif gui.name == "player_pick_confirm" then
 		for k = 1, global.config.number_of_teams do
 			local team = global.force_list[k]
 			local force = game.forces[team.name]
