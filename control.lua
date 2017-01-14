@@ -398,7 +398,7 @@ function match_elapsed_time()
 	local seconds = math.floor((ticks % 60^2) / 60)
 	local returnstring = ""
 	if hours > 0 then returnstring = hours .. " hours, " end
-	if minutes > 0 then returnstring = returnstring .. minutes .. " minutes, and " end
+	if minutes > 0 then returnstring = returnstring .. minutes .. " minutes and " end
 	returnstring = returnstring .. seconds .. " seconds"
 	return returnstring
 end
