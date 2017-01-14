@@ -72,7 +72,7 @@ Event.register(defines.events.on_gui_click, function(event)
 		local votes = global.surrender_votes[player.force.name]
 		local voted_initiated = false
 		if not votes.in_progress then
-			if is_too_early_in_match_to_surrender() or is_too_soon_since_last_surrender_vote(player.force) then return end
+			if is_too_soon_to_surrender(player.force) then return end
 			vote_initiated = true
 			votes.voted_at_least_once = true
 			votes.vote_start_time = game.tick
@@ -122,7 +122,7 @@ Event.register(defines.events.on_gui_click, function(event)
 		log("start surrender_vote_no button handling")
 		local votes = global.surrender_votes[player.force.name]
 		if not votes.in_progress then
-			if is_too_early_in_match_to_surrender() or is_too_soon_since_last_surrender_vote(player.force) then return end
+			if is_too_soon_to_surrender(player.force) then return end
 			local surrender_error_message = "A surrender vote is not in progress."
 			player.gui.left.surrender_dialog.destroy()
 			open_surrender_window(player)
@@ -246,7 +246,7 @@ function open_surrender_window(player)
 	end
 end
 
-
+--[[
 function is_too_early_in_match_to_surrender()
 	return game.tick < global.match_start_time + global.time_before_first_surrender_available * 3600
 end
@@ -255,7 +255,7 @@ function is_too_soon_since_last_surrender_vote(force)
 	local votes = global.surrender_votes[force.name]
 	return votes.voted_at_least_once and game.tick < votes.vote_start_time + global.surrender_vote_cooldown_period * 3600
 end
-
+--]]
 function is_too_soon_to_surrender(force)
 	local votes = global.surrender_votes[force.name]
 	if votes.already_surrendered then
