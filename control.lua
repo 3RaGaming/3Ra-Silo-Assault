@@ -115,7 +115,7 @@ Event.register(defines.events.on_rocket_launched, function (event)
 		force.print({"rocket-launched-without-satellite"})
 		return
 	end
-	game.print({"team-won",force.name})
+	game.print({"team-launched-rocket",force.name})
 
 	if global.config.continuous_play then
 		end_round()
@@ -139,6 +139,7 @@ function end_round()
 				character.destroy()
 			end
 			player.teleport({0,1000}, game.surfaces.Lobby)
+			welcome_window(player)
 			if player.admin then
 				create_config_gui(player)
 			end
@@ -247,6 +248,7 @@ Event.register(defines.events.on_player_joined_game, function(event)
 	if global.setup_finished then
 		choose_joining_gui(player)
 	else
+		welcome_window(player)
 		if player.admin then
 			create_config_gui(player)
 		end
@@ -267,6 +269,7 @@ Event.register(defines.events.on_player_created, function(event)
 	local size = global.copy_surface.map_gen_settings.starting_area
 	local radius = math.ceil(starting_area_constant[size]/2) --radius in tiles
 	game.forces.player.chart(player.surface, {{-radius,-radius},{radius, radius}})
+	welcome_window(player)
 	create_config_gui(player)
 
 	player.print({"msg-intro1"})

@@ -137,8 +137,20 @@ function create_buttons(event)
 	end
 end	
 
-function choose_joining_gui(player)
+function welcome_window(player)
+	local center = player.gui.center
+	if center.welcome_frame then center.welcome_frame.destroy() end
+	local welcome_frame = center.add{type = "frame", name = "welcome_frame", caption = {"",{"welcome-message"},""}}
+	welcome_frame.add{type = "label", name = "welcome_label", caption = {"",{"welcome-label"},""}}
+end
 
+function destroy_welcome_window(player)
+	local center = player.gui.center
+	if center.welcome_frame then center.welcome_frame.destroy() end
+end
+
+function choose_joining_gui(player)
+	destroy_welcome_window(player)
 	if global.team_joining == "random" then
 		create_random_join_gui(player.gui.center)
 		return
