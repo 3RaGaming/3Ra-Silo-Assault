@@ -344,6 +344,7 @@ Event.register(defines.events.on_entity_died, function(event)
 	if index > 1 then return end
 	game.print({"team-won",winner_name})
 	game.print("Match lasted " .. match_elapsed_time() .. ".")
+	print("PVPROUND$end,"..global.round_number..","..winner_name)
 	if global.config.continuous_play then
 		end_round()
 	end
