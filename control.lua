@@ -351,6 +351,7 @@ end)
 
 function freeze_player(player)
 	if player.character then
+		player.zoom = 0.1
 		player.character_crafting_speed_modifier = -1
 		player.character_mining_speed_modifier = -1
 		player.character_running_speed_modifier = -1
@@ -366,6 +367,7 @@ end
 
 function unfreeze_player(player)
 	if player.character then
+		player.zoom = 1
 		player.character_crafting_speed_modifier = 0
 		player.character_mining_speed_modifier = 0
 		player.character_running_speed_modifier = 0
@@ -622,6 +624,8 @@ function set_player(player,force,color)
 	player.force = force
 	player.color = color
 	player.character = surface.create_entity{name = "player", position = position, force = force}
+
+	force.chart(player.surface, {{-radius,-radius},{radius, radius}})
 	give_inventory(player)
 	give_equipment(player)
 	game.print({"joined", player.name, player.force.name})
@@ -762,7 +766,8 @@ function check_starting_area_chunks_are_generated()
 	if not global.check_starting_area_generation then return end
 	local surface = global.surface
 	local size = global.copy_surface.map_gen_settings.starting_area
-	local check_radius = math.ceil(starting_area_constant[size]/64)
+	--local check_radius = math.ceil(starting_area_constant[size]/64)
+	local check_radius = math.ceil(starting_area_constant[size]/16)
 	local total = 0
 	local generated = 0
 	for k = 1, global.config.number_of_teams do
@@ -854,6 +859,7 @@ function finish_setup()
 	local name = global.force_list[index].name
 	local force = game.forces[name]
 	create_silo_for_force(force)
+	--chart_area_for_force(surface, global.silos[force.name].position, 350, force)
 	if global.config.reveal_team_positions then
 		for k, other_force in pairs (game.forces) do
 			chart_area_for_force(surface, global.silos[force.name].position, 16, other_force)
