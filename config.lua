@@ -10,7 +10,7 @@ function load_config()
 	global.teams_currently_preparing = false
 	global.config =
 		{
-			["number_of_teams"] = 3,
+			["number_of_teams"] = 2,
 			["average_team_displacement"] = 75*32,
 			["team_max_variance"] = 1,
 			["team_min_variance"] = 1,
@@ -21,7 +21,7 @@ function load_config()
 			["team_walls"] = true,
 			["continuous_play"] = true,
 			["time_between_rounds"] = 60, -- seconds
-			["team_prepare_period"] = 60, -- seconds
+			["team_prepare_period"] = 0, -- seconds
 			["research_level"] = {"science-pack-1", "science-pack-2", "science-pack-3", "alien-science-pack"}, --TODO fix for 0.15 packs when needed
 			["unlock_combat_research"] = false,
 			["starting_inventory"] = {"none", "small", "medium", "large"},
@@ -101,9 +101,8 @@ function load_config()
 			["repair-pack"] = 20,
 			["inserter"] = 20,
 			["fast-inserter"] = 70,
-			["burner-inserter"] = 20,
+			["burner-inserter"] = 14,
 			["small-electric-pole"] = 40,
-			["burner-mining-drill"] = 10,
 			["electric-mining-drill"] = 20,
 			["stone-furnace"] = 50,
 			["steel-furnace"] = 20,
@@ -113,7 +112,7 @@ function load_config()
 			["steam-engine"] = 10,
 			["chemical-plant"] = 5,
 			["oil-refinery"] = 2,
-			["pumpjack"] = 8
+			["pumpjack"] = 5
 		},
 		["large"] =
 		{
