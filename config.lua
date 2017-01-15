@@ -4,7 +4,7 @@ function load_config()
 	global.starting_inventory = "medium"
 	global.starting_equipment = "small"
 	global.team_joining = "player_pick"
-	global.alien_artifacts_source = "alien_tech_research"
+	global.alien_artifacts_source = "gradual_distribution"
 	global.alien_artifacts_gradual_remainder = 0
 	global.setup_finished = false
 	global.teams_currently_preparing = false
@@ -103,6 +103,7 @@ function load_config()
 			["fast-inserter"] = 70,
 			["burner-inserter"] = 14,
 			["small-electric-pole"] = 40,
+			["burner-mining-drill"] = 10,
 			["electric-mining-drill"] = 20,
 			["stone-furnace"] = 50,
 			["steel-furnace"] = 20,
@@ -112,7 +113,7 @@ function load_config()
 			["steam-engine"] = 10,
 			["chemical-plant"] = 5,
 			["oil-refinery"] = 2,
-			["pumpjack"] = 5
+			["pumpjack"] = 8
 		},
 		["large"] =
 		{
