@@ -22,6 +22,8 @@ require "locale/utils/bot"
 -- controls how much slower you run as you lose health
 global.crippling_factor = 1
 
+global.given_starting_items = {}
+
 black = {r = 0, g = 0, b = 0}
 
 Event.register(-1, function ()
@@ -390,6 +392,11 @@ function team_prepare()
 		-- Unfreezes players.
 		for k, player in pairs (game.players) do
 			pcall(unfreeze_player, player)
+			if not global.given_starting_items[player.index] then
+				give_equipment(player)
+				give_inventory(player)
+				global.given_starting_items[player.index] = true
+			end
 		end
 		global.teams_currently_preparing = false
 		game.print({"start-match"})
@@ -623,8 +630,11 @@ function set_player(player,force,color)
 	player.force = force
 	player.color = color
 	player.character = surface.create_entity{name = "player", position = position, force = force}
-	give_inventory(player)
-	give_equipment(player)
+	if not global.teams_currently_preparing then
+		give_inventory(player)
+		give_equipment(player)
+		global.given_starting_items[player.index] = true
+	end
 	game.print({"joined", player.name, player.force.name})
 	player.print({"objective"})
 	if     global.alien_artifacts_source == "biters_enabled"       then player.print({"biters_enabled_message"})

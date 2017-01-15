@@ -20,8 +20,8 @@ function load_config()
 			["reveal_team_positions"] = false,
 			["team_walls"] = true,
 			["continuous_play"] = true,
-			["time_between_rounds"] = 60, -- seconds
-			["team_prepare_period"] = 0, -- seconds
+			["time_between_rounds"] = 30, -- seconds
+			["team_prepare_period"] = 30, -- seconds
 			["research_level"] = {"science-pack-1", "science-pack-2", "science-pack-3", "alien-science-pack"}, --TODO fix for 0.15 packs when needed
 			["unlock_combat_research"] = false,
 			["starting_inventory"] = {"none", "small", "medium", "large"},
@@ -29,7 +29,7 @@ function load_config()
 			["team_joining"] = {"player_pick", "random", "auto_assign"},
 			["alien_artifacts_source"] = {"biters_enabled", "alien_tech_research", "gradual_distribution"},
 			["num_alien_artifacts_on_tech"] = 200, -- give this amount to each player on a force when they research alien technology
-			["num_alien_artifacts_gradual"] = 100, -- per hour
+			["num_alien_artifacts_gradual"] = 50, -- per hour
 			["peaceful_mode"] = false,
 			["ceasefire"] = false,
 			["evolution_factor"] = 0
