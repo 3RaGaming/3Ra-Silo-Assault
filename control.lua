@@ -791,12 +791,13 @@ end
 
 function check_player_color()
 	for k, player in pairs (game.connected_players) do
-	if global.player_crouch_state == false then
+	if not global.player_crouch_state then
 	 for i, force in pairs (global.force_list) do
 			if force.name == player.force.name then
 				if (fpn(player.color.r) ~= fpn(force.color[1])) or (fpn(player.color.g) ~= fpn(force.color[2])) or (fpn(player.color.b) ~= fpn(force.color[3])) then
 					player.color = {r = fpn(force.color[1]), g = fpn(force.color[2]), b = fpn(force.color[3]), a = fpn(force.color[4])}
-					game.print({"player-changed-color", player.name, force.name})
+					--game.print({"player-changed-color", player.name, force.name})
+					game.print({"player-changed-forces", player.name, force.name})
 				end
 				break
 			end
