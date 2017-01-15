@@ -7,6 +7,8 @@ Event.register(defines.events.on_research_finished, function (event)
 
 	local research = event.research
 	
+	game.print(research.force.."has finished"..research.name)
+	
 	if research.name == "alien-technology" and global.alien_artifacts_source == "alien_tech_research" and not global.disable_alien_tech_distribution then
 		for i,v in pairs(research.force.players) do v.insert{name="alien-artifact", count=global.config.num_alien_artifacts_on_tech} end
 		game.print({"alien-artifacts-distributed-announcement",global.config.num_alien_artifacts_on_tech})
