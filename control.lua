@@ -164,6 +164,7 @@ function end_round()
 	global.next_round_start_tick = game.tick + global.config.time_between_rounds * 60
 	global.teams_currently_preparing = false
 	global.setup_finished = false
+	global.given_starting_items = {}
 
 	game.evolution_factor = 0
 	log_scenario("End end_round()")
