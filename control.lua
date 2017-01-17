@@ -118,6 +118,7 @@ Event.register(defines.events.on_rocket_launched, function (event)
 		return
 	end
 	game.print({"team-launched-rocket",force.name})
+	print("PVPROUND$end," .. global.round_number .. "," .. force.name)
 
 	if global.config.continuous_play then
 		end_round()
@@ -209,7 +210,7 @@ Event.register(defines.events.on_tick, function(event)
 			gradual_plus_remainder = global.config.num_alien_artifacts_gradual + global.alien_artifacts_gradual_remainder
 			local give_amount = math.floor(gradual_plus_remainder / 120)
 			global.alien_artifacts_gradual_remainder = gradual_plus_remainder % 120
-			for i,v in pairs(game.connected_players) do v.insert{name="alien-artifact", count=give_amount} end
+			if give_amount > 0 then for i,v in pairs(game.connected_players) do v.insert{name="alien-artifact", count=give_amount} end end
 		end
 	end
 	local current_time = game.tick / 60 - global.timer_value
@@ -339,15 +340,17 @@ Event.register(defines.events.on_entity_died, function(event)
 	end
 	if force.name == killing_force.name then
 		log_scenario("merge force to neutral")
+		print("PVPROUND$eliminated," .. force.name .. ",suicide")
 		game.merge_forces(force.name, "neutral")
 	else
 		log_scenario("merge force")
+		print("PVPROUND$eliminated," .. force.name .. "," .. killing_force.name)
 		game.merge_forces(force.name, killing_force.name)
 	end
 	if index > 1 then return end
 	game.print({"team-won",winner_name})
 	game.print("Match lasted " .. match_elapsed_time() .. ".")
-	print("PVPROUND$end,"..global.round_number..","..winner_name)
+	print("PVPROUND$end," .. global.round_number .. "," .. winner_name)
 	if global.config.continuous_play then
 		end_round()
 	end
@@ -684,6 +687,12 @@ function setup_teams()
 		disable_combat_technologies(force)
 		set_all_ceasefire(force)
 	end
+	local tempstring = "PVPROUND$begin," .. global.round_number .. ","
+	for i = 1, global.config.number_of_teams, 1 do
+		local force_name = global.force_list[i].name
+		tempstring = tempstring .. force_name .. ","
+	end
+	print(tempstring:sub(1,#tempstring-1))
 end
 
 function set_all_ceasefire(force)
