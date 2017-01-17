@@ -199,7 +199,7 @@ Event.register(defines.events.on_tick, function(event)
 	
 	-- Runs every 5 seconds
 	if game.tick % 300 == 0 then
-		check_player_color()
+		check_player_color(true)
 	end
 
 	-- Runs every 30 seconds
@@ -813,19 +813,21 @@ end
 
 
 
-function check_player_color()
+function check_player_color(printchange)
 	for k, player in pairs (game.connected_players) do
-	if not global.player_crouch_state then
-	 for i, force in pairs (global.force_list) do
-			if force.name == player.force.name then
-				if (fpn(player.color.r) ~= fpn(force.color[1])) or (fpn(player.color.g) ~= fpn(force.color[2])) or (fpn(player.color.b) ~= fpn(force.color[3])) then
-					player.color = {r = fpn(force.color[1]), g = fpn(force.color[2]), b = fpn(force.color[3]), a = fpn(force.color[4])}
-					--game.print({"player-changed-color", player.name, force.name})
-					game.print({"player-changed-forces", player.name, force.name})
+		if not global.player_crouch_state then
+			for i, force in pairs (global.force_list) do
+				if force.name == player.force.name then
+					if (fpn(player.color.r) ~= fpn(force.color[1])) or (fpn(player.color.g) ~= fpn(force.color[2])) or (fpn(player.color.b) ~= fpn(force.color[3])) then
+						player.color = {r = fpn(force.color[1]), g = fpn(force.color[2]), b = fpn(force.color[3]), a = fpn(force.color[4])}
+						if printchange then
+							--game.print({"player-changed-color", player.name, force.name})
+							game.print({"player-changed-forces", player.name, force.name})
+						end
+					end
+					break
 				end
-				break
 			end
-	 end
 		end
 	end
 end
