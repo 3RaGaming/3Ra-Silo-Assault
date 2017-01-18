@@ -53,10 +53,10 @@ function load_config()
 			{name = "Cyan", color = {0.1, 0.9, 0.9, 0.8}},
 			{name = "Purple", color = {0.8, 0.2, 0.8, 0.9}},
 			{name = "Brown", color = {0.5, 0.3, 0.1, 0.8}},
+			{name = "Gray", color = {0.6, 0.6, 0.6, 0.8}},
 			{name = "White", color = {0.8, 0.8, 0.8, 0.5}},
-			{name = "Lobby", color = {0.6, 0.6, 0.6, 0.8}},
 			{name = "Black", color = {0.1, 0.1, 0.1, 0.8}},
-			{name = "Red", color = {0.9, 0.1, 0.1, 0.8}}
+			{name = "Lobby", color = {0.9, 0.1, 0.1, 0.8}}
 		}
 
 	global.inventory_list =

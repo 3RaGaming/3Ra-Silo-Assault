@@ -177,11 +177,10 @@ function choose_joining_gui(player)
 		game.create_force("Lobby")
 	end
 
-	for i,player in pairs(game.players) do
-		player.force = game.forces["Lobby"]
-		print("PLAYER$update," .. player.index .. "," .. player.name .. ",Lobby")
-	end
+	player.force = game.forces["Lobby"]
+	print("PLAYER$update," .. player.index .. "," .. player.name .. ",Lobby")
 	check_player_color(false)
+
 	if global.team_joining == "random" then
 		create_random_join_gui(player.gui.center)
 		return
@@ -363,8 +362,8 @@ function config_confirm(gui)
 		player.print({"more-than-1-team"})
 		return
 	end
-	if global.config.number_of_teams > 8 then 
-		player.print({"less-than-8-teams"})
+	if global.config.number_of_teams > 9 then 
+		player.print({"less-than-9-teams"})
 		return
 	end
 	destroy_config_for_all(gui.parent.name)
