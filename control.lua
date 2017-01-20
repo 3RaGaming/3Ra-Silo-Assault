@@ -128,14 +128,6 @@ function end_round()
 	log_scenario("Begin end_round()")
 
 	local player_count = 0
-	for j, force in pairs (game.forces) do
-		local votes = global.surrender_votes[force.name]
-		if votes then
-			votes.voted_at_least_once = false
-			votes.already_surrendered = false
-			votes.in_progress = false
-		end
-	end
 	for k, player in pairs (game.players) do
 		player.force = game.forces.player
 		--global.surrender_votes = nil
@@ -181,6 +173,7 @@ function prepare_next_round()
 	log_scenario("Begin prepare_next_round()")
 	global.next_round_start_tick = nil
 	global.setup_finished = false
+	global.surrender_votes = {}
 	prepare_map()
 	log_scenario("End prepare_next_round()")
 end

@@ -10,8 +10,8 @@ function load_config()
 	global.setup_finished = false
 	global.teams_currently_preparing = false
 	global.time_before_first_surrender_available = 0.2 -- minutes
-	global.surrender_vote_cooldown_period = 1 -- minutes
-	global.surrender_voting_period = 0.5 -- minutes
+	global.surrender_vote_cooldown_period = 0.5 -- minutes
+	global.surrender_voting_period = 0.3 -- minutes
 	global.config =
 		{
 			["number_of_teams"] = 3,
@@ -24,8 +24,8 @@ function load_config()
 			["reveal_team_positions"] = false,
 			["team_walls"] = true,
 			["continuous_play"] = true,
-			["time_between_rounds"] = 60, -- seconds
-			["team_prepare_period"] = 60, -- seconds
+			["time_between_rounds"] = 10, -- seconds
+			["team_prepare_period"] = 6, -- seconds
 			["research_level"] = {"science-pack-1", "science-pack-2", "science-pack-3", "alien-science-pack"}, --TODO fix for 0.15 packs when needed
 			["unlock_combat_research"] = false,
 			["starting_inventory"] = {"none", "small", "medium", "large"},

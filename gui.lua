@@ -70,6 +70,7 @@ Event.register(defines.events.on_gui_click, function(event)
 	elseif (event.element.name == "surrender_vote_yes") then
 		log("start surrender_vote_yes button handling")
 		local votes = global.surrender_votes[player.force.name]
+		
 		local voted_initiated = false
 		if not votes.in_progress then
 			if is_too_soon_to_surrender(player.force) then return end
@@ -83,39 +84,32 @@ Event.register(defines.events.on_gui_click, function(event)
 			votes.in_progress = true
 			votes.vote_record = {}
 			for i,p in pairs(player.force.players) do
-				votes.vote_record[player.index] = "not voted"
+				votes.vote_record[p.index] = "not voted"
 				p.gui.top.surrender_button.style.font_color = colors.green
-				if p.gui.left.surrender_dialog then p.gui.left.surrender_dialog.destroy() end
-				open_surrender_window(p)
+				--open_surrender_window(p)
 			end
-		end
-		local player_record = votes.vote_record[player.index]
-		local surrender_error_message = ""
-		if not player_record then
-			surrender_error_message = "You joined after the vote started and therefore can not vote."
-		end
-		if player_record == "voted Yes" or player_record == "voted No" then
-			surrender_error_message = "You already " .. player_record .. "."
-		end
-		if surrender_error_message ~= "" then
-			local surrender_table = player.gui.left.surrender_dialog.surrender_table
-			if surrender_table.surrender_error_label then surrender_table.surrender_error_label.destroy() end
-			local surrender_error_label = surrender_table.add{type = "label", name = surrender_error_label, caption = surrender_error_message}
 		else
-			votes.yes_votes_count = votes.yes_votes_count + 1
-			votes.not_yet_voted_count = votes.not_yet_voted_count - 1
-			votes.vote_record[player.index] = "voted Yes"
-			player.gui.top.surrender_button.style.font_color = colors.yellow
-			for i,p in pairs(player.force.players) do
-				if p.gui.left.surrender_dialog then
-					p.gui.left.surrender_dialog.destroy()
-					open_surrender_window(p)
-				elseif vote_initiated then
-					open_surrender_window(p)
-				end
+			local player_record = votes.vote_record[player.index]
+			local surrender_error_message = ""
+			if not player_record then
+				surrender_error_message = "You joined after the vote started and therefore can not vote."
+			elseif player_record == "voted Yes" or player_record == "voted No" then
+				surrender_error_message = "You already " .. player_record .. "."
 			end
-			check_surrender_vote_complete(player.force)
+			if surrender_error_message ~= "" then
+				local surrender_table = player.gui.left.surrender_dialog.surrender_table
+				if surrender_table.surrender_error_label then surrender_table.surrender_error_label.destroy() end
+				local surrender_error_label = surrender_table.add{type = "label", name = surrender_error_label, caption = surrender_error_message}
+				return
+			end
 		end
+
+		votes.yes_votes_count = votes.yes_votes_count + 1
+		--votes.not_yet_voted_count = votes.not_yet_voted_count - 1
+		votes.vote_record[player.index] = "voted Yes"
+		player.gui.top.surrender_button.style.font_color = colors.yellow
+		update_surrender_tally(player, vote_initiated)
+	
 		log("end surrender_vote_yes button handling")
 
 	elseif (event.element.name == "surrender_vote_no") then
@@ -124,7 +118,6 @@ Event.register(defines.events.on_gui_click, function(event)
 		if not votes.in_progress then
 			if is_too_soon_to_surrender(player.force) then return end
 			local surrender_error_message = "A surrender vote is not in progress."
-			player.gui.left.surrender_dialog.destroy()
 			open_surrender_window(player)
 			local surrender_table = player.gui.left.surrender_dialog.surrender_table
 			--if surrender_table.surrender_error_label then surrender_table.surrender_error_label.destroy() end
@@ -144,12 +137,11 @@ Event.register(defines.events.on_gui_click, function(event)
 				if surrender_table.surrender_error_label then surrender_table.surrender_error_label.destroy() end
 				local surrender_error_label = surrender_table.add{type = "label", name = surrender_error_label, caption = surrender_error_message}
 			else
-				player.gui.top.surrender_button.style.font_color = colors.yellow
 				votes.no_votes_count = votes.no_votes_count + 1
-				votes.not_yet_voted_count = votes.not_yet_voted_count - 1
-				player.gui.left.surrender_dialog.destroy()
-				open_surrender_window(player)
-				check_surrender_vote_complete(player.force)
+				--votes.not_yet_voted_count = votes.not_yet_voted_count - 1
+				votes.vote_record[player.index] = "voted No"
+				player.gui.top.surrender_button.style.font_color = colors.yellow
+				update_surrender_tally(player, false)
 			end
 		end
 		log("end surrender_vote_no button handling")
@@ -208,6 +200,8 @@ Event.register(defines.events.on_gui_click, function(event)
 end)
 
 function open_surrender_window(player)
+	if player.gui.left.surrender_dialog then player.gui.left.surrender_dialog.destroy() end
+
 	local frame = player.gui.left.add{name = "surrender_dialog", type = "frame", direction = "vertical", caption = "Vote: Do you wish to surrender?"}
 	--the following line was the only way I could figure out how to cause elements to appear vertically instead of horizontally, there has got to be a better way
 	local surrender_table = frame.add{type = "table", name = "surrender_table", colspan = 1}
@@ -271,20 +265,6 @@ end
 
 function add_surrender_vote_tally_table(player)
 	local votes = global.surrender_votes[player.force.name]
-	votes.not_yet_voted_count = 0
-	for i,p in pairs(player.force.connected_players) do
-		if votes.vote_record[p.index] == "not voted" then
-			votes.not_yet_voted_count = votes.not_yet_voted_count + 1
-		end
-	end
-
-	--current_possible_total_votes = players (online and offline) that have voted + votes.not_yet_voted_count
-	votes.current_possible_total_votes = votes.not_yet_voted_count
-	for i,p in pairs(player.force.players) do
-		if votes.vote_record[p.index] == "voted Yes" or votes.vote_record[p.index] == "voted No" then
-			votes.current_possible_total_votes = votes.current_possible_total_votes + 1
-		end
-	end
 
 	local surrender_tally_table = player.gui.left.surrender_dialog.surrender_table.add{type = "table", name = "surrender_tally_table", colspan = 3}
 	surrender_tally_table.add{type = "label", name = "surrender_tally_table_yes_votes", caption = "Yes votes"}
@@ -298,14 +278,48 @@ function add_surrender_vote_tally_table(player)
 	surrender_tally_table.add{type = "label", name = "surrender_tally_table_not_yet_voted_count", caption = votes.not_yet_voted_count}
 end
 
+function update_surrender_tally(player, vote_initiated)
+	game.print("Entering update_surrender_tally")
+	local votes = global.surrender_votes[player.force.name]
+	for i,p in pairs(player.force.players) do
+		if not votes.vote_record[p.index] then
+			game.print(p.name .. " has false vote_record.")
+		else
+			game.print(p.name .. "'s vote record is: " .. votes.vote_record[p.index])
+		end
+	end
+	votes.not_yet_voted_count = 0
+	for i,p in pairs(player.force.connected_players) do
+		if votes.vote_record[p.index] == "not voted" then
+			votes.not_yet_voted_count = votes.not_yet_voted_count + 1
+		end
+	end
+	--current_possible_total_votes = players (online and offline) that have voted + votes.not_yet_voted_count
+	votes.current_possible_total_votes = votes.not_yet_voted_count
+	for i,p in pairs(player.force.players) do
+		if votes.vote_record[p.index] == "voted Yes" or votes.vote_record[p.index] == "voted No" then
+			votes.current_possible_total_votes = votes.current_possible_total_votes + 1
+		end
+	end
+
+	for i,p in pairs(player.force.players) do
+		if vote_initiated or p.gui.left.surrender_dialog then open_surrender_window(p) end
+	end
+	check_surrender_vote_complete(player.force)
+end
+
 function check_surrender_vote_complete(force)
 	local votes = global.surrender_votes[force.name]
+	game.print("yes_votes_count for " .. force.name .. " = " .. votes.yes_votes_count)
+	game.print("no_votes_count for " .. force.name .. " = " .. votes.no_votes_count)
+	game.print("current_possible_total_votes for " .. force.name .. " = " .. votes.current_possible_total_votes)
+	game.print("global.percentage_needed_to_surrender = " .. global.percentage_needed_to_surrender)
 	if votes.yes_votes_count / votes.current_possible_total_votes >= global.percentage_needed_to_surrender / 100 then
 		game.print(force.name .. " team has voted to surrender!")
 		votes.in_progress = false
 		votes.already_surrendered = true
 		kill_force(force)
-	elseif votes.no_votes.count / votes.current_possible_total_votes > 1 - global.percentage_needed_to_surrender / 100 then
+	elseif votes.no_votes_count / votes.current_possible_total_votes > 1 - global.percentage_needed_to_surrender / 100 then
 		force.print("Surrender vote has failed.")
 		votes.in_progress = false			
 	elseif game.tick > global.surrender_votes[force.name].vote_start_time + global.surrender_voting_period / 3600 then
