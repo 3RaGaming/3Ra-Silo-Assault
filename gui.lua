@@ -318,12 +318,21 @@ function check_surrender_vote_complete(force)
 		game.print(force.name .. " team has voted to surrender!")
 		votes.in_progress = false
 		votes.already_surrendered = true
+		for i,p in pairs(force.players) do
+			p.gui.top.surrender_button.style.font_color = colors.white
+		end
 		kill_force(force)
 	elseif votes.no_votes_count / votes.current_possible_total_votes > 1 - global.percentage_needed_to_surrender / 100 then
 		force.print("Surrender vote has failed.")
+		for i,p in pairs(force.players) do
+			p.gui.top.surrender_button.style.font_color = colors.red
+		end
 		votes.in_progress = false			
 	elseif game.tick > global.surrender_votes[force.name].vote_start_time + global.surrender_voting_period / 3600 then
 		force.print("Surrender voting period ended without enough Yes votes.")
+		for i,p in pairs(force.players) do
+			p.gui.top.surrender_button.style.font_color = colors.red
+		end
 		votes.in_progress = false			
 	end
 end

@@ -174,6 +174,11 @@ function prepare_next_round()
 	global.next_round_start_tick = nil
 	global.setup_finished = false
 	global.surrender_votes = {}
+	for i,p in pairs(game.players) do
+		if p.gui.left.surrender_dialog then p.gui.left.surrender_dialog.destroy() end
+		p.gui.top.surrender_button.style.font_color = colors.white
+	end
+
 	prepare_map()
 	log_scenario("End prepare_next_round()")
 end
