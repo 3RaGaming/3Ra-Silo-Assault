@@ -244,7 +244,12 @@ Event.register(defines.events.on_player_joined_game, function(event)
 	end
 	local player = game.players[event.player_index]
 	unfreeze_player(player)
-	if player.force.name ~= "player" then return end
+	if player.force.name ~= "player" then
+		for k, p in pairs (game.players) do
+			update_players_on_team_count(p)
+		end
+		return
+	end
 	local character = player.character
 	player.character = nil
 	if character then character.destroy() end
@@ -281,7 +286,13 @@ Event.register(defines.events.on_player_created, function(event)
 end)
 
 Event.register(defines.events.on_player_left_game, function(event)
-
+	local player = game.players[event.player_index]
+	if player.force.name ~= "player" then
+		for k, p in pairs (game.players) do
+			update_players_on_team_count(p)
+		end
+		return
+	end
 end)
 
 Event.register(defines.events.on_player_respawned, function(event)
