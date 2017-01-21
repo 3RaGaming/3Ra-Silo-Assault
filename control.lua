@@ -606,7 +606,7 @@ function update_players_on_team_count(player)
 		if force then
 			if gui.pick_join_frame.pick_join_table[force.name.."_count"] then
 				--Should the following be #force.connected_players instead of #force.players ?
-				gui.pick_join_frame.pick_join_table[force.name.."_count"].caption = #force.players
+				gui.pick_join_frame.pick_join_table[force.name.."_count"].caption = #force.connected_players
 			end
 		end
 	end

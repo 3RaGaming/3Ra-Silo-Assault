@@ -112,7 +112,7 @@ Event.register(defines.events.on_gui_click, function(event)
 					local color = {r = fpn(c[1]), g = fpn(c[2]), b = fpn(c[3]), a = fpn(c[4])}
 					gui.parent.destroy()
 					set_player(player,force,color)
-					for k, player in pairs (game.forces.player.players) do
+					for k, player in pairs (game.players) do
 						update_players_on_team_count(player)
 					end
 					break
