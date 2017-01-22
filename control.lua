@@ -22,6 +22,8 @@ require "locale/utils/bot"
 -- controls how much slower you run as you lose health
 global.crippling_factor = 1
 
+global.given_starting_items = {}
+
 black = {r = 0, g = 0, b = 0}
 
 Event.register(-1, function ()
@@ -116,6 +118,7 @@ Event.register(defines.events.on_rocket_launched, function (event)
 		return
 	end
 	game.print({"team-launched-rocket",force.name})
+	print("PVPROUND$end," .. global.round_number .. "," .. force.name)
 
 	if global.config.continuous_play then
 		end_round()
@@ -162,6 +165,7 @@ function end_round()
 	global.next_round_start_tick = game.tick + global.config.time_between_rounds * 60
 	global.teams_currently_preparing = false
 	global.setup_finished = false
+	global.given_starting_items = {}
 
 	game.evolution_factor = 0
 	log_scenario("End end_round()")
@@ -195,7 +199,7 @@ Event.register(defines.events.on_tick, function(event)
 	
 	-- Runs every 5 seconds
 	if game.tick % 300 == 0 then
-		check_player_color()
+		check_player_color(true)
 	end
 
 	-- Runs every 30 seconds
@@ -206,7 +210,7 @@ Event.register(defines.events.on_tick, function(event)
 			gradual_plus_remainder = global.config.num_alien_artifacts_gradual + global.alien_artifacts_gradual_remainder
 			local give_amount = math.floor(gradual_plus_remainder / 120)
 			global.alien_artifacts_gradual_remainder = gradual_plus_remainder % 120
-			for i,v in pairs(game.connected_players) do v.insert{name="alien-artifact", count=give_amount} end
+			if give_amount > 0 then for i,v in pairs(game.connected_players) do v.insert{name="alien-artifact", count=give_amount} end end
 		end
 	end
 	local current_time = game.tick / 60 - global.timer_value
@@ -240,7 +244,12 @@ Event.register(defines.events.on_player_joined_game, function(event)
 	end
 	local player = game.players[event.player_index]
 	unfreeze_player(player)
-	if player.force.name ~= "player" then return end
+	if player.force.name ~= "player" then
+		for k, p in pairs (game.players) do
+			update_players_on_team_count(p)
+		end
+		return
+	end
 	local character = player.character
 	player.character = nil
 	if character then character.destroy() end
@@ -276,8 +285,18 @@ Event.register(defines.events.on_player_created, function(event)
 	player.print({"msg-intro2"})
 end)
 
-Event.register(defines.events.on_player_left_game, function(event)
+Event.register(defines.events.on_player_respawned, function(event)
+	spread_spawn(game.players[event.player_index])
+end)
 
+Event.register(defines.events.on_player_left_game, function(event)
+	local player = game.players[event.player_index]
+	if player.force.name ~= "player" then
+		for k, p in pairs (game.players) do
+			update_players_on_team_count(p)
+		end
+		return
+	end
 end)
 
 Event.register(defines.events.on_player_respawned, function(event)
@@ -336,14 +355,17 @@ Event.register(defines.events.on_entity_died, function(event)
 	end
 	if force.name == killing_force.name then
 		log_scenario("merge force to neutral")
+		print("PVPROUND$eliminated," .. force.name .. ",suicide")
 		game.merge_forces(force.name, "neutral")
 	else
 		log_scenario("merge force")
+		print("PVPROUND$eliminated," .. force.name .. "," .. killing_force.name)
 		game.merge_forces(force.name, killing_force.name)
 	end
 	if index > 1 then return end
 	game.print({"team-won",winner_name})
 	game.print("Match lasted " .. match_elapsed_time() .. ".")
+	print("PVPROUND$end," .. global.round_number .. "," .. winner_name)
 	if global.config.continuous_play then
 		end_round()
 	end
@@ -391,6 +413,11 @@ function team_prepare()
 		-- Unfreezes players.
 		for k, player in pairs (game.players) do
 			pcall(unfreeze_player, player)
+			if not global.given_starting_items[player.index] then
+				give_equipment(player)
+				give_inventory(player)
+				global.given_starting_items[player.index] = true
+			end
 		end
 		global.teams_currently_preparing = false
 		game.print({"start-match"})
@@ -596,7 +623,7 @@ function update_players_on_team_count(player)
 		if force then
 			if gui.pick_join_frame.pick_join_table[force.name.."_count"] then
 				--Should the following be #force.connected_players instead of #force.players ?
-				gui.pick_join_frame.pick_join_table[force.name.."_count"].caption = #force.players
+				gui.pick_join_frame.pick_join_table[force.name.."_count"].caption = #force.connected_players
 			end
 		end
 	end
@@ -616,18 +643,29 @@ function random_join(player)
 	set_player(player,force,color)
 end
 
-function set_player(player,force,color)
+function spread_spawn(player)
 	local surface = global.surface
-	if not surface.valid then return end
-	local position = surface.find_non_colliding_position("player", force.get_spawn_position(surface),32,1)
-	player.teleport(position, surface)
+	if not surface.valid then error("global.surface is false!") return end
+	force_spawn = player.force.get_spawn_position(surface)
+	local spread = 27 --how far away from the actual force spawn position to teleport the player
+	local spread_spawn_x = math.random(-1*spread, spread) + force_spawn.x
+	local spread_spawn_y = math.random(-1*spread, spread) + force_spawn.y
+	local spread_spawn_position = surface.find_non_colliding_position("player", {spread_spawn_x, spread_spawn_y},64,1)
+	player.teleport(spread_spawn_position, surface)
+	return spread_spawn_position
+end
+
+function set_player(player,force,color)
 	player.force = force
 	player.color = color
-	player.character = surface.create_entity{name = "player", position = position, force = force}
-
+	local position = spread_spawn(player)
+	player.character = global.surface.create_entity{name = "player", position = position, force = force}
 	force.chart(player.surface, {{-radius,-radius},{radius, radius}})
-	give_inventory(player)
-	give_equipment(player)
+	if not global.teams_currently_preparing then
+		give_inventory(player)
+		give_equipment(player)
+		global.given_starting_items[player.index] = true
+	end
 	game.print({"joined", player.name, player.force.name})
 	player.print({"objective"})
 	if     global.alien_artifacts_source == "biters_enabled"       then player.print({"biters_enabled_message"})
@@ -676,6 +714,12 @@ function setup_teams()
 		disable_combat_technologies(force)
 		set_all_ceasefire(force)
 	end
+	local tempstring = "PVPROUND$begin," .. global.round_number .. ","
+	for i = 1, global.config.number_of_teams, 1 do
+		local force_name = global.force_list[i].name
+		tempstring = tempstring .. force_name .. ","
+	end
+	print(tempstring:sub(1,#tempstring-1))
 end
 
 function set_all_ceasefire(force)
@@ -797,19 +841,21 @@ end
 
 
 
-function check_player_color()
+function check_player_color(printchange)
 	for k, player in pairs (game.connected_players) do
-	if not global.player_crouch_state then
-	 for i, force in pairs (global.force_list) do
-			if force.name == player.force.name then
-				if (fpn(player.color.r) ~= fpn(force.color[1])) or (fpn(player.color.g) ~= fpn(force.color[2])) or (fpn(player.color.b) ~= fpn(force.color[3])) then
-					player.color = {r = fpn(force.color[1]), g = fpn(force.color[2]), b = fpn(force.color[3]), a = fpn(force.color[4])}
-					--game.print({"player-changed-color", player.name, force.name})
-					game.print({"player-changed-forces", player.name, force.name})
+		if not global.player_crouch_state then
+			for i, force in pairs (global.force_list) do
+				if force.name == player.force.name then
+					if (fpn(player.color.r) ~= fpn(force.color[1])) or (fpn(player.color.g) ~= fpn(force.color[2])) or (fpn(player.color.b) ~= fpn(force.color[3])) then
+						player.color = {r = fpn(force.color[1]), g = fpn(force.color[2]), b = fpn(force.color[3]), a = fpn(force.color[4])}
+						if printchange then
+							--game.print({"player-changed-color", player.name, force.name})
+							game.print({"player-changed-forces", player.name, force.name})
+						end
+					end
+					break
 				end
-				break
 			end
-	 end
 		end
 	end
 end
@@ -980,7 +1026,7 @@ function create_silo_for_force(force)
 	local surface = global.surface
 	local origin = force.get_spawn_position(surface)
 	local offset_x = 0
-	local offset_y = -32 --1 chunk above the spawn position
+	local offset_y = 0 --1 chunk above the spawn position
 	local silo_position = {origin.x+offset_x, origin.y+offset_y}
 	local area = {{silo_position[1]-5,silo_position[2]-6},{silo_position[1]+6, silo_position[2]+6}}
 	for i, entity in pairs(surface.find_entities_filtered({area = area, force = "neutral"})) do

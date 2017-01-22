@@ -21,18 +21,20 @@ Event.register(defines.events.on_gui_click, function(event)
 	end
 	
 	if (event.element.name == "crouch_button") then
-		if player.character == nil then return end
-		global.player_crouch_state = global.player_crouch_state or {}
-		global.player_crouch_color = global.player_crouch_color or {}
-		if global.player_crouch_state == true then
-			global.player_crouch_state = false
-			player.character_running_speed_modifier = 0
-			player.color = global.player_crouch_color
-		else 
-			global.player_crouch_state = true
-			player.character_running_speed_modifier = -0.6
-			global.player_crouch_color = player.color
-			player.color = black				
+		if global.setup_finished and not global.teams_currently_preparing then
+			if player.character == nil then return end
+			global.player_crouch_state = global.player_crouch_state or {}
+			global.player_crouch_color = global.player_crouch_color or {}
+			if global.player_crouch_state == true then
+				global.player_crouch_state = false
+				player.character_running_speed_modifier = 0
+				player.color = global.player_crouch_color
+			else 
+				global.player_crouch_state = true
+				player.character_running_speed_modifier = -0.6
+				global.player_crouch_color = player.color
+				player.color = black				
+			end
 		end
 	end
 	if (event.element.name == "score_button") then
@@ -110,7 +112,7 @@ Event.register(defines.events.on_gui_click, function(event)
 					local color = {r = fpn(c[1]), g = fpn(c[2]), b = fpn(c[3]), a = fpn(c[4])}
 					gui.parent.destroy()
 					set_player(player,force,color)
-					for k, player in pairs (game.forces.player.players) do
+					for k, player in pairs (game.players) do
 						update_players_on_team_count(player)
 					end
 					break
@@ -151,6 +153,34 @@ end
 
 function choose_joining_gui(player)
 	destroy_welcome_window(player)
+	
+--[[	if not global.force_list then error("No force list defined") return end
+	local list = global.force_list
+	local n = global.config.number_of_teams
+	if n <= 0 then error ("Number of team to setup must be greater than 0")return end
+	if n > #list then error("Not enough forces defined for number of teams. Max teams is "..#list) return end
+	for k = 1, n do
+		if not list[k] then	break end
+		local name = list[k].name
+		if name then
+			local new_force
+			if not game.forces[name] then
+				new_force = game.create_force(name)
+			else
+				new_force = game.forces[name]
+			end
+			set_spawn_position(k, n, new_force, global.surface)
+		end
+	end
+--]]
+	if not game.forces["Lobby"] then
+		game.create_force("Lobby")
+	end
+
+	player.force = game.forces["Lobby"]
+	print("PLAYER$update," .. player.index .. "," .. player.name .. ",Lobby")
+	check_player_color(false)
+
 	if global.team_joining == "random" then
 		create_random_join_gui(player.gui.center)
 		return
@@ -332,8 +362,8 @@ function config_confirm(gui)
 		player.print({"more-than-1-team"})
 		return
 	end
-	if global.config.number_of_teams > 12 then 
-		player.print({"less-than-12-teams"})
+	if global.config.number_of_teams > 9 then 
+		player.print({"less-than-9-teams"})
 		return
 	end
 	destroy_config_for_all(gui.parent.name)

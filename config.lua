@@ -4,13 +4,13 @@ function load_config()
 	global.starting_inventory = "medium"
 	global.starting_equipment = "small"
 	global.team_joining = "player_pick"
-	global.alien_artifacts_source = "alien_tech_research"
+	global.alien_artifacts_source = "gradual_distribution"
 	global.alien_artifacts_gradual_remainder = 0
 	global.setup_finished = false
 	global.teams_currently_preparing = false
 	global.config =
 		{
-			["number_of_teams"] = 3,
+			["number_of_teams"] = 2,
 			["average_team_displacement"] = 75*32,
 			["team_max_variance"] = 1,
 			["team_min_variance"] = 1,
@@ -20,8 +20,8 @@ function load_config()
 			["reveal_team_positions"] = false,
 			["team_walls"] = true,
 			["continuous_play"] = true,
-			["time_between_rounds"] = 60, -- seconds
-			["team_prepare_period"] = 60, -- seconds
+			["time_between_rounds"] = 30, -- seconds
+			["team_prepare_period"] = 30, -- seconds
 			["research_level"] = {"science-pack-1", "science-pack-2", "science-pack-3", "alien-science-pack"}, --TODO fix for 0.15 packs when needed
 			["unlock_combat_research"] = false,
 			["starting_inventory"] = {"none", "small", "medium", "large"},
@@ -29,7 +29,7 @@ function load_config()
 			["team_joining"] = {"player_pick", "random", "auto_assign"},
 			["alien_artifacts_source"] = {"biters_enabled", "alien_tech_research", "gradual_distribution"},
 			["num_alien_artifacts_on_tech"] = 200, -- give this amount to each player on a force when they research alien technology
-			["num_alien_artifacts_gradual"] = 100, -- per hour
+			["num_alien_artifacts_gradual"] = 40, -- per hour
 			["peaceful_mode"] = false,
 			["ceasefire"] = false,
 			["evolution_factor"] = 0
@@ -52,11 +52,11 @@ function load_config()
 			{name = "Pink", color = {0.8, 0.2, 0.8, 0.2}},
 			{name = "Cyan", color = {0.1, 0.9, 0.9, 0.8}},
 			{name = "Purple", color = {0.8, 0.2, 0.8, 0.9}},
+			{name = "Brown", color = {0.5, 0.3, 0.1, 0.8}},
+			{name = "Gray", color = {0.6, 0.6, 0.6, 0.8}},
 			{name = "White", color = {0.8, 0.8, 0.8, 0.5}},
 			{name = "Black", color = {0.1, 0.1, 0.1, 0.8}},
-			{name = "Gray", color = {0.6, 0.6, 0.6, 0.8}},
-			{name = "Brown", color = {0.5, 0.3, 0.1, 0.8}},
-			{name = "Red", color = {0.9, 0.1, 0.1, 0.8}}
+			{name = "Lobby", color = {0.9, 0.1, 0.1, 0.8}}
 		}
 
 	global.inventory_list =
@@ -89,8 +89,6 @@ function load_config()
 		["medium"] =
 		{
 			["iron-plate"] = 200,
-			["pipe"] = 100,
-			["pipe-to-ground"] = 20,
 			["iron-gear-wheel"] = 100,
 			["copper-plate"] = 100,
 			["steel-plate"] = 50,
@@ -98,11 +96,13 @@ function load_config()
 			["transport-belt"] = 300,
 			["underground-belt"] = 20,
 			["splitter"] = 20,
-			["repair-pack"] = 20,
+			["pipe"] = 100,
+			["pipe-to-ground"] = 20,
 			["inserter"] = 20,
 			["fast-inserter"] = 70,
-			["burner-inserter"] = 20,
+			["burner-inserter"] = 14,
 			["small-electric-pole"] = 40,
+			["repair-pack"] = 20,
 			["burner-mining-drill"] = 10,
 			["electric-mining-drill"] = 20,
 			["stone-furnace"] = 50,
