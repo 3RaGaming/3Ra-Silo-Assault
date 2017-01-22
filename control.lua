@@ -285,6 +285,10 @@ Event.register(defines.events.on_player_created, function(event)
 	player.print({"msg-intro2"})
 end)
 
+Event.register(defines.events.on_player_respawned, function(event)
+	spread_spawn(game.players[event.player_index])
+end)
+
 Event.register(defines.events.on_player_left_game, function(event)
 	local player = game.players[event.player_index]
 	if player.force.name ~= "player" then
@@ -637,14 +641,23 @@ function random_join(player)
 	set_player(player,force,color)
 end
 
-function set_player(player,force,color)
+function spread_spawn(player)
 	local surface = global.surface
-	if not surface.valid then return end
-	local position = surface.find_non_colliding_position("player", force.get_spawn_position(surface),32,1)
-	player.teleport(position, surface)
+	if not surface.valid then error("global.surface is false!") return end
+	force_spawn = player.force.get_spawn_position(surface)
+	local spread = 27 --how far away from the actual force spawn position to teleport the player
+	local spread_spawn_x = math.random(-1*spread, spread) + force_spawn.x
+	local spread_spawn_y = math.random(-1*spread, spread) + force_spawn.y
+	local spread_spawn_position = surface.find_non_colliding_position("player", {spread_spawn_x, spread_spawn_y},64,1)
+	player.teleport(spread_spawn_position, surface)
+	return spread_spawn_position
+end
+
+function set_player(player,force,color)
 	player.force = force
 	player.color = color
-	player.character = surface.create_entity{name = "player", position = position, force = force}
+	local position = spread_spawn(player)
+	player.character = global.surface.create_entity{name = "player", position = position, force = force}
 	if not global.teams_currently_preparing then
 		give_inventory(player)
 		give_equipment(player)
@@ -1008,7 +1021,7 @@ function create_silo_for_force(force)
 	local surface = global.surface
 	local origin = force.get_spawn_position(surface)
 	local offset_x = 0
-	local offset_y = -32 --1 chunk above the spawn position
+	local offset_y = 0 --1 chunk above the spawn position
 	local silo_position = {origin.x+offset_x, origin.y+offset_y}
 	local area = {{silo_position[1]-5,silo_position[2]-6},{silo_position[1]+6, silo_position[2]+6}}
 	for i, entity in pairs(surface.find_entities_filtered({area = area, force = "neutral"})) do

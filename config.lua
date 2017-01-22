@@ -29,7 +29,7 @@ function load_config()
 			["team_joining"] = {"player_pick", "random", "auto_assign"},
 			["alien_artifacts_source"] = {"biters_enabled", "alien_tech_research", "gradual_distribution"},
 			["num_alien_artifacts_on_tech"] = 200, -- give this amount to each player on a force when they research alien technology
-			["num_alien_artifacts_gradual"] = 50, -- per hour
+			["num_alien_artifacts_gradual"] = 40, -- per hour
 			["peaceful_mode"] = false,
 			["ceasefire"] = false,
 			["evolution_factor"] = 0
@@ -89,8 +89,6 @@ function load_config()
 		["medium"] =
 		{
 			["iron-plate"] = 200,
-			["pipe"] = 100,
-			["pipe-to-ground"] = 20,
 			["iron-gear-wheel"] = 100,
 			["copper-plate"] = 100,
 			["steel-plate"] = 50,
@@ -98,11 +96,13 @@ function load_config()
 			["transport-belt"] = 300,
 			["underground-belt"] = 20,
 			["splitter"] = 20,
-			["repair-pack"] = 20,
+			["pipe"] = 100,
+			["pipe-to-ground"] = 20,
 			["inserter"] = 20,
 			["fast-inserter"] = 70,
 			["burner-inserter"] = 14,
 			["small-electric-pole"] = 40,
+			["repair-pack"] = 20,
 			["burner-mining-drill"] = 10,
 			["electric-mining-drill"] = 20,
 			["stone-furnace"] = 50,
