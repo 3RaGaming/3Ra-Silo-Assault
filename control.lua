@@ -373,6 +373,7 @@ end)
 
 function freeze_player(player)
 	if player.character then
+		player.zoom = 0.2
 		player.character_crafting_speed_modifier = -1
 		player.character_mining_speed_modifier = -1
 		player.character_running_speed_modifier = -1
@@ -388,6 +389,7 @@ end
 
 function unfreeze_player(player)
 	if player.character then
+		player.zoom = 1
 		player.character_crafting_speed_modifier = 0
 		player.character_mining_speed_modifier = 0
 		player.character_running_speed_modifier = 0
@@ -645,7 +647,7 @@ function spread_spawn(player)
 	local surface = global.surface
 	if not surface.valid then error("global.surface is false!") return end
 	force_spawn = player.force.get_spawn_position(surface)
-	local spread = 27 --how far away from the actual force spawn position to teleport the player
+	local spread = 38 --how far away from the actual force spawn position to teleport the player
 	local spread_spawn_x = math.random(-1*spread, spread) + force_spawn.x
 	local spread_spawn_y = math.random(-1*spread, spread) + force_spawn.y
 	local spread_spawn_position = surface.find_non_colliding_position("player", {spread_spawn_x, spread_spawn_y},64,1)
