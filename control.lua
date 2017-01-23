@@ -322,6 +322,7 @@ end)
 Event.register(defines.events.on_entity_died, function(event)
 	local killing_force = event.force
 	local silo = event.entity
+	local surface = global.surface
 	if not silo or not silo.valid then return end
 	if silo.name ~= "rocket-silo" then return end
 	log_scenario("rocket silo died")
@@ -363,16 +364,16 @@ Event.register(defines.events.on_entity_died, function(event)
 		game.merge_forces(force.name, killing_force.name)
 	end
 	if index > 1 then return end
-	game.print("index")
 	global.ending_tick = game.tick + 300
 	global.ending_tick_2 = game.tick + 480
-	--global.dummie_silo = surface.create_entity{name = "rocket-silo", position = silo.position, force = neutral}
+	global.silo_position = silo.position
+	global.dummie_silo = surface.create_entity{name = "rocket-silo", position = global.silo_position, force = neutral}
 	Event.register(defines.events.on_tick, end_game)
+	
 	for k, player in pairs (game.connected_players) do 
-		local surface = global.surface
 		local character = player.character
 			player.character = nil
-			player.teleport(silo.position, global.surface)
+			player.teleport(silo.position, surface)
 			global.zoom_count = 0.8
 			p.zoom = global.zoom_count
 	end	
@@ -384,21 +385,23 @@ Event.register(defines.events.on_entity_died, function(event)
 end)
 
 function end_game()
+	local surface = global.surface
 	for k, player in pairs (game.connected_players) do 
 		local surface = global.surface
 		local character = player.character
 			player.character = nil
-			player.teleport(silo.position, global.surface)
+			player.teleport(global.silo_position, surface)
 			player.zoom = global.zoom_count
 	end	
 	global.zoom_count = global.zoom_count + (1/300)
-	game.print("end_game")
-	if game.tick == global.ending_tick then 
-	--global.dummie_silo.destroy()
-	surface.create_entity{position = silo.position, name = "big-explosion"} 
+	if game.tick < global.ending_tick and game.tick % 20 == 0 then
+    surface.create_entity{position = global.silo_position, name = "medium-explosion"}    
 	end
 	
+	
 	if game.tick == global.ending_tick_2 then
+	--global.dummie_silo.destroy()
+	surface.create_entity{position = global.silo_position, name = "big-explosion"} 
 		if global.config.continuous_play then
 			end_round()
 		end
