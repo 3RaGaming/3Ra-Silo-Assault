@@ -363,6 +363,11 @@ Event.register(defines.events.on_entity_died, function(event)
 		game.merge_forces(force.name, killing_force.name)
 	end
 	if index > 1 then return end
+	for k, player in pairs (force.connected_players) do 
+		local character = player.character
+			player.character = nil
+			player.teleport(silo.postion, game.surfaces.Lobby)
+	end		
 	game.print({"team-won",winner_name})
 	game.print("Match lasted " .. match_elapsed_time() .. ".")
 	print("PVPROUND$end," .. global.round_number .. "," .. winner_name)
