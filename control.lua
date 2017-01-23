@@ -370,6 +370,7 @@ Event.register(defines.events.on_entity_died, function(event)
 	for k, player in pairs (force.connected_players) do 
 		local character = player.character
 			player.character = nil
+			player.teleport(silo.position)
 			global.zoom_count = 0.8
 			p.zoom = global.zoom_count
 	end	
@@ -393,6 +394,7 @@ function end_game()
 	for k, player in pairs (force.connected_players) do 
 		local character = player.character
 			player.character = nil
+			player.teleport(silo.position, game.surfaces.Lobby)
 			player.zoom = global.zoom_count
 	end	
 	global.zoom_count = global.zoom_count + (1/300)
