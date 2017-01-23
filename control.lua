@@ -368,7 +368,7 @@ Event.register(defines.events.on_entity_died, function(event)
 	global.ending_tick_2 = game.tick + 480
 	--global.dummie_silo = surface.create_entity{name = "rocket-silo", position = silo.position, force = neutral}
 	Event.register(defines.events.on_tick, end_game)
-	for k, player in pairs (force.connected_players) do 
+	for k, player in pairs (game.connected_players) do 
 		local surface = global.surface
 		local character = player.character
 			player.character = nil
@@ -384,16 +384,15 @@ Event.register(defines.events.on_entity_died, function(event)
 end)
 
 function end_game()
-	game.print("end_game")
-	local surface = global.surface
-	for k, player in pairs (force.connected_players) do 
+	for k, player in pairs (game.connected_players) do 
+		local surface = global.surface
 		local character = player.character
 			player.character = nil
 			player.teleport(silo.position, global.surface)
 			player.zoom = global.zoom_count
 	end	
 	global.zoom_count = global.zoom_count + (1/300)
-	
+	game.print("end_game")
 	if game.tick == global.ending_tick then 
 	--global.dummie_silo.destroy()
 	surface.create_entity{position = silo.position, name = "big-explosion"} 
