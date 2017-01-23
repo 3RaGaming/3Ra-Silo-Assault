@@ -363,18 +363,42 @@ Event.register(defines.events.on_entity_died, function(event)
 		game.merge_forces(force.name, killing_force.name)
 	end
 	if index > 1 then return end
+	global.ending_tick = game.tick + 300
+	global.ending_tick_2 = game.tick + 480
+	dummie_silo = surface.create_entity{name = "rocket-silo", position = silo.position, force = neutral}
+	Event.register(defines.events.on_tick, end_game)
 	for k, player in pairs (force.connected_players) do 
 		local character = player.character
 			player.character = nil
-			player.teleport(silo.postion, game.surfaces.Lobby)
-	end		
+			global.zoom_count = 0.8
+			p.zoom = global.zoom_count
+	end	
+	global.zoom_count = global.zoom_count + (1/300)
+	
 	game.print({"team-won",winner_name})
 	game.print("Match lasted " .. match_elapsed_time() .. ".")
 	print("PVPROUND$end," .. global.round_number .. "," .. winner_name)
-	if global.config.continuous_play then
-		end_round()
+	if game.tick == global.ending_tick then 
+	dummie_silo.destroy()
+	surface.create_entity{position = silo.position, name = "big-explosion"} 
 	end
+	if game.tick == global.ending_tick_2 then
+		if global.config.continuous_play then
+			end_round()
+		end
+	end	
 end)
+
+function end_game()
+	for k, player in pairs (force.connected_players) do 
+		local character = player.character
+			player.character = nil
+			player.zoom = global.zoom_count
+	end	
+	global.zoom_count = global.zoom_count + (1/300)
+
+
+end
 
 function freeze_player(player)
 	if player.character then
