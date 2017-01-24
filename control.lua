@@ -130,10 +130,7 @@ function end_round()
 	local player_count = 0
 	for k, player in pairs (game.players) do
 		player.force = game.forces.player
-		--global.surrender_votes = nil
 		destroy_joining_guis(player.gui.center)
-		if player.gui.left.surrender_dialog then player.gui.left.surrender_dialog.destroy() end
-		player.gui.top.surrender_button.style.font_color = colors.white
 		if player.connected then
 			local character = player.character
 			player.character = nil
@@ -644,6 +641,11 @@ function setup_teams()
 	local n = global.config.number_of_teams
 	if n <= 0 then error ("Number of team to setup must be greater than 0")return end
 	if n > #list then error("Not enough forces defined for number of teams. Max teams is "..#list) return end
+	for i,player in pairs(game.players) do
+		global.surrender_votes = nil
+		if player.gui.left.surrender_dialog then player.gui.left.surrender_dialog.destroy() end
+		player.gui.top.surrender_button.style.font_color = colors.white
+	end
 	for k = 1, n do
 		if not list[k] then	break end
 		local name = list[k].name
