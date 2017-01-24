@@ -375,7 +375,7 @@ Event.register(defines.events.on_entity_died, function(event)
 			player.character = nil
 			player.teleport(silo.position, surface)
 			global.zoom_count = 1
-			p.zoom = global.zoom_count
+			player.zoom = global.zoom_count
 	end	
 	global.zoom_count = global.zoom_count + (1/300)
 	
