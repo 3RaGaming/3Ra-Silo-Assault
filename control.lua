@@ -374,7 +374,7 @@ Event.register(defines.events.on_entity_died, function(event)
 		local character = player.character
 			player.character = nil
 			player.teleport(silo.position, surface)
-			global.zoom_count = 0.8
+			global.zoom_count = 1
 			p.zoom = global.zoom_count
 	end	
 	global.zoom_count = global.zoom_count + (1/300)
@@ -397,7 +397,7 @@ function end_game()
 			player.teleport(global.silo_position, surface)
 			player.zoom = global.zoom_count
 	end	
-	global.zoom_count = global.zoom_count + (1/300)
+	global.zoom_count = global.zoom_count - (1/3000)
 	if game.tick < global.ending_tick and game.tick % 20 == 0 then
     surface.create_entity{position = {x + math.random(-4,4),y + math.random(-4,4)}, name = "medium-explosion"}   
 	end
