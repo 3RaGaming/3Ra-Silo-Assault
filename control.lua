@@ -715,6 +715,7 @@ function set_player(player,force,color)
 	end
 	game.print({"joined", player.name, player.force.name})
 	player.print({"objective"})
+	update_scoreboard()
 	if     global.alien_artifacts_source == "biters_enabled"       then player.print({"biters_enabled_message"})
 	elseif global.alien_artifacts_source == "alien_tech_research"  then player.print({"alien_tech_research_message",global.config.num_alien_artifacts_on_tech})
 	elseif global.alien_artifacts_source == "gradual_distribution" then player.print({"gradual_distribution_message",global.config.num_alien_artifacts_gradual})

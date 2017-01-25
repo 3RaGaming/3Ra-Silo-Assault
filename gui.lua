@@ -374,6 +374,9 @@ function destroy_config_for_all()
 	for k, player in pairs (game.players) do
 		if player.gui.left.config_gui then
 			player.gui.left.config_gui.destroy()
+		end	
+		if player.gui.left.balance_options_frame then
+			player.gui.left.balance_options_frame.destroy()
 		end
 	end
 end
@@ -389,16 +392,24 @@ Event.register(defines.events.on_entity_died, function(event)
 	if entity and entity.valid and entity.type == "player" and force and force.name ~= entity.force.name and force.name ~= "enemy" then
 		if not global.kill_counts[force.name] then global.kill_counts[force.name] = 1
 		else global.kill_counts[force.name] = global.kill_counts[force.name] + 1 end
-		update_scoreboard(force)
+		update_scoreboard_kills(force)
 	end
 end)
 
-function update_scoreboard(force)
+function update_scoreboard_kills(force)
 	for _,player in pairs(game.players) do
 		if player.gui.left.score_board then
 			local force_kill_counter = force.name .. "_kill_count"
 			if not player.gui.left.score_board.score_board_table[force_kill_counter] then return end
 			player.gui.left.score_board.score_board_table[force_kill_counter].caption = global.kill_counts[force.name]
+			player.gui.left.score_board.score_board_table[force.name.."_count"].caption = #force.connected_players
+		end
+	end
+end
+
+function update_scoreboard()
+	for _,player in pairs(game.players) do
+		if player.gui.left.score_board then
 			player.gui.left.score_board.score_board_table[force.name.."_count"].caption = #force.connected_players
 		end
 	end
