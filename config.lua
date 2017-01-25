@@ -165,7 +165,7 @@ function give_equipment(player)
 		player.insert{name = "light-armor", count = 1}
 		player.insert{name = "steel-axe", count = 1}
 		player.insert{name = "submachine-gun", count = 1}
-		player.insert{name = "firearm-magazine", count = 40}
+		player.insert{name = "piercing-rounds-magazine", count = 40}
 		return
 	end
 
