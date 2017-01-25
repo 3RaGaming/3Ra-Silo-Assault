@@ -173,6 +173,7 @@ end
 
 function prepare_next_round()
 	log_scenario("Begin prepare_next_round()")
+	destroy_config_for_all()
 	global.next_round_start_tick = nil
 	global.setup_finished = false
 	prepare_map()
@@ -185,6 +186,8 @@ global.timer_wait = 600
 global.timer_display = 1
 
 Event.register(defines.events.on_tick, function(event)
+	--runs every tick
+	end_game()
 	--runs every 500ms
 	if(game.tick % 30 == 0) then
 		show_health()
@@ -247,6 +250,7 @@ Event.register(defines.events.on_player_joined_game, function(event)
 	if player.force.name ~= "player" then
 		for k, p in pairs (game.players) do
 			update_players_on_team_count(p)
+			update_scoreboard()
 		end
 		return
 	end
@@ -294,6 +298,7 @@ Event.register(defines.events.on_player_left_game, function(event)
 	if player.force.name ~= "player" then
 		for k, p in pairs (game.players) do
 			update_players_on_team_count(p)
+			update_scoreboard()
 		end
 		return
 	end
@@ -369,7 +374,6 @@ Event.register(defines.events.on_entity_died, function(event)
 	global.silo_position = silo.position
 	global.dummie_silo = surface.create_entity{name = "rocket-silo", position = global.silo_position, force = neutral}
 	endgame = true
-	Event.register(defines.events.on_tick, end_game)
 	for k, player in pairs (game.connected_players) do 
 		local character = player.character
 			player.character = nil
@@ -385,7 +389,7 @@ Event.register(defines.events.on_entity_died, function(event)
 end)
 
 function end_game()
-
+	--called in on_tick
 	if endgame ~= true then return end
 	local surface = global.surface
 	local x = global.silo_position.x
@@ -402,7 +406,7 @@ function end_game()
     surface.create_entity{position = {x + math.random(-4,4),y + math.random(-4,4)}, name = "medium-explosion"}   
 	end
 	if game.tick == global.ending_tick then
-	global.dummie_silo.destroy()
+	if global.dummie_silo then global.dummie_silo.destroy() end
 	surface.create_entity{position = global.silo_position, name = "big-explosion"} 
 	end
 	if game.tick == global.ending_tick_2 then
@@ -453,12 +457,14 @@ function team_prepare()
 		end
 	else
 		-- Unfreezes players.
-		for k, player in pairs (game.players) do
-			pcall(unfreeze_player, player)
-			if not global.given_starting_items[player.index] then
-				give_equipment(player)
-				give_inventory(player)
-				global.given_starting_items[player.index] = true
+		for k, player in pairs (game.connected_players) do
+			if player.character then
+				pcall(unfreeze_player, player)
+				if not global.given_starting_items[player.index] then
+					give_equipment(player)
+					give_inventory(player)
+					global.given_starting_items[player.index] = true
+				end
 			end
 		end
 		global.teams_currently_preparing = false
