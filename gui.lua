@@ -409,9 +409,13 @@ end
 
 function update_scoreboard()
 	for _,player in pairs(game.players) do
-	local force = game.forces
-		if player.gui.left.score_board and player.gui.left.score_board_table and player.gui.left.score_board.score_board_table[force.name.."_count"] then
-			player.gui.left.score_board.score_board_table[force.name.."_count"].caption = #force.connected_players
+		if player.gui.left.score_board and player.gui.left.score_board_table then
+			for _,force in pairs(game.forces) do
+				if player.gui.left.score_board.score_board_table[force.name .. "_count"] and player.gui.left.score_board.score_board_table[force.name .. "_online"] then
+					player.gui.left.score_board.score_board_table[force.name .. "_online"].caption = #force.connected_players
+					player.gui.left.score_board.score_board_table[force.name .. "_count"].caption = #force.players
+				end
+			end
 		end
 	end
 end
