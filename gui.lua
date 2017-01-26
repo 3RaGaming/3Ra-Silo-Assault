@@ -20,18 +20,20 @@ Event.register(defines.events.on_gui_click, function(event)
 		return
 
 	elseif (event.element.name == "crouch_button") then
-		if player.character == nil then return end
-		global.player_crouch_state = global.player_crouch_state or {}
-		global.player_crouch_color = global.player_crouch_color or {}
-		if global.player_crouch_state == true then
-			global.player_crouch_state = false
-			player.character_running_speed_modifier = 0
-			player.color = global.player_crouch_color
-		else 
-			global.player_crouch_state = true
-			player.character_running_speed_modifier = -0.6
-			global.player_crouch_color = player.color
-			player.color = black				
+		if global.setup_finished and not global.teams_currently_preparing then
+			if player.character == nil then return end
+			global.player_crouch_state = global.player_crouch_state or {}
+			global.player_crouch_color = global.player_crouch_color or {}
+			if global.player_crouch_state == true then
+				global.player_crouch_state = false
+				player.character_running_speed_modifier = 0
+				player.color = global.player_crouch_color
+			else 
+				global.player_crouch_state = true
+				player.character_running_speed_modifier = -0.6
+				global.player_crouch_color = player.color
+				player.color = black				
+			end
 		end
 
 	elseif (event.element.name == "score_button") then
@@ -186,7 +188,7 @@ Event.register(defines.events.on_gui_click, function(event)
 					local color = {r = fpn(c[1]), g = fpn(c[2]), b = fpn(c[3]), a = fpn(c[4])}
 					gui.parent.destroy()
 					set_player(player,force,color)
-					for k, player in pairs (game.forces.player.players) do
+					for k, player in pairs (game.players) do
 						update_players_on_team_count(player)
 					end
 					break
@@ -393,7 +395,47 @@ function create_buttons(event)
 	end
 end	
 
+function welcome_window(player)
+	local center = player.gui.center
+	if center.welcome_frame then center.welcome_frame.destroy() end
+	local welcome_frame = center.add{type = "frame", name = "welcome_frame", caption = {"",{"welcome-message"},""}}
+	welcome_frame.add{type = "label", name = "welcome_label", caption = {"",{"welcome-label"},""}}
+end
+
+function destroy_welcome_window(player)
+	local center = player.gui.center
+	if center.welcome_frame then center.welcome_frame.destroy() end
+end
+
 function choose_joining_gui(player)
+	destroy_welcome_window(player)
+	
+--[[	if not global.force_list then error("No force list defined") return end
+	local list = global.force_list
+	local n = global.config.number_of_teams
+	if n <= 0 then error ("Number of team to setup must be greater than 0")return end
+	if n > #list then error("Not enough forces defined for number of teams. Max teams is "..#list) return end
+	for k = 1, n do
+		if not list[k] then	break end
+		local name = list[k].name
+		if name then
+			local new_force
+			if not game.forces[name] then
+				new_force = game.create_force(name)
+			else
+				new_force = game.forces[name]
+			end
+			set_spawn_position(k, n, new_force, global.surface)
+		end
+	end
+--]]
+	if not game.forces["Lobby"] then
+		game.create_force("Lobby")
+	end
+
+	player.force = game.forces["Lobby"]
+	print("PLAYER$update," .. player.index .. "," .. player.name .. ",Lobby")
+	check_player_color(false)
 
 	if global.team_joining == "random" then
 		create_random_join_gui(player.gui.center)
@@ -576,19 +618,21 @@ function config_confirm(gui)
 		player.print({"more-than-1-team"})
 		return
 	end
-	if global.config.number_of_teams > 12 then 
-		player.print({"less-than-12-teams"})
+	if global.config.number_of_teams > 9 then 
+		player.print({"less-than-9-teams"})
 		return
 	end
-	destroy_config_for_all(gui.parent.name)
 	prepare_next_round()
 
 end
 
-function destroy_config_for_all(name)
+function destroy_config_for_all()
 	for k, player in pairs (game.players) do
-		if player.gui.left[name] then
-			player.gui.left[name].destroy()
+		if player.gui.left.config_gui then
+			player.gui.left.config_gui.destroy()
+		end	
+		if player.gui.left.balance_options_frame then
+			player.gui.left.balance_options_frame.destroy()
 		end
 	end
 end
@@ -604,16 +648,30 @@ Event.register(defines.events.on_entity_died, function(event)
 	if entity and entity.valid and entity.type == "player" and force and force.name ~= entity.force.name and force.name ~= "enemy" then
 		if not global.kill_counts[force.name] then global.kill_counts[force.name] = 1
 		else global.kill_counts[force.name] = global.kill_counts[force.name] + 1 end
-		update_kill_counts(force)
+		update_scoreboard_kills(force)
 	end
 end)
 
-function update_kill_counts(force)
+function update_scoreboard_kills(force)
 	for _,player in pairs(game.players) do
 		if player.gui.left.score_board then
 			local force_kill_counter = force.name .. "_kill_count"
 			if not player.gui.left.score_board.score_board_table[force_kill_counter] then return end
 			player.gui.left.score_board.score_board_table[force_kill_counter].caption = global.kill_counts[force.name]
+			player.gui.left.score_board.score_board_table[force.name.."_count"].caption = #force.connected_players
+		end
+	end
+end
+
+function update_scoreboard()
+	for _,player in pairs(game.players) do
+		if player.gui.left.score_board and player.gui.left.score_board_table then
+			for _,force in pairs(game.forces) do
+				if player.gui.left.score_board.score_board_table[force.name .. "_count"] and player.gui.left.score_board.score_board_table[force.name .. "_online"] then
+					player.gui.left.score_board.score_board_table[force.name .. "_online"].caption = #force.connected_players
+					player.gui.left.score_board.score_board_table[force.name .. "_count"].caption = #force.players
+				end
+			end
 		end
 	end
 end

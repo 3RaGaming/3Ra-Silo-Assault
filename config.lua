@@ -5,7 +5,7 @@ function load_config()
 	global.starting_inventory = "medium"
 	global.starting_equipment = "small"
 	global.team_joining = "player_pick"
-	global.alien_artifacts_source = "alien_tech_research"
+	global.alien_artifacts_source = "gradual_distribution"
 	global.alien_artifacts_gradual_remainder = 0
 	global.setup_finished = false
 	global.teams_currently_preparing = false
@@ -33,7 +33,7 @@ function load_config()
 			["team_joining"] = {"player_pick", "random", "auto_assign"},
 			["alien_artifacts_source"] = {"biters_enabled", "alien_tech_research", "gradual_distribution"},
 			["num_alien_artifacts_on_tech"] = 200, -- give this amount to each player on a force when they research alien technology
-			["num_alien_artifacts_gradual"] = 100, -- per hour
+			["num_alien_artifacts_gradual"] = 40, -- per hour
 			["peaceful_mode"] = false,
 			["ceasefire"] = false,
 			["evolution_factor"] = 0
@@ -56,11 +56,11 @@ function load_config()
 			{name = "Pink", color = {0.8, 0.2, 0.8, 0.2}},
 			{name = "Cyan", color = {0.1, 0.9, 0.9, 0.8}},
 			{name = "Purple", color = {0.8, 0.2, 0.8, 0.9}},
+			{name = "Brown", color = {0.5, 0.3, 0.1, 0.8}},
+			{name = "Gray", color = {0.6, 0.6, 0.6, 0.8}},
 			{name = "White", color = {0.8, 0.8, 0.8, 0.5}},
 			{name = "Black", color = {0.1, 0.1, 0.1, 0.8}},
-			{name = "Gray", color = {0.6, 0.6, 0.6, 0.8}},
-			{name = "Brown", color = {0.5, 0.3, 0.1, 0.8}},
-			{name = "Red", color = {0.9, 0.1, 0.1, 0.8}}
+			{name = "Lobby", color = {0.9, 0.1, 0.1, 0.8}}
 		}
 
 	global.inventory_list =
@@ -84,7 +84,7 @@ function load_config()
 			["small-electric-pole"] = 40,
 			["burner-mining-drill"] = 16,
 			["stone-furnace"] = 12,
-			["burner-inserter"] = 30,
+			["burner-inserter"] = 7,
 			["assembling-machine-1"] = 8,
 			["electric-mining-drill"] = 2,
 			["boiler"] = 7,
@@ -93,8 +93,6 @@ function load_config()
 		["medium"] =
 		{
 			["iron-plate"] = 200,
-			["pipe"] = 100,
-			["pipe-to-ground"] = 20,
 			["iron-gear-wheel"] = 100,
 			["copper-plate"] = 100,
 			["steel-plate"] = 50,
@@ -102,12 +100,14 @@ function load_config()
 			["transport-belt"] = 300,
 			["underground-belt"] = 20,
 			["splitter"] = 20,
-			["repair-pack"] = 20,
+			["pipe"] = 100,
+			["pipe-to-ground"] = 20,
 			["inserter"] = 20,
 			["fast-inserter"] = 70,
-			["burner-inserter"] = 20,
+			["burner-inserter"] = 14,
 			["small-electric-pole"] = 40,
-			["burner-mining-drill"] = 10,
+			["repair-pack"] = 20,
+			["burner-mining-drill"] = 30,
 			["electric-mining-drill"] = 20,
 			["stone-furnace"] = 50,
 			["steel-furnace"] = 20,
@@ -132,7 +132,7 @@ function load_config()
 			["splitter"] = 40,
 			["repair-pack"] = 20,
 			["inserter"] = 100,
-			["burner-inserter"] = 50,
+			["burner-inserter"] = 28,
 			["small-electric-pole"] = 50,
 			["burner-mining-drill"] = 50,
 			["electric-mining-drill"] = 50,
@@ -146,7 +146,7 @@ function load_config()
 			["fast-inserter"] = 100,
 			["medium-electric-pole"] = 50,
 			["substation"] = 10,
-			["boiler"] = 30,
+			["boiler"] = 28,
 			["steam-engine"] = 20,
 			["chemical-plant"] = 10,
 			["oil-refinery"] = 5,
@@ -169,7 +169,7 @@ function give_equipment(player)
 		player.insert{name = "light-armor", count = 1}
 		player.insert{name = "steel-axe", count = 1}
 		player.insert{name = "submachine-gun", count = 1}
-		player.insert{name = "firearm-magazine", count = 40}
+		player.insert{name = "piercing-rounds-magazine", count = 40}
 		return
 	end
 
@@ -223,4 +223,3 @@ starting_area_constant =
 		["high"] = 4*120,
 		["very-high"] = 5*120
 	}
-	
