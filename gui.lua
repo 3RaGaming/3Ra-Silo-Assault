@@ -119,10 +119,8 @@ Event.register(defines.events.on_gui_click, function(event)
 			if is_too_soon_to_surrender(player.force) then return end
 			local surrender_error_message = "A surrender vote is not in progress."
 			open_surrender_window(player)
-			local surrender_table = player.gui.left.surrender_dialog.surrender_table
-			--if surrender_table.surrender_error_label then surrender_table.surrender_error_label.destroy() end
-			local surrender_error_label = surrender_table.add{type = "label", name = surrender_error_label, caption = surrender_error_message}
-			surrender_error_label.style.font_color = colors.red
+			local label = add_surrender_label(player, surrender_error_message)
+			label.style.font_color = colors.red
 		else
 			local player_record = votes.vote_record[player.index]
 			local surrender_error_message = ""
@@ -199,6 +197,13 @@ Event.register(defines.events.on_gui_click, function(event)
 	
 end)
 
+function add_surrender_label(player, message)
+	local surrender_table = player.gui.left.surrender_dialog.surrender_table
+	--if surrender_table.surrender_error_label then surrender_table.surrender_error_label.destroy() end
+	local surrender_error_label = surrender_table.add{type = "label", name = surrender_error_label, caption = message}
+	return surrender_error_label
+end
+	
 function open_surrender_window(player)
 	if player.gui.left.surrender_dialog then player.gui.left.surrender_dialog.destroy() end
 
@@ -225,24 +230,17 @@ function open_surrender_window(player)
 	local surrender_info_label = surrender_table.add{type = "label", name = surrender_info_label, caption = "70% Yes vote required for surrender."}
 	local contact_author_label = surrender_table.add{type = "label", name = contact_author_label, caption = "Please contact JuicyJuuce regarding surrender bugs!"}
 	
---[[	local too_early = is_too_early_in_match_to_surrender()
-	local too_soon = is_too_soon_since_last_surrender_vote(player.force)
-	local surrender_error_message = ""
-	if too_early then
-		surrender_error_message = "You can not surrender during the first " .. global.time_before_first_surrender_available .. " minutes of a match."
+	local surrender_error_message = nil
+	if player.force.name == "player" then
+		surrender_error_message = "You must be on a team to surrender."
+	else
+		surrender_error_message = is_too_soon_to_surrender(player.force)
 	end
-	if too_soon then
-		surrender_error_message = "You can not surrender until " .. global.surrender_vote_cooldown_period .. " minutes have passed since the last vote."
-	end
-
-	if (too_early or too_soon) then
---]]
-	local surrender_error_message = is_too_soon_to_surrender(player.force)
 	if surrender_error_message then
 		surrender_vote_yes.style.font_color = colors.grey
 		surrender_vote_no.style.font_color = colors.grey
-		local surrender_error_label = surrender_table.add{type = "label", name = surrender_error_label, caption = surrender_error_message}
-		surrender_error_label.style.font_color = colors.red
+		local label = add_surrender_label(player, surrender_error_message)
+		label.style.font_color = colors.red
 	end
 end
 

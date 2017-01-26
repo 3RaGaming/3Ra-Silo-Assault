@@ -604,6 +604,7 @@ function random_join(player)
 end
 
 function set_player(player,force,color)
+	if player.gui.left.surrender_dialog then player.gui.left.surrender_dialog.destroy() end
 	local surface = global.surface
 	if not surface.valid then return end
 	local position = surface.find_non_colliding_position("player", force.get_spawn_position(surface),32,1)
