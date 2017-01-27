@@ -63,6 +63,27 @@ Event.register(defines.events.on_gui_click, function(event)
 		end
 	end	
 	
+	if (event.element.name == "players_button") then
+		if player.gui.left.players_list then
+			player.gui.left.players_list.destroy()
+		else
+			local players_list = player.gui.left.add{name = "players_list", type = "frame", direction = "horizontal"}
+			for k = 1, #global.force_list do
+				local team = global.force_list[k]
+				local force = game.forces[team.name]
+				if force ~= nil then
+					local force_flow = players_list.add{type = "flow", name = force.name.."_table", direction = "vertical"}
+					local force_label = force_flow.add{type = "label", name = force.name.."_label", caption = force.name}
+					local c = team.color
+					force_label.style.font_color = {r = 1 - (1 - c[1]) * 0.5, g = 1 - (1 - c[2]) * 0.5, b = 1 - (1 - c[3]) * 0.5, a = 1}
+					for i,player in pairs(force.connected_players) do
+						force_flow.add{type = "label", name = "player_"..i.."_label", caption = player.name}
+					end
+				end
+			end
+		end
+	end
+
 	if gui.name == "balance_options_confirm" then
 		set_balance_settings(gui.parent.balance_options_scrollpane)
 		gui.parent.destroy()
@@ -137,6 +158,10 @@ function create_buttons(event)
 	if (not player.gui.top["score_button"]) then
 		player.gui.top.add{type="button", name="score_button", caption="Score"}
 	end
+
+	if (not player.gui.top["players_button"]) then
+		player.gui.top.add{type="button", name="players_button", caption="Players"}
+	end
 end	
 
 function welcome_window(player)
@@ -153,29 +178,6 @@ end
 
 function choose_joining_gui(player)
 	destroy_welcome_window(player)
-	
---[[	if not global.force_list then error("No force list defined") return end
-	local list = global.force_list
-	local n = global.config.number_of_teams
-	if n <= 0 then error ("Number of team to setup must be greater than 0")return end
-	if n > #list then error("Not enough forces defined for number of teams. Max teams is "..#list) return end
-	for k = 1, n do
-		if not list[k] then	break end
-		local name = list[k].name
-		if name then
-			local new_force
-			if not game.forces[name] then
-				new_force = game.create_force(name)
-			else
-				new_force = game.forces[name]
-			end
-			set_spawn_position(k, n, new_force, global.surface)
-		end
-	end
---]]
-	if not game.forces["Lobby"] then
-		game.create_force("Lobby")
-	end
 
 	player.force = game.forces["Lobby"]
 	print("PLAYER$update," .. player.index .. "," .. player.name .. ",Lobby")
