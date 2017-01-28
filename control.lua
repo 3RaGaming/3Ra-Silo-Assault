@@ -209,6 +209,19 @@ Event.register(defines.events.on_tick, function(event)
 	-- Runs every 5 seconds
 	if game.tick % 300 == 0 then
 		check_player_color(true)
+		if global.surrender_votes then
+			for force_name, votes in pairs(global.surrender_votes) do
+				if votes.in_progress and game.tick >= votes.vote_start_time + global.surrender_voting_period * 3600 then
+					local force = game.forces[force_name]
+					force.print("Surrender voting period ended without enough Yes votes.")
+					votes.in_progress = false			
+					for i,p in pairs(force.players) do
+						p.gui.top.surrender_button.style.font_color = colors.red
+						if p.gui.left.surrender_dialog then open_surrender_window(p) end
+					end
+				end
+			end
+		end
 	end
 
 	-- Runs every 30 seconds

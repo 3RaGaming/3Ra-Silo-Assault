@@ -71,6 +71,7 @@ Event.register(defines.events.on_gui_click, function(event)
 
 	elseif (event.element.name == "surrender_vote_yes") then
 		local votes = global.surrender_votes[player.force.name]
+		if votes.buttons_disabled then return end
 		
 		local vote_initiated = false
 		if not votes.in_progress then
@@ -111,6 +112,7 @@ Event.register(defines.events.on_gui_click, function(event)
 
 	elseif (event.element.name == "surrender_vote_no") then
 		local votes = global.surrender_votes[player.force.name]
+		if votes.buttons_disabled then return end
 		if not votes.in_progress then
 			if is_too_soon_to_surrender(player.force) then return end
 			local surrender_error_message = "A surrender vote is not in progress."
@@ -203,7 +205,6 @@ function open_surrender_window(player)
 	local frame = player.gui.left.add{name = "surrender_dialog", type = "frame", direction = "vertical", caption = "Vote: Do you wish to surrender?"}
 	--the following line was the only way I could figure out how to cause elements to appear vertically instead of horizontally, there has got to be a better way
 	local surrender_table = frame.add{type = "table", name = "surrender_table", colspan = 1}
-	local debug_force_label = surrender_table.add{type = "label", name = debug_force_label, caption = "player.force.name = " .. player.force.name}
 	local button_table = surrender_table.add{type = "table", name = "button_table", colspan = 2}
 	local surrender_vote_yes = button_table.add{type = "button", name = "surrender_vote_yes", caption = "Yes"}
 	local surrender_vote_no = button_table.add{type = "button", name = "surrender_vote_no", caption = "No"}
@@ -211,7 +212,6 @@ function open_surrender_window(player)
 	if not global.surrender_votes then global.surrender_votes = {} end  --this contains the surrender vote information for all teams
 	local votes
 	if not global.surrender_votes[player.force.name] then 
-		surrender_table.add{type = "label", caption = "not global-surrender_votes[player.force.name]"}
 		global.surrender_votes[player.force.name] = {}
 		votes = global.surrender_votes[player.force.name]		
 		votes.in_progress = false
@@ -219,17 +219,23 @@ function open_surrender_window(player)
 	else
 		votes = global.surrender_votes[player.force.name]
 	end
+	votes.buttons_disabled = false
 	if votes.in_progress or votes.already_surrendered then add_surrender_vote_tally_table(player) end
 	local surrender_info_label = surrender_table.add{type = "label", name = surrender_info_label, caption = "70% Yes vote required for surrender."}
-	local contact_author_label = surrender_table.add{type = "label", name = contact_author_label, caption = "Please contact JuicyJuuce regarding surrender bugs!"}
+	local contact_author_label = surrender_table.add{type = "label", name = contact_author_label, caption = "Please contact @JuicyJuuce in Discord regarding surrender bugs!"}
 	
 	local surrender_error_message = nil
-	if player.force.name == "player" then
+	if     player.force.name == "player"
+	    or player.force.name == "Admins"
+		or player.force.name == "Lobby"
+		or player.force.name == "enemy"
+	then
 		surrender_error_message = "You must be on a team to surrender."
 	elseif not votes.in_progress then
 		surrender_error_message = is_too_soon_to_surrender(player.force)
 	end
 	if surrender_error_message then
+		votes.buttons_disabled = true
 		surrender_vote_yes.style.font_color = colors.grey
 		surrender_vote_no.style.font_color = colors.grey
 		local label = add_surrender_label(player, surrender_error_message)

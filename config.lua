@@ -9,9 +9,9 @@ function load_config()
 	global.alien_artifacts_gradual_remainder = 0
 	global.setup_finished = false
 	global.teams_currently_preparing = false
-	global.time_before_first_surrender_available = 0.2 -- minutes
-	global.surrender_vote_cooldown_period = 0.5 -- minutes
-	global.surrender_voting_period = 0.3 -- minutes
+	global.time_before_first_surrender_available = 15 -- minutes
+	global.surrender_vote_cooldown_period = 5 -- minutes
+	global.surrender_voting_period = 1 -- minutes
 	global.config =
 		{
 			["number_of_teams"] = 3,
