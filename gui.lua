@@ -60,6 +60,26 @@ Event.register(defines.events.on_gui_click, function(event)
 				end
 			end
 		end
+	
+	elseif (event.element.name == "players_button") then
+		if player.gui.left.players_list then
+			player.gui.left.players_list.destroy()
+		else
+			local players_list = player.gui.left.add{name = "players_list", type = "frame", direction = "horizontal"}
+			for k = 1, #global.force_list do
+				local team = global.force_list[k]
+				local force = game.forces[team.name]
+				if force ~= nil then
+					local force_flow = players_list.add{type = "flow", name = force.name.."_table", direction = "vertical"}
+					local force_label = force_flow.add{type = "label", name = force.name.."_label", caption = force.name}
+					local c = team.color
+					force_label.style.font_color = {r = 1 - (1 - c[1]) * 0.5, g = 1 - (1 - c[2]) * 0.5, b = 1 - (1 - c[3]) * 0.5, a = 1}
+					for i,player in pairs(force.connected_players) do
+						force_flow.add{type = "label", name = "player_"..i.."_label", caption = player.name}
+					end
+				end
+			end
+		end
 
 		--Brings up vote-to-surrender dialog
 	elseif (event.element.name == "surrender_button") then
@@ -335,6 +355,11 @@ function create_buttons(event)
 	if (not player.gui.top["score_button"]) then
 		player.gui.top.add{type="button", name="score_button", caption="Score"}
 	end
+
+	if (not player.gui.top["players_button"]) then
+		player.gui.top.add{type="button", name="players_button", caption="Players"}
+	end
+
 	if (not player.gui.top["surrender_button"]) then
 		player.gui.top.add{type="button", name="surrender_button", caption="Surrender Menu"}
 	end
@@ -354,10 +379,6 @@ end
 
 function choose_joining_gui(player)
 	destroy_welcome_window(player)
-	
-	if not game.forces["Lobby"] then
-		game.create_force("Lobby")
-	end
 
 	player.force = game.forces["Lobby"]
 	print("PLAYER$update," .. player.index .. "," .. player.name .. ",Lobby")

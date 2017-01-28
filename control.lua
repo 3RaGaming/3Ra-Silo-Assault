@@ -444,13 +444,6 @@ function freeze_player(player)
 		player.character_crafting_speed_modifier = -1
 		player.character_mining_speed_modifier = -1
 		player.character_running_speed_modifier = -1
-		--Unfortunately, the following gave errors that said the minimum value for each is zero.
-		--player.character_build_distance_bonus = -1
-		--player.character_item_drop_distance_bonus = -1
-		--player.character_reach_distance_bonus = -1
-		--player.character_resource_reach_distance_bonus = -1
-		--player.character_item_pickup_distance_bonus = -1
-		--player.character_loot_pickup_distance_bonus = -1
 	end
 end
 
@@ -460,12 +453,6 @@ function unfreeze_player(player)
 		player.character_crafting_speed_modifier = 0
 		player.character_mining_speed_modifier = 0
 		player.character_running_speed_modifier = 0
-		--player.character_build_distance_bonus = 0
-		--player.character_item_drop_distance_bonus = 0
-		--player.character_reach_distance_bonus = 0
-		--player.character_resource_reach_distance_bonus = 0
-		--player.character_item_pickup_distance_bonus = 0
-		--player.character_loot_pickup_distance_bonus = 0
 	end
 end
 
@@ -724,11 +711,16 @@ function spread_spawn(player)
 	return spread_spawn_position
 end
 
+function switch_teams(playername, forcename)
+	set_player(game.players[playername], game.forces[forcename], {0,0,0,0})
+end
+
 function set_player(player,force,color)
 	if player.gui.left.surrender_dialog then player.gui.left.surrender_dialog.destroy() end
 	player.force = force
 	player.color = color
 	local position = spread_spawn(player)
+	if player.character then player.character.destroy() end
 	player.character = global.surface.create_entity{name = "player", position = position, force = force}
 	if not global.teams_currently_preparing then
 		give_inventory(player)
@@ -759,6 +751,7 @@ function give_inventory(player)
 end
 
 function setup_teams()
+	game.create_force("Lobby")
 	if not global.force_list then error("No force list defined") return end
 	local list = global.force_list
 	local n = global.config.number_of_teams
