@@ -176,6 +176,12 @@ function prepare_next_round()
 	destroy_config_for_all()
 	global.next_round_start_tick = nil
 	global.setup_finished = false
+	global.surrender_votes = {}
+	for i,p in pairs(game.players) do
+		if p.gui.left.surrender_dialog then p.gui.left.surrender_dialog.destroy() end
+		p.gui.top.surrender_button.style.font_color = colors.white
+	end
+
 	prepare_map()
 	log_scenario("End prepare_next_round()")
 end
@@ -203,6 +209,19 @@ Event.register(defines.events.on_tick, function(event)
 	-- Runs every 5 seconds
 	if game.tick % 300 == 0 then
 		check_player_color(true)
+		if global.surrender_votes then
+			for force_name, votes in pairs(global.surrender_votes) do
+				if votes.in_progress and game.tick >= votes.vote_start_time + global.surrender_voting_period * 3600 then
+					local force = game.forces[force_name]
+					force.print("Surrender voting period ended without enough Yes votes.")
+					votes.in_progress = false			
+					for i,p in pairs(force.players) do
+						p.gui.top.surrender_button.style.font_color = colors.red
+						if p.gui.left.surrender_dialog then open_surrender_window(p) end
+					end
+				end
+			end
+		end
 	end
 
 	-- Runs every 30 seconds
@@ -697,6 +716,7 @@ function switch_teams(playername, forcename)
 end
 
 function set_player(player,force,color)
+	if player.gui.left.surrender_dialog then player.gui.left.surrender_dialog.destroy() end
 	player.force = force
 	player.color = color
 	local position = spread_spawn(player)
@@ -737,6 +757,11 @@ function setup_teams()
 	local n = global.config.number_of_teams
 	if n <= 0 then error ("Number of team to setup must be greater than 0")return end
 	if n > #list then error("Not enough forces defined for number of teams. Max teams is "..#list) return end
+	for i,player in pairs(game.players) do
+		global.surrender_votes = nil
+		if player.gui.left.surrender_dialog then player.gui.left.surrender_dialog.destroy() end
+		player.gui.top.surrender_button.style.font_color = colors.white
+	end
 	for k = 1, n do
 		if not list[k] then	break end
 		local name = list[k].name
