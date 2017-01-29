@@ -1,6 +1,7 @@
 
 function load_config()
 	global.shrink_from_edge_constant = 0.75
+	global.percentage_needed_to_surrender = 70 -- percentage
 	global.starting_inventory = "medium"
 	global.starting_equipment = "small"
 	global.team_joining = "player_pick"
@@ -8,20 +9,23 @@ function load_config()
 	global.alien_artifacts_gradual_remainder = 0
 	global.setup_finished = false
 	global.teams_currently_preparing = false
+	global.time_before_first_surrender_available = 15 -- minutes
+	global.surrender_vote_cooldown_period = 5 -- minutes
+	global.surrender_voting_period = 1 -- minutes
 	global.config =
 		{
-			["number_of_teams"] = 2,
+			["number_of_teams"] = 3,
 			["average_team_displacement"] = 75*32,
 			["team_max_variance"] = 1,
 			["team_min_variance"] = 1,
-			["map_height"] = 100*32,
-			["map_width"] = 100*32,
+			["map_height"] = 150*32,
+			["map_width"] = 150*32,
 			["copy_starting_area"] = true,
 			["reveal_team_positions"] = false,
 			["team_walls"] = true,
 			["continuous_play"] = true,
-			["time_between_rounds"] = 30, -- seconds
-			["team_prepare_period"] = 30, -- seconds
+			["time_between_rounds"] = 60, -- seconds
+			["team_prepare_period"] = 60, -- seconds
 			["research_level"] = {"science-pack-1", "science-pack-2", "science-pack-3", "alien-science-pack"}, --TODO fix for 0.15 packs when needed
 			["unlock_combat_research"] = false,
 			["starting_inventory"] = {"none", "small", "medium", "large"},

@@ -731,7 +731,9 @@ function give_inventory(player)
 end
 
 function setup_teams()
-	game.create_force("Lobby")
+	if not game.forces["Lobby"] then
+		game.create_force("Lobby")
+	end
 	if not global.force_list then error("No force list defined") return end
 	local list = global.force_list
 	local n = global.config.number_of_teams
