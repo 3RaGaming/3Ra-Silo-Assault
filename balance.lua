@@ -1,4 +1,4 @@
-local combat_technologies = 
+local combat_technologies =
 	{
 		"follower-robot-count",
 		"combat-robot-damage",
@@ -12,7 +12,7 @@ local combat_technologies =
 		"rocket-damage",
 		"rocket-speed",
 		"grenade-damage",
-		"flamethrower-damage"	
+		"flamethrower-damage"
 	}
 
 function disable_combat_technologies(force)
@@ -35,20 +35,20 @@ function apply_character_modifiers(force)
 	end
 end
 
-global.modifier_list = 
-	{ 
-		["character_modifiers"] = 
+global.modifier_list =
+	{
+		["character_modifiers"] =
 			{
 				["character_running_speed_modifier"] = 0.3,
 				["character_health_bonus"] = 100
 			},
-		["turret_attack_modifier"] = 
+		["turret_attack_modifier"] =
 			{
 				["laser-turret"] = -0.5,
 				["gun-turret"] = -0.5,
 				["flamethrower-turret"] = -0.5
 			},
-		["ammo_damage_modifier"] = 
+		["ammo_damage_modifier"] =
 			{
 				["bullet"] = 0.5,
 				["shotgun-shell"] =	0,
@@ -60,7 +60,7 @@ global.modifier_list =
 				["combat-robot-laser"] =	0,
 				["laser-turret"] =	0
 			},
-		["gun_speed_modifier"] = 
+		["gun_speed_modifier"] =
 			{
 				["bullet"] =	0,
 				["shotgun-shell"] =	0,
@@ -76,11 +76,11 @@ function apply_combat_modifiers(force)
 	for name, modifier in pairs (global.modifier_list.turret_attack_modifier) do
 		force.set_turret_attack_modifier(name, modifier)
 	end
-	
+
 	for name, modifier in pairs (global.modifier_list.ammo_damage_modifier) do
 		force.set_ammo_damage_modifier(name, modifier)
 	end
-	
+
 	for name, modifier in pairs (global.modifier_list.gun_speed_modifier) do
 		force.set_gun_speed_modifier(name, modifier)
 	end
@@ -92,11 +92,11 @@ function clear_combat_modifiers(force)
 	for name, modifier in pairs (global.modifier_list.turret_attack_modifier) do
 		force.set_turret_attack_modifier(name, 0)
 	end
-	
+
 	for name, modifier in pairs (global.modifier_list.ammo_damage_modifier) do
 		force.set_ammo_damage_modifier(name, 0)
 	end
-	
+
 	for name, modifier in pairs (global.modifier_list.gun_speed_modifier) do
 		force.set_gun_speed_modifier(name, 0)
 	end

@@ -36,7 +36,8 @@ function load_config()
 			["num_alien_artifacts_gradual"] = 40, -- per hour
 			["peaceful_mode"] = false,
 			["ceasefire"] = false,
-			["evolution_factor"] = 0
+			["evolution_factor"] = 0,
+			["chests_neutral"] = true
 		}
 
 	global.research_ingredient_list =

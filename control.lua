@@ -118,7 +118,7 @@ Event.register(defines.events.on_rocket_launched, function (event)
 		return
 	end
 	game.print({"team-launched-rocket",force.name})
-	print("PVPROUND$end," .. global.round_number .. "," .. force.name)
+	print("PVPROUND$end," .. global.round_number .. "," .. force.name..","..match_elapsed_time())
 
 	if global.config.continuous_play then
 		end_round()
@@ -161,7 +161,11 @@ function end_round()
 		game.delete_surface(game.surfaces["Battle_surface"])
 	end
 	global.kill_counts = {}
-	game.print{"next-round-start", global.config.time_between_rounds, global.config.team_prepare_period}
+	if global.config.team_prepare_period > 0 then
+		game.print{"next-round-start", global.config.time_between_rounds, global.config.team_prepare_period}
+	else
+		game.print{"next-round-start-no-prep", global.config.time_between_rounds}
+	end
 	global.next_round_start_tick = game.tick + global.config.time_between_rounds * 60
 	global.teams_currently_preparing = false
 	global.setup_finished = false
@@ -201,11 +205,11 @@ Event.register(defines.events.on_tick, function(event)
 			team_prepare()
 		end
 	end
-	
+
 	--runs every second
 	if(game.tick % 60 == 0) then
 	end
-	
+
 	-- Runs every 5 seconds
 	if game.tick % 300 == 0 then
 		check_player_color(true)
@@ -214,7 +218,7 @@ Event.register(defines.events.on_tick, function(event)
 				if votes.in_progress and game.tick >= votes.vote_start_time + global.surrender_voting_period * 3600 then
 					local force = game.forces[force_name]
 					force.print("Surrender voting period ended without enough Yes votes.")
-					votes.in_progress = false			
+					votes.in_progress = false
 					for i,p in pairs(force.players) do
 						p.gui.top.surrender_button.style.font_color = colors.red
 						if p.gui.left.surrender_dialog then open_surrender_window(p) end
@@ -387,24 +391,26 @@ Event.register(defines.events.on_entity_died, function(event)
 		print("PVPROUND$eliminated," .. force.name .. "," .. killing_force.name)
 		game.merge_forces(force.name, killing_force.name)
 	end
+	game.print("1")
 	if index > 1 then return end
+	game.print("2")
 	global.ending_tick = game.tick + 300
 	global.ending_tick_2 = game.tick + 480
 	global.silo_position = silo.position
-	global.dummie_silo = surface.create_entity{name = "rocket-silo", position = global.silo_position, force = neutral}
+	global.dummie_silo = surface.create_entity{name = "rocket-silo", position = global.silo_position, force = "neutral"}
 	endgame = true
-	for k, player in pairs (game.connected_players) do 
+	for k, player in pairs (game.connected_players) do
 		local character = player.character
-			player.character = nil
-			player.teleport(silo.position, surface)
-			global.zoom_count = 1
-			player.zoom = global.zoom_count
-	end	
+		player.character = nil
+		player.teleport(silo.position, surface)
+		global.zoom_count = 1
+		player.zoom = global.zoom_count
+	end
 	global.zoom_count = global.zoom_count + (1/300)
-	
+	local time = match_elapsed_time()
 	game.print({"team-won",winner_name})
-	game.print("Match lasted " .. match_elapsed_time() .. ".")
-	print("PVPROUND$end," .. global.round_number .. "," .. winner_name)
+	game.print("Match lasted " .. time:gsub(";", ",") .. ".")
+	game.print("PVPROUND$end," .. global.round_number .. "," .. winner_name .. "," .. time)
 end)
 
 function end_game()
@@ -413,28 +419,28 @@ function end_game()
 	local surface = global.surface
 	local x = global.silo_position.x
 	local y = global.silo_position.y
-	for k, player in pairs (game.connected_players) do 
+	for k, player in pairs (game.connected_players) do
 		local surface = global.surface
 		local character = player.character
 			player.character = nil
 			player.teleport(global.silo_position, surface)
 			player.zoom = global.zoom_count
-	end	
+	end
 	global.zoom_count = global.zoom_count - (1/3000)
 	if game.tick < global.ending_tick and game.tick % 20 == 0 then
-    surface.create_entity{position = {x + math.random(-4,4),y + math.random(-4,4)}, name = "medium-explosion"}   
+    surface.create_entity{position = {x + math.random(-4,4),y + math.random(-4,4)}, name = "medium-explosion"}
 	end
 	if game.tick == global.ending_tick then
 	if global.dummie_silo then global.dummie_silo.destroy() end
-	surface.create_entity{position = global.silo_position, name = "big-explosion"} 
+	surface.create_entity{position = global.silo_position, name = "big-explosion"}
 	end
 	if game.tick == global.ending_tick_2 then
-	
+
 		if global.config.continuous_play then
 			end_round()
 			endgame = false
 		end
-	end	
+	end
 
 end
 
@@ -481,14 +487,14 @@ function team_prepare()
 end
 
 function match_elapsed_time()
-	local ticks = game.tick - global.match_start_time
+	local ticks = game.tick - global.match_start_time - global.config.team_prepare_period
 	local hours = math.floor(ticks / 60^3)
 	local minutes = math.floor((ticks % 60^3) / 60^2)
 	local seconds = math.floor((ticks % 60^2) / 60)
 	local returnstring = ""
-	if hours > 0 then returnstring = hours .. " hours, " end
-	if minutes > 0 then returnstring = returnstring .. minutes .. " minutes and " end
-	returnstring = returnstring .. seconds .. " seconds"
+	if hours > 0 then returnstring = hours .. (hours > 1 and " hours; " or " hour; ") end
+	if minutes > 0 then returnstring = returnstring .. minutes .. (minutes > 1 and " minutes" or " minute").. " and " end
+	returnstring = returnstring .. seconds .. (seconds ~= 1 and " seconds" or "second")
 	return returnstring
 end
 
@@ -861,13 +867,13 @@ end
 function chart_starting_area_for_force_spawns()
 	local surface = global.surface
 	local size = global.copy_surface.map_gen_settings.starting_area
-	local radius = math.ceil(starting_area_constant[size]/64)
+	local radius = math.ceil((starting_area_constant[size] + 350) / 64)
 	for k = 1, global.config.number_of_teams do
 		local name = global.force_list[k].name
 		local force = game.forces[name]
 		if force ~= nil then
 			local origin = force.get_spawn_position(surface)
-			local area = {{origin.x-200, origin.y-200},{origin.x+200,origin.y+200}}
+			local area = {{origin.x-500, origin.y-500},{origin.x+500,origin.y+500}}
 			--force.chart(surface, area)
 			surface.request_to_generate_chunks({origin.x, origin.y}, radius)
 			force.chart(surface, area)
@@ -882,7 +888,7 @@ function check_starting_area_chunks_are_generated()
 	local surface = global.surface
 	local size = global.copy_surface.map_gen_settings.starting_area
 	--local check_radius = math.ceil(starting_area_constant[size]/64)
-	local check_radius = math.ceil(starting_area_constant[size]/16)
+	local check_radius = math.ceil((starting_area_constant[size] + 350) / 64)
 	local total = 0
 	local generated = 0
 	for k = 1, global.config.number_of_teams do
@@ -902,7 +908,6 @@ function check_starting_area_chunks_are_generated()
 			end
 		end
 	end
-	--game.print(total.."-"..generated)
 	if total == generated then
 		game.speed = 1
 		global.check_starting_area_generation = false
@@ -961,7 +966,7 @@ function finish_setup()
 	if not global.finish_setup then return end
 	local index = global.finish_setup - game.tick
 	local surface = global.surface
-	if index == 0 then
+	if index == 0 and not global.check_starting_area_generation then
 		global.finish_setup = nil
 		game.print({"map-ready"})
 		global.setup_finished = true
@@ -970,7 +975,9 @@ function finish_setup()
 			choose_joining_gui(player)
 		end
 		global.teams_currently_preparing = true
-		game.print({"team-preparing-period-start",global.config.team_prepare_period})
+		if global.config.team_prepare_period > 0 then
+			game.print({"team-preparing-period-start",global.config.team_prepare_period})
+		end
 		return
 	end
 	local name = global.force_list[index].name
@@ -1048,7 +1055,6 @@ function copy_paste_starting_area_tiles()
 	local chunk_position_y = offset[2]+((origin.y)/32)
 	if not (chunk_position_y == math.floor(chunk_position_y)) then game.print("Chunk position calculated from force spawn was not an integer") return end
 	global.surface.set_chunk_generated_status({chunk_position_x,chunk_position_y}, defines.chunk_generated_status.entities)
-
 end
 
 function copy_paste_starting_area_entities()
@@ -1087,13 +1093,14 @@ function copy_paste_starting_area_entities()
 			end
 		end
 	end
+	chart_starting_area_for_force_spawns()
 end
 
 
 function create_silo_for_force(force)
 	if not global.silos then global.silos = {} end
 	if not force then return end
-	if not force.valid then return end
+	if not force.valid or global.silos[force.name] then return end
 	local surface = global.surface
 	local origin = force.get_spawn_position(surface)
 	local offset_x = 0
@@ -1192,6 +1199,12 @@ function create_wall_for_force(force)
 	surface.set_tiles(tiles_grass)
 	surface.set_tiles(tiles)
 end
+
+Event.register(defines.events.on_built_entity, function(event)
+	if event.created_entity.type == "container" and global.config.chests_neutral then
+		event.created_entity.force = "neutral"
+	end
+end)
 
 function fpn(n)
 	return (math.floor(n*32)/32)

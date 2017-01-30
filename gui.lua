@@ -4,7 +4,7 @@ Event.register(defines.events.on_gui_click, function(event)
 	local gui = event.element
 	local player = game.players[event.player_index]
 	local index = event.player_index
-	
+
 	if not event.element.valid then return end
 	-- Turns on/off Flashlight
 	if (event.element.name == "flashlight_button") then
@@ -28,11 +28,11 @@ Event.register(defines.events.on_gui_click, function(event)
 				global.player_crouch_state = false
 				player.character_running_speed_modifier = 0
 				player.color = global.player_crouch_color
-			else 
+			else
 				global.player_crouch_state = true
 				player.character_running_speed_modifier = -0.6
 				global.player_crouch_color = player.color
-				player.color = black				
+				player.color = black
 			end
 		end
 
@@ -60,7 +60,7 @@ Event.register(defines.events.on_gui_click, function(event)
 				end
 			end
 		end
-	
+
 	elseif (event.element.name == "players_button") then
 		if player.gui.left.players_list then
 			player.gui.left.players_list.destroy()
@@ -92,7 +92,7 @@ Event.register(defines.events.on_gui_click, function(event)
 	elseif (event.element.name == "surrender_vote_yes") then
 		local votes = global.surrender_votes[player.force.name]
 		if votes.buttons_disabled then return end
-		
+
 		local vote_initiated = false
 		if not votes.in_progress then
 			if is_too_soon_to_surrender(player.force) then return end
@@ -197,7 +197,7 @@ Event.register(defines.events.on_gui_click, function(event)
 			local force = game.forces[team.name]
 			if force then
 				local check = gui.parent.pick_join_table[force.name]
-				if check.state then 
+				if check.state then
 					local c = team.color
 					local color = {r = fpn(c[1]), g = fpn(c[2]), b = fpn(c[3]), a = fpn(c[4])}
 					gui.parent.destroy()
@@ -210,7 +210,7 @@ Event.register(defines.events.on_gui_click, function(event)
 			end
 		end
 	end
-	
+
 end)
 
 function add_surrender_label(player, message)
@@ -218,7 +218,7 @@ function add_surrender_label(player, message)
 	local surrender_error_label = surrender_table.add{type = "label", name = surrender_error_label, caption = message}
 	return surrender_error_label
 end
-	
+
 function open_surrender_window(player)
 	if player.gui.left.surrender_dialog then player.gui.left.surrender_dialog.destroy() end
 
@@ -228,12 +228,12 @@ function open_surrender_window(player)
 	local button_table = surrender_table.add{type = "table", name = "button_table", colspan = 2}
 	local surrender_vote_yes = button_table.add{type = "button", name = "surrender_vote_yes", caption = "Yes"}
 	local surrender_vote_no = button_table.add{type = "button", name = "surrender_vote_no", caption = "No"}
-	
+
 	if not global.surrender_votes then global.surrender_votes = {} end  --this contains the surrender vote information for all teams
 	local votes
-	if not global.surrender_votes[player.force.name] then 
+	if not global.surrender_votes[player.force.name] then
 		global.surrender_votes[player.force.name] = {}
-		votes = global.surrender_votes[player.force.name]		
+		votes = global.surrender_votes[player.force.name]
 		votes.in_progress = false
 		votes.voted_at_least_once = false
 	else
@@ -243,7 +243,7 @@ function open_surrender_window(player)
 	if votes.in_progress or votes.already_surrendered then add_surrender_vote_tally_table(player) end
 	local surrender_info_label = surrender_table.add{type = "label", name = surrender_info_label, caption = "70% Yes vote required for surrender."}
 	local contact_author_label = surrender_table.add{type = "label", name = contact_author_label, caption = "Please contact @JuicyJuuce in Discord regarding surrender bugs!"}
-	
+
 	local surrender_error_message = nil
 	if     player.force.name == "player"
 	    or player.force.name == "Admins"
@@ -321,13 +321,13 @@ function update_surrender_tally(player, vote_initiated)
 		for i,p in pairs(player.force.players) do
 			p.gui.top.surrender_button.style.font_color = colors.red
 		end
-		votes.in_progress = false			
+		votes.in_progress = false
 	elseif game.tick > global.surrender_votes[player.force.name].vote_start_time + global.surrender_voting_period * 3600 then
 		player.force.print("Surrender voting period ended without enough Yes votes.")
 		for i,p in pairs(player.force.players) do
 			p.gui.top.surrender_button.style.font_color = colors.red
 		end
-		votes.in_progress = false			
+		votes.in_progress = false
 	end
 	for i,p in pairs(player.force.players) do
 		if vote_initiated or p.gui.left.surrender_dialog then open_surrender_window(p) end
@@ -351,7 +351,7 @@ function create_buttons(event)
 	if (not player.gui.top["crouch_button"]) then
 		local frame = player.gui.top.add{name = "crouch_button", type = "button", direction = "horizontal", caption = "Crouch"}
 	end
-	
+
 	if (not player.gui.top["score_button"]) then
 		player.gui.top.add{type="button", name="score_button", caption="Score"}
 	end
@@ -363,7 +363,7 @@ function create_buttons(event)
 	if (not player.gui.top["surrender_button"]) then
 		player.gui.top.add{type="button", name="surrender_button", caption="Surrender Menu"}
 	end
-end	
+end
 
 function welcome_window(player)
 	local center = player.gui.center
@@ -393,12 +393,12 @@ function choose_joining_gui(player)
 		create_pick_join_gui(player.gui.center)
 		return
 	end
-	
+
 	if global.team_joining == "auto_assign" then
 		create_auto_assign_gui(player.gui.center)
 		return
 	end
-	
+
 end
 
 function destroy_joining_guis(gui)
@@ -510,7 +510,7 @@ function create_balance_option(gui)
 			else
 				table.add{name = name.."label", type = "label", caption = {name}}
 			end
-			
+
 
 			local input = table.add{name = name.."text", type = "textfield"}
 			input.text = modifier
@@ -518,7 +518,7 @@ function create_balance_option(gui)
 	end
 	frame.add{type = "button", name = "balance_options_confirm", caption = {"config-confirm"}}.style.font = "default"
 	frame.add{type = "button", name = "balance_options_cancel", caption = {"cancel"}}.style.font = "default"
-	
+
 end
 
 function set_balance_settings(gui)
@@ -529,7 +529,7 @@ function set_balance_settings(gui)
 				local text = modifier_table[name.."text"].text
 				if text then
 					local n = tonumber(text)
-					if n == nil then 
+					if n == nil then
 						game.players[gui.player_index].print({"must-be-number",name})
 						return
 					end
@@ -565,7 +565,7 @@ function config_confirm(gui)
 		player.print({"more-than-1-team"})
 		return
 	end
-	if global.config.number_of_teams > 9 then 
+	if global.config.number_of_teams > 9 then
 		player.print({"less-than-9-teams"})
 		return
 	end
@@ -577,7 +577,7 @@ function destroy_config_for_all()
 	for k, player in pairs (game.players) do
 		if player.gui.left.config_gui then
 			player.gui.left.config_gui.destroy()
-		end	
+		end
 		if player.gui.left.balance_options_frame then
 			player.gui.left.balance_options_frame.destroy()
 		end
