@@ -1,6 +1,7 @@
 
 function load_config()
 	global.shrink_from_edge_constant = 0.75
+	global.percentage_needed_to_surrender = 70 -- percentage
 	global.starting_inventory = "medium"
 	global.starting_equipment = "small"
 	global.team_joining = "player_pick"
@@ -8,20 +9,23 @@ function load_config()
 	global.alien_artifacts_gradual_remainder = 0
 	global.setup_finished = false
 	global.teams_currently_preparing = false
+	global.time_before_first_surrender_available = 15 -- minutes
+	global.surrender_vote_cooldown_period = 5 -- minutes
+	global.surrender_voting_period = 1 -- minutes
 	global.config =
 		{
-			["number_of_teams"] = 2,
+			["number_of_teams"] = 3,
 			["average_team_displacement"] = 75*32,
 			["team_max_variance"] = 1,
 			["team_min_variance"] = 1,
-			["map_height"] = 100*32,
-			["map_width"] = 100*32,
+			["map_height"] = 150*32,
+			["map_width"] = 150*32,
 			["copy_starting_area"] = true,
 			["reveal_team_positions"] = false,
 			["team_walls"] = true,
 			["continuous_play"] = true,
-			["time_between_rounds"] = 30, -- seconds
-			["team_prepare_period"] = 30, -- seconds
+			["time_between_rounds"] = 60, -- seconds
+			["team_prepare_period"] = 60, -- seconds
 			["research_level"] = {"science-pack-1", "science-pack-2", "science-pack-3", "alien-science-pack"}, --TODO fix for 0.15 packs when needed
 			["unlock_combat_research"] = false,
 			["starting_inventory"] = {"none", "small", "medium", "large"},
@@ -80,7 +84,7 @@ function load_config()
 			["small-electric-pole"] = 40,
 			["burner-mining-drill"] = 16,
 			["stone-furnace"] = 12,
-			["burner-inserter"] = 30,
+			["burner-inserter"] = 7,
 			["assembling-machine-1"] = 8,
 			["electric-mining-drill"] = 2,
 			["boiler"] = 7,
@@ -103,7 +107,7 @@ function load_config()
 			["burner-inserter"] = 14,
 			["small-electric-pole"] = 40,
 			["repair-pack"] = 20,
-			["burner-mining-drill"] = 10,
+			["burner-mining-drill"] = 30,
 			["electric-mining-drill"] = 20,
 			["stone-furnace"] = 50,
 			["steel-furnace"] = 20,
@@ -128,7 +132,7 @@ function load_config()
 			["splitter"] = 40,
 			["repair-pack"] = 20,
 			["inserter"] = 100,
-			["burner-inserter"] = 50,
+			["burner-inserter"] = 28,
 			["small-electric-pole"] = 50,
 			["burner-mining-drill"] = 50,
 			["electric-mining-drill"] = 50,
@@ -142,7 +146,7 @@ function load_config()
 			["fast-inserter"] = 100,
 			["medium-electric-pole"] = 50,
 			["substation"] = 10,
-			["boiler"] = 30,
+			["boiler"] = 28,
 			["steam-engine"] = 20,
 			["chemical-plant"] = 10,
 			["oil-refinery"] = 5,
@@ -165,7 +169,7 @@ function give_equipment(player)
 		player.insert{name = "light-armor", count = 1}
 		player.insert{name = "steel-axe", count = 1}
 		player.insert{name = "submachine-gun", count = 1}
-		player.insert{name = "firearm-magazine", count = 40}
+		player.insert{name = "piercing-rounds-magazine", count = 40}
 		return
 	end
 

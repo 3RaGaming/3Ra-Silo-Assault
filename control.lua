@@ -173,8 +173,15 @@ end
 
 function prepare_next_round()
 	log_scenario("Begin prepare_next_round()")
+	destroy_config_for_all()
 	global.next_round_start_tick = nil
 	global.setup_finished = false
+	global.surrender_votes = {}
+	for i,p in pairs(game.players) do
+		if p.gui.left.surrender_dialog then p.gui.left.surrender_dialog.destroy() end
+		p.gui.top.surrender_button.style.font_color = colors.white
+	end
+
 	prepare_map()
 	log_scenario("End prepare_next_round()")
 end
@@ -185,6 +192,8 @@ global.timer_wait = 600
 global.timer_display = 1
 
 Event.register(defines.events.on_tick, function(event)
+	--runs every tick
+	end_game()
 	--runs every 500ms
 	if(game.tick % 30 == 0) then
 		show_health()
@@ -200,6 +209,19 @@ Event.register(defines.events.on_tick, function(event)
 	-- Runs every 5 seconds
 	if game.tick % 300 == 0 then
 		check_player_color(true)
+		if global.surrender_votes then
+			for force_name, votes in pairs(global.surrender_votes) do
+				if votes.in_progress and game.tick >= votes.vote_start_time + global.surrender_voting_period * 3600 then
+					local force = game.forces[force_name]
+					force.print("Surrender voting period ended without enough Yes votes.")
+					votes.in_progress = false			
+					for i,p in pairs(force.players) do
+						p.gui.top.surrender_button.style.font_color = colors.red
+						if p.gui.left.surrender_dialog then open_surrender_window(p) end
+					end
+				end
+			end
+		end
 	end
 
 	-- Runs every 30 seconds
@@ -247,6 +269,7 @@ Event.register(defines.events.on_player_joined_game, function(event)
 	if player.force.name ~= "player" then
 		for k, p in pairs (game.players) do
 			update_players_on_team_count(p)
+			update_scoreboard()
 		end
 		return
 	end
@@ -294,6 +317,7 @@ Event.register(defines.events.on_player_left_game, function(event)
 	if player.force.name ~= "player" then
 		for k, p in pairs (game.players) do
 			update_players_on_team_count(p)
+			update_scoreboard()
 		end
 		return
 	end
@@ -322,6 +346,7 @@ end)
 Event.register(defines.events.on_entity_died, function(event)
 	local killing_force = event.force
 	local silo = event.entity
+	local surface = global.surface
 	if not silo or not silo.valid then return end
 	if silo.name ~= "rocket-silo" then return end
 	log_scenario("rocket silo died")
@@ -363,13 +388,55 @@ Event.register(defines.events.on_entity_died, function(event)
 		game.merge_forces(force.name, killing_force.name)
 	end
 	if index > 1 then return end
+	global.ending_tick = game.tick + 300
+	global.ending_tick_2 = game.tick + 480
+	global.silo_position = silo.position
+	global.dummie_silo = surface.create_entity{name = "rocket-silo", position = global.silo_position, force = neutral}
+	endgame = true
+	for k, player in pairs (game.connected_players) do 
+		local character = player.character
+			player.character = nil
+			player.teleport(silo.position, surface)
+			global.zoom_count = 1
+			player.zoom = global.zoom_count
+	end	
+	global.zoom_count = global.zoom_count + (1/300)
+	
 	game.print({"team-won",winner_name})
 	game.print("Match lasted " .. match_elapsed_time() .. ".")
 	print("PVPROUND$end," .. global.round_number .. "," .. winner_name)
-	if global.config.continuous_play then
-		end_round()
-	end
 end)
+
+function end_game()
+	--called in on_tick
+	if endgame ~= true then return end
+	local surface = global.surface
+	local x = global.silo_position.x
+	local y = global.silo_position.y
+	for k, player in pairs (game.connected_players) do 
+		local surface = global.surface
+		local character = player.character
+			player.character = nil
+			player.teleport(global.silo_position, surface)
+			player.zoom = global.zoom_count
+	end	
+	global.zoom_count = global.zoom_count - (1/3000)
+	if game.tick < global.ending_tick and game.tick % 20 == 0 then
+    surface.create_entity{position = {x + math.random(-4,4),y + math.random(-4,4)}, name = "medium-explosion"}   
+	end
+	if game.tick == global.ending_tick then
+	if global.dummie_silo then global.dummie_silo.destroy() end
+	surface.create_entity{position = global.silo_position, name = "big-explosion"} 
+	end
+	if game.tick == global.ending_tick_2 then
+	
+		if global.config.continuous_play then
+			end_round()
+			endgame = false
+		end
+	end	
+
+end
 
 function freeze_player(player)
 	if player.character then
@@ -377,13 +444,6 @@ function freeze_player(player)
 		player.character_crafting_speed_modifier = -1
 		player.character_mining_speed_modifier = -1
 		player.character_running_speed_modifier = -1
-		--Unfortunately, the following gave errors that said the minimum value for each is zero.
-		--player.character_build_distance_bonus = -1
-		--player.character_item_drop_distance_bonus = -1
-		--player.character_reach_distance_bonus = -1
-		--player.character_resource_reach_distance_bonus = -1
-		--player.character_item_pickup_distance_bonus = -1
-		--player.character_loot_pickup_distance_bonus = -1
 	end
 end
 
@@ -393,12 +453,6 @@ function unfreeze_player(player)
 		player.character_crafting_speed_modifier = 0
 		player.character_mining_speed_modifier = 0
 		player.character_running_speed_modifier = 0
-		--player.character_build_distance_bonus = 0
-		--player.character_item_drop_distance_bonus = 0
-		--player.character_reach_distance_bonus = 0
-		--player.character_resource_reach_distance_bonus = 0
-		--player.character_item_pickup_distance_bonus = 0
-		--player.character_loot_pickup_distance_bonus = 0
 	end
 end
 
@@ -411,12 +465,14 @@ function team_prepare()
 		end
 	else
 		-- Unfreezes players.
-		for k, player in pairs (game.players) do
-			pcall(unfreeze_player, player)
-			if not global.given_starting_items[player.index] then
-				give_equipment(player)
-				give_inventory(player)
-				global.given_starting_items[player.index] = true
+		for k, player in pairs (game.connected_players) do
+			if player.character then
+				pcall(unfreeze_player, player)
+				if not global.given_starting_items[player.index] then
+					give_equipment(player)
+					give_inventory(player)
+					global.given_starting_items[player.index] = true
+				end
 			end
 		end
 		global.teams_currently_preparing = false
@@ -647,7 +703,7 @@ function spread_spawn(player)
 	local surface = global.surface
 	if not surface.valid then error("global.surface is false!") return end
 	force_spawn = player.force.get_spawn_position(surface)
-	local spread = 27 --how far away from the actual force spawn position to teleport the player
+	local spread = 38 --how far away from the actual force spawn position to teleport the player
 	local spread_spawn_x = math.random(-1*spread, spread) + force_spawn.x
 	local spread_spawn_y = math.random(-1*spread, spread) + force_spawn.y
 	local spread_spawn_position = surface.find_non_colliding_position("player", {spread_spawn_x, spread_spawn_y},64,1)
@@ -655,10 +711,16 @@ function spread_spawn(player)
 	return spread_spawn_position
 end
 
+function switch_teams(playername, forcename)
+	set_player(game.players[playername], game.forces[forcename], {0,0,0,0})
+end
+
 function set_player(player,force,color)
+	if player.gui.left.surrender_dialog then player.gui.left.surrender_dialog.destroy() end
 	player.force = force
 	player.color = color
 	local position = spread_spawn(player)
+	if player.character then player.character.destroy() end
 	player.character = global.surface.create_entity{name = "player", position = position, force = force}
 	force.chart(player.surface, {{-radius,-radius},{radius, radius}})
 	if not global.teams_currently_preparing then
@@ -668,6 +730,7 @@ function set_player(player,force,color)
 	end
 	game.print({"joined", player.name, player.force.name})
 	player.print({"objective"})
+	update_scoreboard()
 	if     global.alien_artifacts_source == "biters_enabled"       then player.print({"biters_enabled_message"})
 	elseif global.alien_artifacts_source == "alien_tech_research"  then player.print({"alien_tech_research_message",global.config.num_alien_artifacts_on_tech})
 	elseif global.alien_artifacts_source == "gradual_distribution" then player.print({"gradual_distribution_message",global.config.num_alien_artifacts_gradual})
@@ -689,11 +752,19 @@ function give_inventory(player)
 end
 
 function setup_teams()
+	if not game.forces["Lobby"] then
+		game.create_force("Lobby")
+	end
 	if not global.force_list then error("No force list defined") return end
 	local list = global.force_list
 	local n = global.config.number_of_teams
 	if n <= 0 then error ("Number of team to setup must be greater than 0")return end
 	if n > #list then error("Not enough forces defined for number of teams. Max teams is "..#list) return end
+	for i,player in pairs(game.players) do
+		global.surrender_votes = nil
+		if player.gui.left.surrender_dialog then player.gui.left.surrender_dialog.destroy() end
+		player.gui.top.surrender_button.style.font_color = colors.white
+	end
 	for k = 1, n do
 		if not list[k] then	break end
 		local name = list[k].name
