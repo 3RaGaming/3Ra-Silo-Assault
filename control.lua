@@ -728,7 +728,7 @@ function set_player(player,force,color)
 	local position = spread_spawn(player)
 	if player.character then player.character.destroy() end
 	player.character = global.surface.create_entity{name = "player", position = position, force = force}
-	force.chart(player.surface, {{-radius,-radius},{radius, radius}})
+	--force.chart(player.surface, {{-radius,-radius},{radius, radius}})
 	if not global.teams_currently_preparing then
 		give_inventory(player)
 		give_equipment(player)
@@ -965,6 +965,7 @@ end
 function finish_setup()
 	if not global.finish_setup then return end
 	local index = global.finish_setup - game.tick
+	--log("index = " .. index)
 	local surface = global.surface
 	if index == 0 and not global.check_starting_area_generation then
 		global.finish_setup = nil
@@ -980,16 +981,18 @@ function finish_setup()
 		end
 		return
 	end
-	local name = global.force_list[index].name
-	local force = game.forces[name]
-	create_silo_for_force(force)
-	--chart_area_for_force(surface, global.silos[force.name].position, 350, force)
-	if global.config.reveal_team_positions then
-		for k, other_force in pairs (game.forces) do
-			chart_area_for_force(surface, global.silos[force.name].position, 16, other_force)
+	if index > 0 then
+		local name = global.force_list[index].name
+		local force = game.forces[name]
+		create_silo_for_force(force)
+		--chart_area_for_force(surface, global.silos[force.name].position, 350, force)
+		if global.config.reveal_team_positions then
+			for k, other_force in pairs (game.forces) do
+				chart_area_for_force(surface, global.silos[force.name].position, 16, other_force)
+			end
 		end
+		create_wall_for_force(force)
 	end
-	create_wall_for_force(force)
 end
 
 function chart_area_for_force(surface, origin, radius, force)
