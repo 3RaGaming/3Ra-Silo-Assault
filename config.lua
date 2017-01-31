@@ -2,6 +2,7 @@
 function load_config()
 	global.shrink_from_edge_constant = 0.75
 	global.percentage_needed_to_surrender = 70 -- percentage
+	global.minimum_yes_votes_to_surrender = 4
 	global.starting_inventory = "medium"
 	global.starting_equipment = "small"
 	global.team_joining = "player_pick"

@@ -241,7 +241,13 @@ function open_surrender_window(player)
 	end
 	votes.buttons_disabled = false
 	if votes.in_progress or votes.already_surrendered then add_surrender_vote_tally_table(player) end
-	local surrender_info_label = surrender_table.add{type = "label", name = surrender_info_label, caption = "70% Yes vote required for surrender."}
+	local minimum_vote_message
+	if global.minimum_yes_votes_to_surrender == 0 then
+		minimum_vote_message = global.percentage_needed_to_surrender .. "% Yes vote required for surrender."
+	else
+		minimum_vote_message = "At least " .. global.minimum_yes_votes_to_surrender .." Yes votes and " .. global.percentage_needed_to_surrender .. "% overall Yes vote required for surrender."
+	end
+	local surrender_info_label = surrender_table.add{type = "label", name = surrender_info_label, caption = minimum_vote_message}
 	local contact_author_label = surrender_table.add{type = "label", name = contact_author_label, caption = "Please contact @JuicyJuuce in Discord regarding surrender bugs!"}
 
 	local surrender_error_message = nil
@@ -308,7 +314,7 @@ function update_surrender_tally(player, vote_initiated)
 	end
 
 	local surrendered_successfully = false
-	if votes.yes_votes_count / votes.current_possible_total_votes >= global.percentage_needed_to_surrender / 100 then
+	if votes.yes_votes_count > global.minimum_yes_votes_to_surrender and votes.yes_votes_count / votes.current_possible_total_votes >= global.percentage_needed_to_surrender / 100 then
 		game.print(player.force.name .. " team has voted to surrender!")
 		votes.in_progress = false
 		votes.already_surrendered = true
