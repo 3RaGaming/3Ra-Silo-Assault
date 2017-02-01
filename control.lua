@@ -460,7 +460,7 @@ end
 
 function freeze_player(player)
 	if player.character then
-		player.zoom = 0.1
+		player.zoom = 0.085
 		player.character_crafting_speed_modifier = -1
 		player.character_mining_speed_modifier = -1
 		player.character_running_speed_modifier = -1
@@ -882,13 +882,13 @@ end
 function chart_starting_area_for_force_spawns()
 	local surface = global.surface
 	local size = global.copy_surface.map_gen_settings.starting_area
-	local radius = math.ceil((starting_area_constant[size] + 350) / 64)
+	local radius = math.ceil((starting_area_constant[size] + 240) / 64)
 	for k = 1, global.config.number_of_teams do
 		local name = global.force_list[k].name
 		local force = game.forces[name]
 		if force ~= nil then
 			local origin = force.get_spawn_position(surface)
-			local area = {{origin.x-500, origin.y-500},{origin.x+500,origin.y+500}}
+			local area = {{origin.x-416, origin.y-256},{origin.x+416,origin.y+256}}
 			--force.chart(surface, area)
 			surface.request_to_generate_chunks({origin.x, origin.y}, radius)
 			force.chart(surface, area)
@@ -903,7 +903,7 @@ function check_starting_area_chunks_are_generated()
 	local surface = global.surface
 	local size = global.copy_surface.map_gen_settings.starting_area
 	--local check_radius = math.ceil(starting_area_constant[size]/64)
-	local check_radius = math.ceil((starting_area_constant[size] + 350) / 64)
+	local check_radius = math.ceil((starting_area_constant[size] + 240) / 64)
 	local total = 0
 	local generated = 0
 	for k = 1, global.config.number_of_teams do
