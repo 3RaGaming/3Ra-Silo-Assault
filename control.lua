@@ -424,7 +424,7 @@ Event.register(defines.events.on_entity_died, function(event)
 	local time = match_elapsed_time()
 	game.print({"team-won",winner_name})
 	game.print("Match lasted " .. time:gsub(";", ",") .. ".")
-	game.print("PVPROUND$end," .. global.round_number .. "," .. winner_name .. "," .. time)
+	print("PVPROUND$end," .. global.round_number .. "," .. winner_name .. "," .. time)
 end)
 
 function end_game()
