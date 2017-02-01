@@ -23,6 +23,7 @@ require "locale/utils/bot"
 global.crippling_factor = 1
 
 global.given_starting_items = {}
+global.silo_progress_warning_level = {}
 
 black = {r = 0, g = 0, b = 0}
 
@@ -115,6 +116,7 @@ Event.register(defines.events.on_rocket_launched, function (event)
 	local force = event.rocket.force
 	if event.rocket.get_item_count("satellite") == 0 then
 		force.print({"rocket-launched-without-satellite"})
+		global.silo_progress_warning_level[force.name] = 1
 		return
 	end
 	game.print({"team-launched-rocket",force.name})
@@ -170,6 +172,7 @@ function end_round()
 	global.teams_currently_preparing = false
 	global.setup_finished = false
 	global.given_starting_items = {}
+	global.silo_progress_warning_level = {}
 
 	game.evolution_factor = 0
 	log_scenario("End end_round()")
@@ -208,6 +211,17 @@ Event.register(defines.events.on_tick, function(event)
 
 	--runs every second
 	if(game.tick % 60 == 0) then
+		for force_name, warning_level in pairs(global.silo_progress_warning_level) do
+			if global.silos[force_name].rocket_parts >= warning_level then
+				if warning_level == 1 then
+					game.print({"rocket-assembly-begun", force_name})
+					global.silo_progress_warning_level[force_name] = 10
+				else
+					game.print({"rocket-assembly-progress", force_name, warning_level})
+					global.silo_progress_warning_level[force_name] = warning_level + 10
+				end
+			end
+		end
 	end
 
 	-- Runs every 5 seconds
@@ -217,7 +231,7 @@ Event.register(defines.events.on_tick, function(event)
 			for force_name, votes in pairs(global.surrender_votes) do
 				if votes.in_progress and game.tick >= votes.vote_start_time + global.surrender_voting_period * 3600 then
 					local force = game.forces[force_name]
-					force.print("Surrender voting period ended without enough Yes votes.")
+					force.print({"voting-period-timed-out"})
 					votes.in_progress = false
 					for i,p in pairs(force.players) do
 						p.gui.top.surrender_button.style.font_color = colors.red
@@ -736,6 +750,7 @@ function set_player(player,force,color)
 	end
 	game.print({"joined", player.name, player.force.name})
 	player.print({"objective"})
+	player.print({"objective-warning"})
 	update_scoreboard()
 	if     global.alien_artifacts_source == "biters_enabled"       then player.print({"biters_enabled_message"})
 	elseif global.alien_artifacts_source == "alien_tech_research"  then player.print({"alien_tech_research_message",global.config.num_alien_artifacts_on_tech})
@@ -1116,6 +1131,7 @@ function create_silo_for_force(force)
 	global.silos[force.name] = surface.create_entity{name = "rocket-silo", position = silo_position, force = force}
 	global.silos[force.name].minable = false
 	global.silos[force.name].backer_name = tostring(force.name)
+	global.silo_progress_warning_level[force.name] = 1
 	local tiles_1 = {}
 	local tiles_2 = {}
 	for X = -5, 5 do

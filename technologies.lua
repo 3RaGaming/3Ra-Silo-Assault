@@ -20,6 +20,7 @@ Event.register(defines.events.on_research_finished, function (event)
 		then game.print({"force-researched-warning",research.force.name,research.localised_name}) end
 	end
 	
+	research.force.recipes["rocket-silo"].enabled=false
 	--research.force.recipes["laser-turret"].enabled=false
 	--research.force.recipes["discharge-defense-equipment"].enabled=false
 	research.force.recipes["construction-robot"].enabled=false
