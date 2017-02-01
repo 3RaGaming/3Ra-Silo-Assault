@@ -1132,7 +1132,7 @@ function setup_research(force)
 	if not force then return end
 	if not force.valid then return end
 	--Unlocks all research, and then unenables them based on a blacklist
-	global.disable_alien_tech_distribution = true
+	global.disable_tech_event = true
 	force.research_all_technologies()
 	for k, technology in pairs (force.technologies) do
 		for j, ingredient in pairs (technology.research_unit_ingredients) do
@@ -1142,7 +1142,7 @@ function setup_research(force)
 			end
 		end
 	end
-	global.disable_alien_tech_distribution = false
+	global.disable_tech_event = false
 end
 
 function create_wall_for_force(force)
