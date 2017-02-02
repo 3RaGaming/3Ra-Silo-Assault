@@ -212,7 +212,8 @@ Event.register(defines.events.on_tick, function(event)
 	--runs every second
 	if(game.tick % 60 == 0) then
 		for force_name, warning_level in pairs(global.silo_progress_warning_level) do
-			if global.silos[force_name].rocket_parts >= warning_level then
+			local silo = global.silos[force_name]
+			if silo and silo.rocket_parts >= warning_level then
 				if warning_level == 1 then
 					game.print({"rocket-assembly-begun", force_name})
 					global.silo_progress_warning_level[force_name] = 10
