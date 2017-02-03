@@ -19,23 +19,6 @@ Event.register(defines.events.on_gui_click, function(event)
 		end
 		return
 
-	elseif (event.element.name == "crouch_button") then
-		if global.setup_finished and not global.teams_currently_preparing then
-			if player.character == nil then return end
-			global.player_crouch_state = global.player_crouch_state or {}
-			global.player_crouch_color = global.player_crouch_color or {}
-			if global.player_crouch_state == true then
-				global.player_crouch_state = false
-				player.character_running_speed_modifier = 0
-				player.color = global.player_crouch_color
-			else
-				global.player_crouch_state = true
-				player.character_running_speed_modifier = -0.6
-				global.player_crouch_color = player.color
-				player.color = black
-			end
-		end
-
 	elseif (event.element.name == "score_button") then
 		if player.gui.left.score_board then
 			player.gui.left.score_board.destroy()
@@ -352,10 +335,6 @@ function create_buttons(event)
 	local player = game.players[event.player_index]
 	if (not player.gui.top["flashlight_button"]) then
 		player.gui.top.add{type="button", name="flashlight_button", caption="Flashlight"}
-	end
-
-	if (not player.gui.top["crouch_button"]) then
-		local frame = player.gui.top.add{name = "crouch_button", type = "button", direction = "horizontal", caption = "Crouch"}
 	end
 
 	if (not player.gui.top["score_button"]) then

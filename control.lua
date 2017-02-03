@@ -525,9 +525,7 @@ function show_health()
 				if global.player_health[index] ~= health then
 					global.player_health[index] = health
 					-- slows the player just slightly if not at full health
-					if global.player_crouch_state == false then
 						player.character_running_speed_modifier = -.1*(100-health)*global.crippling_factor/100
-					end
 					-- prints player health when < 80%
 					if health < 80 then
 						if health > 50 then
@@ -934,18 +932,16 @@ end
 
 function check_player_color(printchange)
 	for k, player in pairs (game.connected_players) do
-		if not global.player_crouch_state then
-			for i, force in pairs (global.force_list) do
-				if force.name == player.force.name then
-					if (fpn(player.color.r) ~= fpn(force.color[1])) or (fpn(player.color.g) ~= fpn(force.color[2])) or (fpn(player.color.b) ~= fpn(force.color[3])) then
-						player.color = {r = fpn(force.color[1]), g = fpn(force.color[2]), b = fpn(force.color[3]), a = fpn(force.color[4])}
-						if printchange then
-							--game.print({"player-changed-color", player.name, force.name})
-							game.print({"player-changed-forces", player.name, force.name})
-						end
+		for i, force in pairs (global.force_list) do
+			if force.name == player.force.name then
+				if (fpn(player.color.r) ~= fpn(force.color[1])) or (fpn(player.color.g) ~= fpn(force.color[2])) or (fpn(player.color.b) ~= fpn(force.color[3])) then
+					player.color = {r = fpn(force.color[1]), g = fpn(force.color[2]), b = fpn(force.color[3]), a = fpn(force.color[4])}
+					if printchange then
+						--game.print({"player-changed-color", player.name, force.name})
+						game.print({"player-changed-forces", player.name, force.name})
 					end
-					break
 				end
+				break
 			end
 		end
 	end
