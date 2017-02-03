@@ -24,6 +24,7 @@ global.crippling_factor = 1
 
 global.given_starting_items = {}
 global.silo_progress_warning_level = {}
+global.endgame = false
 
 black = {r = 0, g = 0, b = 0}
 
@@ -426,7 +427,7 @@ Event.register(defines.events.on_entity_died, function(event)
 		global.ending_tick_2 = game.tick + 480
 		global.silo_position = silo.position
 		global.dummie_silo = surface.create_entity{name = "rocket-silo", position = global.silo_position, force = "neutral"}
-		endgame = true
+		global.endgame = true
 		for k, player in pairs (game.connected_players) do
 			local character = player.character
 			player.character = nil
@@ -444,7 +445,7 @@ end)
 
 function end_game()
 	--called in on_tick
-	if endgame ~= true then return end
+	if global.endgame ~= true then return end
 	local surface = global.surface
 	local x = global.silo_position.x
 	local y = global.silo_position.y
@@ -467,7 +468,7 @@ function end_game()
 
 		if global.config.continuous_play then
 			end_round()
-			endgame = false
+			global.endgame = false
 		end
 	end
 
