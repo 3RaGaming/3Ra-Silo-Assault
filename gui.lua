@@ -339,10 +339,6 @@ function update_surrender_tally(force, vote_initiated)
 	end
 end
 
-function kill_force(force)
-	global.silos[force.name].damage(10000, force)
-end
-
 --using this to order the gui'
 function create_buttons(event)
 	local player = game.players[event.player_index]

@@ -108,7 +108,7 @@ function create_next_surface()
 		end_round()
 	end
 	global.surface = game.create_surface("Battle_surface", settings)
-	global.surface.daytime = 0
+	--global.surface.daytime = 0
 	log_scenario("End create_next_surface")
 end
 
@@ -511,19 +511,24 @@ function team_prepare()
 			end
 		end
 		global.teams_currently_preparing = false
+		global.surface.daytime = 0
 		game.print({"start-match"})
 	end
 end
 
 function match_elapsed_time()
-	local ticks = game.tick - global.match_start_time - global.config.team_prepare_period
+	local returnstring = ""
+	local ticks = game.tick - global.match_start_time - global.config.team_prepare_period * 60
+	if ticks < 0 then
+		ticks = ticks * -1
+		returnstring = "-"
+	end
 	local hours = math.floor(ticks / 60^3)
 	local minutes = math.floor((ticks % 60^3) / 60^2)
 	local seconds = math.floor((ticks % 60^2) / 60)
-	local returnstring = ""
-	if hours > 0 then returnstring = hours .. (hours > 1 and " hours; " or " hour; ") end
+	if hours > 0 then returnstring = returnstring .. hours .. (hours > 1 and " hours; " or " hour; ") end
 	if minutes > 0 then returnstring = returnstring .. minutes .. (minutes > 1 and " minutes" or " minute").. " and " end
-	returnstring = returnstring .. seconds .. (seconds ~= 1 and " seconds" or "second")
+	returnstring = returnstring .. seconds .. (seconds ~= 1 and " seconds" or " second")
 	return returnstring
 end
 
@@ -998,6 +1003,7 @@ function finish_setup()
 		global.finish_setup = nil
 		game.print({"map-ready"})
 		global.setup_finished = true
+		global.surface.daytime = 0
 		global.match_start_time = game.tick
 		for k, player in pairs (game.connected_players) do
 			choose_joining_gui(player)
@@ -1236,6 +1242,26 @@ Event.register(defines.events.on_built_entity, function(event)
 		event.created_entity.force = "neutral"
 	end
 end)
+
+function kill_force(force)
+	global.silos[force.name].damage(10000, force)
+end
+
+function get_seed()
+	game.print(game.surfaces["nauvis"].map_gen_settings.seed)
+end
+
+function remove_buttons(player)
+	for _,child in pairs(player.gui.top.children_names) do player.gui.top[child].destroy() end
+end
+
+function remove_biters()
+	for c in game.surfaces["Battle_surface"].get_chunks() do
+		for key, entity in pairs(game.surfaces["Battle_surface"].find_entities_filtered({area={{c.x * 32, c.y * 32}, {c.x * 32 + 32, c.y * 32 + 32}}, force= "enemy"})) do
+			entity.destroy()
+		end
+	end
+end
 
 function fpn(n)
 	return (math.floor(n*32)/32)
