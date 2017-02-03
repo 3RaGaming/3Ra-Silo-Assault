@@ -180,6 +180,13 @@ end
 
 function prepare_next_round()
 	log_scenario("Begin prepare_next_round()")
+	--if global.silos then
+	--	for forcename,silo in pairs(global.silos) do
+	--		game.merge_forces(forcename, "neutral")
+	--	end
+	--end
+	update_players_list()
+	update_scoreboard()
 	destroy_config_for_all()
 	global.next_round_start_tick = nil
 	global.setup_finished = false
@@ -285,13 +292,17 @@ Event.register(defines.events.on_player_joined_game, function(event)
 	end
 	local player = game.players[event.player_index]
 	unfreeze_player(player)
+	update_surrender_tally(player.force, false)
+	update_players_list()
+	
 	if player.force.name ~= "player" then
 		for k, p in pairs (game.players) do
 			update_players_on_team_count(p)
-			update_scoreboard()
 		end
 		return
 	end
+	update_scoreboard()
+
 	local character = player.character
 	player.character = nil
 	if character then character.destroy() end
@@ -336,10 +347,11 @@ Event.register(defines.events.on_player_left_game, function(event)
 	if player.force.name ~= "player" then
 		for k, p in pairs (game.players) do
 			update_players_on_team_count(p)
-			update_scoreboard()
 		end
-		return
 	end
+	update_surrender_tally(player.force, false)
+	update_players_list()
+	update_scoreboard()
 end)
 
 Event.register(defines.events.on_player_respawned, function(event)
@@ -385,7 +397,7 @@ Event.register(defines.events.on_entity_died, function(event)
 		end
 	end
 	for k, player in pairs (force.players) do
-		player.force = game.forces.player
+		player.force = game.forces.Lobby
 		if player.connected then
 			local character = player.character
 			player.character = nil
@@ -393,7 +405,6 @@ Event.register(defines.events.on_entity_died, function(event)
 			player.teleport({0,1000}, game.surfaces.Lobby)
 			if index > 1 then
 				player.print{"join-new-team"}
-				choose_joining_gui(player)
 			end
 		end
 	end
@@ -406,26 +417,29 @@ Event.register(defines.events.on_entity_died, function(event)
 		print("PVPROUND$eliminated," .. force.name .. "," .. killing_force.name)
 		game.merge_forces(force.name, killing_force.name)
 	end
-	game.print("1")
-	if index > 1 then return end
-	game.print("2")
-	global.ending_tick = game.tick + 300
-	global.ending_tick_2 = game.tick + 480
-	global.silo_position = silo.position
-	global.dummie_silo = surface.create_entity{name = "rocket-silo", position = global.silo_position, force = "neutral"}
-	endgame = true
-	for k, player in pairs (game.connected_players) do
-		local character = player.character
-		player.character = nil
-		player.teleport(silo.position, surface)
-		global.zoom_count = 1
-		player.zoom = global.zoom_count
+	update_players_list()
+	update_scoreboard()
+	if index > 1 then
+		for _,player in pairs(game.forces.Lobby.connected_players) do choose_joining_gui(player) end
+	else
+		global.ending_tick = game.tick + 300
+		global.ending_tick_2 = game.tick + 480
+		global.silo_position = silo.position
+		global.dummie_silo = surface.create_entity{name = "rocket-silo", position = global.silo_position, force = "neutral"}
+		endgame = true
+		for k, player in pairs (game.connected_players) do
+			local character = player.character
+			player.character = nil
+			player.teleport(silo.position, surface)
+			global.zoom_count = 1
+			player.zoom = global.zoom_count
+		end
+		global.zoom_count = global.zoom_count + (1/300)
+		local time = match_elapsed_time()
+		game.print({"team-won",winner_name})
+		game.print("Match lasted " .. time:gsub(";", ",") .. ".")
+		print("PVPROUND$end," .. global.round_number .. "," .. winner_name .. "," .. time)
 	end
-	global.zoom_count = global.zoom_count + (1/300)
-	local time = match_elapsed_time()
-	game.print({"team-won",winner_name})
-	game.print("Match lasted " .. time:gsub(";", ",") .. ".")
-	print("PVPROUND$end," .. global.round_number .. "," .. winner_name .. "," .. time)
 end)
 
 function end_game()
@@ -747,10 +761,11 @@ function set_player(player,force,color)
 		give_equipment(player)
 		global.given_starting_items[player.index] = true
 	end
+	update_players_list()
+	update_scoreboard()
 	game.print({"joined", player.name, player.force.name})
 	player.print({"objective"})
 	player.print({"objective-warning"})
-	update_scoreboard()
 	if     global.alien_artifacts_source == "biters_enabled"       then player.print({"biters_enabled_message"})
 	elseif global.alien_artifacts_source == "alien_tech_research"  then player.print({"alien_tech_research_message",global.config.num_alien_artifacts_on_tech})
 	elseif global.alien_artifacts_source == "gradual_distribution" then player.print({"gradual_distribution_message",global.config.num_alien_artifacts_gradual})
