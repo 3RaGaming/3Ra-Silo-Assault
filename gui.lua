@@ -168,14 +168,19 @@ Event.register(defines.events.on_gui_click, function(event)
 			if force then
 				local check = gui.parent.pick_join_table[force.name]
 				if check.state then
-					local c = team.color
-					local color = {r = fpn(c[1]), g = fpn(c[2]), b = fpn(c[3]), a = fpn(c[4])}
-					gui.parent.destroy()
-					set_player(player,force,color)
-					for k, player in pairs (game.players) do
-						update_players_on_team_count(player)
+					local max_players = global.config.max_players_per_team
+					if max_players > 0 and #force.connected_players >= max_players then
+						if gui.parent.max_players_label then gui.parent.max_players_label.style.font_color = colors.red end
+					else
+						local c = team.color
+						local color = {r = fpn(c[1]), g = fpn(c[2]), b = fpn(c[3]), a = fpn(c[4])}
+						gui.parent.destroy()
+						set_player(player,force,color)
+						for k, player in pairs (game.players) do
+							update_players_on_team_count(player)
+						end
+						break
 					end
-					break
 				end
 			end
 		end
@@ -444,6 +449,10 @@ function create_pick_join_gui(gui)
 			pick_join_table.add{type = "label", name = force.name.."_count", caption = #force.connected_players}
 			pick_join_table.add{type = "checkbox", name = force.name,state = false}
 		end
+	end
+	if global.config.max_players_per_team ~= 0 then
+		local max_players_label = frame.add{type = "label", name = "max_players_label", caption = {"max_players_label", global.config.max_players_per_team}}
+		--max_players_label.style.font_color = colors.red
 	end
 	local button = frame.add{type = "button", name = "player_pick_confirm", caption = {"confirm"}}
 	button.style.font = "default"

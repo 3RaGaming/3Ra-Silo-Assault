@@ -16,6 +16,7 @@ function load_config()
 	global.config =
 		{
 			["number_of_teams"] = 3,
+			["max_players_per_team"] = 0,
 			["average_team_displacement"] = 75*32,
 			["team_max_variance"] = 1,
 			["team_min_variance"] = 1,

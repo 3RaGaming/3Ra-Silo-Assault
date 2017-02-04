@@ -750,10 +750,6 @@ function spread_spawn(player)
 	return spread_spawn_position
 end
 
-function switch_teams(playername, forcename)
-	set_player(game.players[playername], game.forces[forcename], {0,0,0,0})
-end
-
 function set_player(player,force,color)
 	if player.gui.left.surrender_dialog then player.gui.left.surrender_dialog.destroy() end
 	player.force = force
@@ -1243,6 +1239,10 @@ Event.register(defines.events.on_built_entity, function(event)
 		event.created_entity.force = "neutral"
 	end
 end)
+
+function switch_teams(playername, forcename)
+	set_player(game.players[playername], game.forces[forcename], {0,0,0,0})
+end
 
 function kill_force(force)
 	global.silos[force.name].damage(10000, force)
