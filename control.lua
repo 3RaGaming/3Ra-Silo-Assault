@@ -1138,7 +1138,7 @@ end
 function create_silo_for_force(force)
 	if not global.silos then global.silos = {} end
 	if not force then return end
-	if not force.valid or global.silos[force.name] then return end
+	if not force.valid or (global.silos[force.name] and global.silos[force.name].valid) then return end
 	local surface = global.surface
 	local origin = force.get_spawn_position(surface)
 	local offset_x = 0
