@@ -211,6 +211,7 @@ Event.register(defines.events.on_tick, function(event)
 	end_game()
 	--runs every 500ms
 	if(game.tick % 30 == 0) then
+		update_silo_progress_bars()
 		show_health()
 		if global.teams_currently_preparing then
 			team_prepare()
@@ -316,15 +317,16 @@ Event.register(defines.events.on_player_joined_game, function(event)
 			create_config_gui(player)
 		end
 	end
+	if player.admin then player.tag = "[Admin]" end
 	player.set_controller{type = defines.controllers.ghost}
 	local p = game.players[event.player_index]
-	create_buttons(event)
+	create_buttons(player)
  end)
 
 Event.register(defines.events.on_player_created, function(event)
-	create_buttons(event)
-	if event.player_index ~= 1 then return end
 	local player = game.players[event.player_index]
+	create_buttons(player)
+	if event.player_index ~= 1 then return end
 
 	local character = player.character
 	player.character = nil
@@ -765,6 +767,7 @@ function set_player(player,force,color)
 	end
 	update_players_list()
 	update_scoreboard()
+	create_silo_progress_bars(player)
 	game.print({"joined", player.name, player.force.name})
 	player.print({"objective"})
 	player.print({"objective-warning"})
@@ -1004,14 +1007,14 @@ function finish_setup()
 		global.match_start_time = game.tick
 		for k, player in pairs (game.connected_players) do
 			choose_joining_gui(player)
+			create_silo_progress_bars(player)
 		end
 		global.teams_currently_preparing = true
 		if global.config.team_prepare_period > 0 then
 			game.print({"team-preparing-period-start",global.config.team_prepare_period})
 		end
-		return
-	end
-	if index > 0 then
+		
+	elseif index > 0 then
 		local name = global.force_list[index].name
 		local force = game.forces[name]
 		create_silo_for_force(force)

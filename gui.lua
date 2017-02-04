@@ -5,9 +5,9 @@ Event.register(defines.events.on_gui_click, function(event)
 	local player = game.players[event.player_index]
 	local index = event.player_index
 
-	if not event.element.valid then return end
+	if not gui.valid then return end
 	-- Turns on/off Flashlight
-	if (event.element.name == "flashlight_button") then
+	if (gui.name == "flashlight_button") then
 		if player.character == nil then return end
 		global.player_flashlight_state = global.player_flashlight_state or {}
 		if global.player_flashlight_state == true then
@@ -19,7 +19,7 @@ Event.register(defines.events.on_gui_click, function(event)
 		end
 		return
 
-	elseif (event.element.name == "score_button") then
+	elseif (gui.name == "score_button") then
 		if player.gui.left.score_board then
 			player.gui.left.score_board.destroy()
 		else
@@ -44,7 +44,7 @@ Event.register(defines.events.on_gui_click, function(event)
 			end
 		end
 
-	elseif (event.element.name == "players_button") then
+	elseif (gui.name == "players_button") then
 		if player.gui.left.players_list then
 			player.gui.left.players_list.destroy()
 		else
@@ -52,14 +52,14 @@ Event.register(defines.events.on_gui_click, function(event)
 		end
 
 	--Brings up vote-to-surrender dialog
-	elseif (event.element.name == "surrender_button") then
+	elseif (gui.name == "surrender_button") then
 		if player.gui.left.surrender_dialog then
 			player.gui.left.surrender_dialog.destroy()
 		else
 			open_surrender_window(player)
 		end
 
-	elseif (event.element.name == "surrender_vote_yes") then
+	elseif (gui.name == "surrender_vote_yes") then
 		local votes = global.surrender_votes[player.force.name]
 		if votes.buttons_disabled then return end
 
@@ -100,7 +100,7 @@ Event.register(defines.events.on_gui_click, function(event)
 		player.gui.top.surrender_button.style.font_color = colors.yellow
 		update_surrender_tally(player.force, vote_initiated)
 
-	elseif (event.element.name == "surrender_vote_no") then
+	elseif (gui.name == "surrender_vote_no") then
 		local votes = global.surrender_votes[player.force.name]
 		if votes.buttons_disabled then return end
 		if not votes.in_progress then
@@ -345,8 +345,7 @@ function update_surrender_tally(force, vote_initiated)
 end
 
 --using this to order the gui'
-function create_buttons(event)
-	local player = game.players[event.player_index]
+function create_buttons(player)
 	if (not player.gui.top["flashlight_button"]) then
 		player.gui.top.add{type="button", name="flashlight_button", caption="Flashlight"}
 	end
@@ -361,6 +360,76 @@ function create_buttons(event)
 
 	if (not player.gui.top["surrender_button"]) then
 		player.gui.top.add{type="button", name="surrender_button", caption="Surrender Menu"}
+	end
+end
+
+function create_silo_progress_bars(player)
+	if player.gui.top.silo_progress_bars_frame then player.gui.top.silo_progress_bars_frame.destroy() end
+	if not global.silos then return end
+	
+	local silo_progress_bars_frame = player.gui.top.add{type="frame", name="silo_progress_bars_frame", caption="Teams' Rocket Silo Health"}	
+	local silo_progress_bars_table = silo_progress_bars_frame.add{type = "table", name = "silo_progress_bars_table", colspan = 2}
+	local at_least_one_visible = false
+	for k = 1, global.config.number_of_teams do
+		local team = global.force_list[k]
+		local force = game.forces[team.name]
+		if force ~= nil and global.silos[force.name] and global.silos[force.name].valid then
+			local c = team.color
+			local color = {r = 1 - (1 - c[1]) * 0.5, g = 1 - (1 - c[2]) * 0.5, b = 1 - (1 - c[3]) * 0.5, a = 1}
+			local label = silo_progress_bars_table.add{type = "label", name = force.name.."_label", caption = force.name}
+			label.style.font_color = color
+			local bar = silo_progress_bars_table.add{type="progressbar", name=force.name, size=100, value=(global.silos[force.name].health/5000)}
+			--bar.style.minimal_height = 30
+			if bar.value == 1 then
+				label.style.visible = false
+				bar.style.visible = false
+			else
+				at_least_one_visible = true
+			end
+		end
+	end
+	if not at_least_one_visible then silo_progress_bars_frame.style.visible = false end
+end
+
+function update_silo_progress_bars()
+	if global.silos then
+		for _,player in pairs(game.connected_players) do
+			local bars_frame = player.gui.top.silo_progress_bars_frame
+			if not bars_frame then
+				return
+			else
+				local at_least_one_visible = false
+				local bars_table = bars_frame.silo_progress_bars_table
+				for _,name in pairs(bars_table.children_names) do
+					if bars_table[name].type == "progressbar" then
+						local bar = bars_table[name]
+						local label = bars_table[name.."_label"]
+						if not global.silos[name] or not global.silos[name].valid then
+							label.destroy()
+							bar.destroy()
+						else
+							local force = game.forces[name]
+							if force ~= nil then
+								bar.value = global.silos[force.name].health/5000
+								if bar.value == 1 then
+									label.style.visible = false
+									bar.style.visible = false
+								else
+									label.style.visible = true
+									bar.style.visible = true
+									at_least_one_visible = true
+								end
+							end
+						end
+					end
+				end
+				if not at_least_one_visible then
+					bars_frame.style.visible = false
+				else
+					bars_frame.style.visible = true
+				end
+			end
+		end
 	end
 end
 
