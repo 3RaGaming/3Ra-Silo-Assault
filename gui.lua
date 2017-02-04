@@ -559,8 +559,8 @@ function config_confirm(gui)
 		player.print({"more-than-1-team"})
 		return
 	end
-	if global.config.number_of_teams > 9 then
-		player.print({"less-than-9-teams"})
+	if global.config.number_of_teams > global.max_teams then
+		player.print({"less-than-max-teams"})
 		return
 	end
 	prepare_next_round()

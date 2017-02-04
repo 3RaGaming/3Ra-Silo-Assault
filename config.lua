@@ -49,7 +49,7 @@ function load_config()
 			["science-pack-3"] = false,
 			["alien-science-pack"] = false
 		}
-	global.force_list =
+--[[	global.force_list =
 		{
 			{name = "Blue", color = {0.2, 0.2, 0.8, 0.7}},
 			{name = "Green", color = {0.1, 0.8, 0.1, 0.8}},
@@ -64,7 +64,23 @@ function load_config()
 			{name = "Black", color = {0.1, 0.1, 0.1, 0.8}},
 			{name = "Lobby", color = {0.9, 0.1, 0.1, 0.8}}
 		}
-
+--]]
+	global.max_teams = 11
+	global.force_list =
+		{
+			{name = "Blue", color = {0, 0.259, 1, 1}},
+			{name = "Orange", color = {0.996, 0.729, 0.055, 1}},
+			{name = "Purple", color = {0.329, 0, 0.506, 1}},
+			{name = "Yellow", color = {1, 0.988, 0.004, 1}},
+			{name = "Green", color = {0.125, 0.753, 0, 1}},
+			{name = "Teal", color = {0.11, 0.902, 0.725, 1}},
+			{name = "Pink", color = {0.898, 0.357, 0.69, 1}},
+			{name = "Grey", color = {0.584, 0.588, 0.592, 1}},
+			{name = "Brown", color = {0.306, 0.165, 0.016, 1}},
+			{name = "Light Blue", color = {0.494, 0.749, 0.945, 1}},
+			{name = "Dark Green", color = {0.063, 0.384, 0.275, 1}},
+			{name = "Lobby", color = {1, 0.012, 0.012, 1}} -- Red
+		}
 	global.inventory_list =
 	{
 		["none"] =
