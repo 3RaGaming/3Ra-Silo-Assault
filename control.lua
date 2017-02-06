@@ -404,6 +404,7 @@ Event.register(defines.events.on_entity_died, function(event)
 	for k, player in pairs (force.players) do
 		player.force = game.forces.Lobby
 		if player.connected then
+			print("PLAYER$force," .. player.index .. "," .. player.name .. ",Lobby")
 			local character = player.character
 			player.character = nil
 			if character then character.destroy() end
@@ -424,6 +425,12 @@ Event.register(defines.events.on_entity_died, function(event)
 	end
 	update_players_list()
 	update_scoreboard()
+	for i = 1, global.number_of_teams do
+		if global.force_list[i].name == force.name then
+			global.force_list[i].status = "dead"
+			break
+		end
+	end
 	if index > 1 then
 		for _,player in pairs(game.forces.Lobby.connected_players) do choose_joining_gui(player) end
 	else
@@ -818,6 +825,7 @@ function setup_teams()
 				new_force = game.forces[name]
 			end
 			set_spawn_position(k, n, new_force, global.surface)
+			global.force_list[k].status = "alive"
 		end
 	end
 	for k, force in pairs (game.forces) do
@@ -827,12 +835,6 @@ function setup_teams()
 		disable_combat_technologies(force)
 		set_all_ceasefire(force)
 	end
-	local tempstring = "PVPROUND$begin," .. global.round_number .. ","
-	for i = 1, global.config.number_of_teams, 1 do
-		local force_name = global.force_list[i].name
-		tempstring = tempstring .. force_name .. ","
-	end
-	print(tempstring:sub(1,#tempstring-1))
 end
 
 function set_all_ceasefire(force)
@@ -1015,6 +1017,13 @@ function finish_setup()
 		if global.config.team_prepare_period > 0 then
 			game.print({"team-preparing-period-start",global.config.team_prepare_period})
 		end
+		
+		local tempstring = "PVPROUND$begin," .. global.round_number .. ","
+		for i = 1, global.config.number_of_teams, 1 do
+			local force_name = global.force_list[i].name
+			tempstring = tempstring .. force_name .. ","
+		end
+		print(tempstring:sub(1,#tempstring-1))
 		
 	elseif index > 0 then
 		local name = global.force_list[index].name
@@ -1272,3 +1281,15 @@ end
 function fpn(n)
 	return (math.floor(n*32)/32)
 end
+
+function ongoingRound()
+	if not global.setup_finished then return end
+	local tempstring = "PVPROUND$ongoing," .. global.round_number .. ","
+	for i = 1, global.config.number_of_teams, 1 do
+		local force_name = global.force_list[i].name
+		if global.force_list[i].status == "alive" then tempstring = tempstring .. force_name .. "," end
+	end
+	print(tempstring:sub(1,#tempstring-1))
+end
+	
+Event.register(-2, ongoingRound)
