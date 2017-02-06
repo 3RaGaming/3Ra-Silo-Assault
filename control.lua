@@ -679,7 +679,12 @@ function auto_assign(player)
 		this_team = global.force_list[k]
 		local other_force = game.forces[this_team.name]
 		if other_force ~= nil then
-			if #other_force.connected_players < count and #other_force.players < total then
+			if #other_force.connected_players < count then
+				count = #other_force.connected_players
+				total = #other_force.players
+				force = other_force
+				team = this_team
+			elseif #other_force.connected_players == count and #other_force.players < total then
 				count = #other_force.connected_players
 				total = #other_force.players
 				force = other_force
