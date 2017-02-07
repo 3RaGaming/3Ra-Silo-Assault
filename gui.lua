@@ -23,25 +23,7 @@ Event.register(defines.events.on_gui_click, function(event)
 		if player.gui.left.score_board then
 			player.gui.left.score_board.destroy()
 		else
-			local frame = player.gui.left.add{name = "score_board", type = "frame", direction = "vertical", caption = "Player Count"}
-			local score_board_table = frame.add{type = "table", name = "score_board_table", colspan = 4}
-			score_board_table.add{type = "label", name = "score_board_table_force_name", caption = {"team-name"}}
-			score_board_table.add{type = "label", name = "score_board_table_player_count", caption = "Players Joined"}
-			score_board_table.add{type = "label", name = "score_board_table_players_online", caption = "Players Online"}
-			score_board_table.add{type = "label", name = "score_board_kill_counter", caption = "Kill Count"}
-			for k = 1, global.config.number_of_teams do
-				local team = global.force_list[k]
-				local force = game.forces[team.name]
-				if force ~= nil then
-					local c = team.color
-					local color = {r = 1 - (1 - c[1]) * 0.5, g = 1 - (1 - c[2]) * 0.5, b = 1 - (1 - c[3]) * 0.5, a = 1}
-					local name = score_board_table.add{type = "label", name = force.name.."_label", caption = force.name}
-					name.style.font_color = color
-					score_board_table.add{type = "label", name = force.name.."_count", caption = #force.players}
-					score_board_table.add{type = "label", name = force.name.."_online", caption = #force.connected_players}
-					score_board_table.add{type = "label", name = force.name.."_kill_count", caption = global.kill_counts[force.name] or 0}
-				end
-			end
+			open_score_board_window(player)
 		end
 
 	elseif (gui.name == "players_button") then
@@ -216,6 +198,33 @@ function add_surrender_label(player, message)
 	local surrender_table = player.gui.left.surrender_dialog.surrender_table
 	local surrender_error_label = surrender_table.add{type = "label", name = surrender_error_label, caption = message}
 	return surrender_error_label
+end
+
+function open_score_board_window(player)
+	if player.gui.left.score_board then player.gui.left.score_board.destroy() end
+
+	local frame = player.gui.left.add{name = "score_board", type = "frame", direction = "vertical", caption = "Player Count"}
+	local score_board_table = frame.add{type = "table", name = "score_board_table", colspan = 4}
+	score_board_table.add{type = "label", name = "score_board_table_force_name", caption = {"team-name"}}
+	score_board_table.add{type = "label", name = "score_board_table_player_count", caption = "Players Joined"}
+	score_board_table.add{type = "label", name = "score_board_table_players_online", caption = "Players Online"}
+	score_board_table.add{type = "label", name = "score_board_kill_counter", caption = "Kill Count"}
+	for k = 1, global.config.number_of_teams do
+		local team = global.force_list[k]
+		local force = game.forces[team.name]
+		if force ~= nil then
+			local c = team.color
+			local color = {r = 1 - (1 - c[1]) * 0.5, g = 1 - (1 - c[2]) * 0.5, b = 1 - (1 - c[3]) * 0.5, a = 1}
+			local name = score_board_table.add{type = "label", name = force.name.."_label", caption = force.name}
+			name.style.font_color = color
+			score_board_table.add{type = "label", name = force.name.."_count", caption = #force.players}
+			score_board_table.add{type = "label", name = force.name.."_online", caption = #force.connected_players}
+			score_board_table.add{type = "label", name = force.name.."_kill_count", caption = global.kill_counts[force.name] or 0}
+		end
+	end
+	if global.match_start_time then
+		frame.add{type = "label", name = "score_board_match_time", caption = "Match elapsed time: "..match_elapsed_time()}
+	end
 end
 
 function open_surrender_window(player)
@@ -674,17 +683,21 @@ end)
 function update_scoreboard_kills(force)
 	for _,player in pairs(game.players) do
 		if player.gui.left.score_board then
-			local force_kill_counter = force.name .. "_kill_count"
-			if not player.gui.left.score_board.score_board_table[force_kill_counter] then return end
-			player.gui.left.score_board.score_board_table[force_kill_counter].caption = global.kill_counts[force.name]
-			player.gui.left.score_board.score_board_table[force.name.."_count"].caption = #force.connected_players
+			open_score_board_window(player)
+			--local force_kill_counter = force.name .. "_kill_count"
+			--if not player.gui.left.score_board.score_board_table[force_kill_counter] then return end
+			--player.gui.left.score_board.score_board_table[force_kill_counter].caption = global.kill_counts[force.name]
+			--player.gui.left.score_board.score_board_table[force.name.."_count"].caption = #force.connected_players
 		end
 	end
 end
 
 function update_scoreboard()
 	for _,player in pairs(game.players) do
-		if player.gui.left.score_board and player.gui.left.score_board_table then
+		if player.gui.left.score_board then
+			open_score_board_window(player)
+		end			
+--[[	if player.gui.left.score_board and player.gui.left.score_board_table then
 			for _,force in pairs(game.forces) do
 				if player.gui.left.score_board.score_board_table[force.name .. "_count"] and player.gui.left.score_board.score_board_table[force.name .. "_online"] then
 					player.gui.left.score_board.score_board_table[force.name .. "_online"].caption = #force.connected_players
@@ -692,5 +705,6 @@ function update_scoreboard()
 				end
 			end
 		end
+--]]
 	end
 end

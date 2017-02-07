@@ -232,6 +232,9 @@ Event.register(defines.events.on_tick, function(event)
 				end
 			end
 		end
+		for _,player in pairs(game.players) do
+			if player.gui.left.score_board then open_score_board_window(player) end
+		end
 	end
 
 	-- Runs every 5 seconds
