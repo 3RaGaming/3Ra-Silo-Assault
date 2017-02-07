@@ -425,7 +425,7 @@ Event.register(defines.events.on_entity_died, function(event)
 	end
 	update_players_list()
 	update_scoreboard()
-	for i = 1, global.number_of_teams do
+	for i = 1, global.config.number_of_teams do
 		if global.force_list[i].name == force.name then
 			global.force_list[i].status = "dead"
 			break
