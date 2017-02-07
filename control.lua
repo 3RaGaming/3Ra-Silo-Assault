@@ -414,6 +414,12 @@ Event.register(defines.events.on_entity_died, function(event)
 			end
 		end
 	end
+	for i = 1, global.config.number_of_teams do
+		if global.force_list[i].name == force.name then
+			global.force_list[i].status = "dead"
+			break
+		end
+	end
 	if force.name == killing_force.name then
 		log_scenario("merge force to neutral")
 		print("PVPROUND$eliminated," .. force.name .. ",suicide")
@@ -425,12 +431,6 @@ Event.register(defines.events.on_entity_died, function(event)
 	end
 	update_players_list()
 	update_scoreboard()
-	for i = 1, global.config.number_of_teams do
-		if global.force_list[i].name == force.name then
-			global.force_list[i].status = "dead"
-			break
-		end
-	end
 	if index > 1 then
 		for _,player in pairs(game.forces.Lobby.connected_players) do choose_joining_gui(player) end
 	else
