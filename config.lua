@@ -70,7 +70,7 @@ function load_config()
 	global.force_list =
 		{
 			{name = "Blue", color = {0, 0.259, 1, 1}},
-			{name = "Orange", color = {0.996, 0.729, 0.055, 1}},
+			{name = "Orange", color = {0.8, 0.4, 0, 1}},
 			{name = "Purple", color = {0.329, 0, 0.506, 1}},
 			{name = "Yellow", color = {1, 0.988, 0.004, 1}},
 			{name = "Green", color = {0.125, 0.753, 0, 1}},
