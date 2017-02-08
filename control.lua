@@ -1273,14 +1273,14 @@ end)
 
 Event.register(defines.events.on_player_driving_changed_state, function(event)
 	local player = game.players[event.player_index]
-	local search_area = {{player.position.x - 3, player.position.y - 3}, {player.position.x + 3, player.position.y + 3}}
+	local search_area = {{player.position.x - 5, player.position.y - 5}, {player.position.x + 5, player.position.y + 5}}
 	local entities = game.surfaces["Battle_surface"].find_entities_filtered{area = search_area, name = "stone-wall"}
 	for _,entity in pairs(entities) do
 		if entity.last_user == nil and entity.force ~= player.force then
 			if player.driving then player.vehicle.passenger = nil end
 			if not player.character then return end
 			player.character.damage(10000, entity.force)
-			game.print(player.name.." got electrocuted because they entered or exited a vehicle within 3 tiles of an enemy starting wall.")
+			game.print(player.name.." got electrocuted because they entered or exited a vehicle within 5 tiles of an enemy starting wall.")
 		end
 	end
 end)
