@@ -143,6 +143,16 @@ end)
 function end_round()
 	log_scenario("Begin end_round()")
 
+	-- Force admins out of spectate state
+	for index, value in pairs(global.player_spectator_state) do
+		if global.player_spectator_state[index] ~= nil then
+			local character = global.player_spectator_character[index]
+			global.player_spectator_character[index] = nil
+			if character and character.valid then character.destroy() end
+			force_spectators(index, false)
+		end
+	end
+	
 	local player_count = 0
 	for k, player in pairs (game.players) do
 		player.force = game.forces.player
@@ -441,6 +451,16 @@ Event.register(defines.events.on_entity_died, function(event)
 		if global.force_list[i].name == force.name then
 			global.force_list[i].status = "dead"
 			break
+		end
+	end
+	--Spectating admins who were originally on the dead force
+	for index, sforce in pairs(global.player_spectator_force) do
+		if sforce and force.name == sforce.name then
+			global.player_spectator_force[index] = game.forces["Admins"]
+			local character = global.player_spectator_character[index]
+			global.player_spectator_character[index] = nil
+			if character and character.valid then character.destroy() end
+			--Code to give spectating admin a button to open the join team panel here
 		end
 	end
 	if force.name == killing_force.name then
