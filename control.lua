@@ -216,6 +216,14 @@ Event.register(defines.events.on_tick, function(event)
 		if global.teams_currently_preparing then
 			team_prepare()
 		end
+		if global.silos then 
+			for force_name, silo in pairs(global.silos) do
+				local silo_inventory = silo.get_inventory(defines.inventory.rocket_silo_rocket)
+				if silo_inventory and silo_inventory.find_item_stack("satellite") then
+					if not silo.launch_rocket() then game.print("Error: Was not able to launch rocket.") end
+				end
+			end
+		end
 	end
 
 	--runs every second
@@ -788,6 +796,7 @@ function set_player(player,force,color)
 	game.print({"joined", player.name, player.force.name})
 	player.print({"objective"})
 	player.print({"objective-warning"})
+	player.print({"wall-warning"})
 	if     global.alien_artifacts_source == "biters_enabled"       then player.print({"biters_enabled_message"})
 	elseif global.alien_artifacts_source == "alien_tech_research"  then player.print({"alien_tech_research_message",global.config.num_alien_artifacts_on_tech})
 	elseif global.alien_artifacts_source == "gradual_distribution" then player.print({"gradual_distribution_message",global.config.num_alien_artifacts_gradual})
@@ -1259,6 +1268,20 @@ end
 Event.register(defines.events.on_built_entity, function(event)
 	if event.created_entity.type == "container" and global.config.chests_neutral then
 		event.created_entity.force = "neutral"
+	end
+end)
+
+Event.register(defines.events.on_player_driving_changed_state, function(event)
+	local player = game.players[event.player_index]
+	local search_area = {{player.position.x - 3, player.position.y - 3}, {player.position.x + 3, player.position.y + 3}}
+	local entities = game.surfaces["Battle_surface"].find_entities_filtered{area = search_area, name = "stone-wall"}
+	for _,entity in pairs(entities) do
+		if entity.last_user == nil and entity.force ~= player.force then
+			if player.driving then player.vehicle.passenger = nil end
+			if not player.character then return end
+			player.character.damage(10000, entity.force)
+			game.print(player.name.." got electrocuted because they entered or exited a vehicle within 3 tiles of an enemy starting wall.")
+		end
 	end
 end)
 
