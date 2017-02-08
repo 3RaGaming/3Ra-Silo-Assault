@@ -36,6 +36,7 @@ Event.register(-1, function ()
 	game.disable_replay()
 	local surface = game.create_surface("Lobby",{width = 1, height = 1})
 	surface.set_tiles({{name = "out-of-map",position = {1,1}}})
+	game.create_force("Admins")
 end)
 
 local function log_scenario(msg)
@@ -813,7 +814,7 @@ function set_player(player,force,color)
 		elseif global.alien_artifacts_source == "gradual_distribution" then player.print({"gradual_distribution_message",global.config.num_alien_artifacts_gradual})
 		else game.print("error in set_player()!") end
 	else
-		
+		player.print("You are now an admin. You are not on any team, and cannot join another team without a console command.")
 	end
 	print("PLAYER$force," .. player.index .. "," .. player.name .. "," .. player.force.name)
 end
@@ -857,6 +858,8 @@ function setup_teams()
 			end
 			set_spawn_position(k, n, new_force, global.surface)
 			global.force_list[k].status = "alive"
+			new_force.set_cease_fire("Admins", true)
+			game.forces["Admins"].set_cease_fire(new_force.name, true)
 		end
 	end
 	for k, force in pairs (game.forces) do
