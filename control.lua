@@ -36,7 +36,16 @@ Event.register(-1, function ()
 	game.disable_replay()
 	local surface = game.create_surface("Lobby",{width = 1, height = 1})
 	surface.set_tiles({{name = "out-of-map",position = {1,1}}})
-	game.create_force("Admins")
+	if not game.forces["Admins"] then
+		game.create_force("Admins")
+		game.forces.Admins.research_all_technologies()
+		for _,force in pairs(game.forces) do
+			if force.name ~= "Admins" then
+				force.set_cease_fire("Admins", true)
+				game.forces["Admins"].set_cease_fire(force.name, true)
+			end
+		end
+	end
 end)
 
 local function log_scenario(msg)
@@ -1283,6 +1292,11 @@ function create_wall_for_force(force)
 end
 
 Event.register(defines.events.on_built_entity, function(event)
+	if event.created_entity.force.name == "Admins" then
+		event.created_entity.destroy()
+		game.players[event.player_index].print("Admins cannot place entities on the field!")
+		return
+	end
 	if event.created_entity.type == "container" and global.config.chests_neutral then
 		event.created_entity.force = "neutral"
 	end
