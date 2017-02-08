@@ -218,9 +218,11 @@ Event.register(defines.events.on_tick, function(event)
 		end
 		if global.silos then 
 			for force_name, silo in pairs(global.silos) do
-				local silo_inventory = silo.get_inventory(defines.inventory.rocket_silo_rocket)
-				if silo_inventory and silo_inventory.find_item_stack("satellite") then
-					if not silo.launch_rocket() then game.print("Error: Was not able to launch rocket.") end
+				if silo and silo.valid then
+					local silo_inventory = silo.get_inventory(defines.inventory.rocket_silo_rocket)
+					if silo_inventory and silo_inventory.find_item_stack("satellite") then
+						if not silo.launch_rocket() then game.print("Error: Was not able to launch rocket.") end
+					end
 				end
 			end
 		end
@@ -519,12 +521,12 @@ function team_prepare()
 	if game.tick < global.config.team_prepare_period * 60 + global.match_start_time then
 		-- The following essentially freezes all players.
 		for k, player in pairs (game.connected_players) do
-			freeze_player(player)
+			if player.force.name ~= "Admins" then freeze_player(player) end
 		end
 	else
 		-- Unfreezes players.
 		for k, player in pairs (game.connected_players) do
-			if player.character then
+			if player.character and player.force.name ~= "Admins" then
 				pcall(unfreeze_player, player)
 				if not global.given_starting_items[player.index] then
 					give_equipment(player)
@@ -709,6 +711,14 @@ function auto_assign(player)
 end
 
 
+function admin_spectate_join(player)
+	local force = game.forces["Admins"]
+	local c = {1, 0.012, 0.012, 1}
+	local color = {r = fpn(c[1]), g = fpn(c[2]), b = fpn(c[3]), a = fpn(c[4])}
+	set_player(player,force,color)
+end
+
+
 function prepare_map()
 	create_next_surface()
 	global.next_round_start_tick = nil
@@ -785,22 +795,26 @@ function set_player(player,force,color)
 	if player.character then player.character.destroy() end
 	player.character = global.surface.create_entity{name = "player", position = position, force = force}
 	--force.chart(player.surface, {{-radius,-radius},{radius, radius}})
-	if not global.teams_currently_preparing then
-		give_inventory(player)
-		give_equipment(player)
-		global.given_starting_items[player.index] = true
+	if force.name ~= "Admins" then
+		if not global.teams_currently_preparing then
+			give_inventory(player)
+			give_equipment(player)
+			global.given_starting_items[player.index] = true
+		end
+		update_players_list()
+		update_scoreboard()
+		create_silo_progress_bars(player)
+		game.print({"joined", player.name, player.force.name})
+		player.print({"objective"})
+		player.print({"objective-warning"})
+		player.print({"wall-warning"})
+		if     global.alien_artifacts_source == "biters_enabled"       then player.print({"biters_enabled_message"})
+		elseif global.alien_artifacts_source == "alien_tech_research"  then player.print({"alien_tech_research_message",global.config.num_alien_artifacts_on_tech})
+		elseif global.alien_artifacts_source == "gradual_distribution" then player.print({"gradual_distribution_message",global.config.num_alien_artifacts_gradual})
+		else game.print("error in set_player()!") end
+	else
+		
 	end
-	update_players_list()
-	update_scoreboard()
-	create_silo_progress_bars(player)
-	game.print({"joined", player.name, player.force.name})
-	player.print({"objective"})
-	player.print({"objective-warning"})
-	player.print({"wall-warning"})
-	if     global.alien_artifacts_source == "biters_enabled"       then player.print({"biters_enabled_message"})
-	elseif global.alien_artifacts_source == "alien_tech_research"  then player.print({"alien_tech_research_message",global.config.num_alien_artifacts_on_tech})
-	elseif global.alien_artifacts_source == "gradual_distribution" then player.print({"gradual_distribution_message",global.config.num_alien_artifacts_gradual})
-	else game.print("error in set_player()!") end
 	print("PLAYER$force," .. player.index .. "," .. player.name .. "," .. player.force.name)
 end
 

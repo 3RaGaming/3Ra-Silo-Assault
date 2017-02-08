@@ -166,8 +166,10 @@ Event.register(defines.events.on_gui_click, function(event)
 				end
 			end
 		end
+	elseif gui.name == "admin_join_spectate" then
+		gui.parent.destroy()
+		admin_spectate_join(player)
 	end
-
 end)
 
 function open_players_list(player)
@@ -496,6 +498,7 @@ function create_random_join_gui(gui)
 	end
 	local frame = gui.add{type = "frame", name = "random_join_frame", caption = {"",{"random-join"},""}}
 	local button = frame.add{type = "button", name = "random_join_button", caption = {"",{"random-join-button"},""}}
+	if game.players[gui.player_index].admin then frame.add{type = "button", name = "admin_join_spectate", caption = "(Admin) Spectate"} end
 end
 
 function create_auto_assign_gui(gui)
@@ -505,6 +508,7 @@ function create_auto_assign_gui(gui)
 	end
 	local frame = gui.add{type = "frame", name = name.."_frame", caption = {name.."_frame"}}
 	local button = frame.add{type = "button", name = name.."_button", caption = {name.."_button"}}
+	if game.players[gui.player_index].admin then frame.add{type = "button", name = "admin_join_spectate", caption = "(Admin) Spectate"} end
 end
 
 function create_pick_join_gui(gui)
@@ -534,6 +538,7 @@ function create_pick_join_gui(gui)
 	end
 	local button = frame.add{type = "button", name = "player_pick_confirm", caption = {"confirm"}}
 	button.style.font = "default"
+	if game.players[gui.player_index].admin then frame.add{type = "button", name = "admin_join_spectate", caption = "(Admin) Spectate"} end
 end
 
 function create_config_gui(player)

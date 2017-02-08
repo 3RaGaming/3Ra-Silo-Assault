@@ -80,7 +80,8 @@ function load_config()
 			{name = "Brown", color = {0.306, 0.165, 0.016, 1}},
 			{name = "Light Blue", color = {0.494, 0.749, 0.945, 1}},
 			{name = "Dark Green", color = {0.063, 0.384, 0.275, 1}},
-			{name = "Lobby", color = {1, 0.012, 0.012, 1}} -- Red
+			{name = "Admins", color = {1, 0.012, 0.012, 1}}, -- Red
+			{name = "Lobby", color = {0.8, 0.8, 0.8, 0.5}} -- White
 		}
 	global.inventory_list =
 	{
