@@ -23,7 +23,7 @@ function load_config()
 			["map_height"] = 150*32,
 			["map_width"] = 150*32,
 			["copy_starting_area"] = true,
-			["reveal_team_positions"] = false,
+			["reveal_team_positions"] = true,
 			["team_walls"] = true,
 			["continuous_play"] = true,
 			["time_between_rounds"] = 60, -- seconds

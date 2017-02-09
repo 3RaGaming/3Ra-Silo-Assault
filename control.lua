@@ -229,6 +229,7 @@ global.timer_display = 1
 Event.register(defines.events.on_tick, function(event)
 	--runs every tick
 	end_game()
+	
 	--runs every 500ms
 	if(game.tick % 30 == 0) then
 		update_silo_progress_bars()
@@ -589,32 +590,36 @@ end
 
 -- shows player health as a text float.
 function show_health()
-		for k, player in pairs(game.players) do
-		if player.connected then
-			if player.character then
-				if player.character.health == nil  then return end
-				local index = player.index
-				local health = math.ceil(player.character.health)
-				if global.player_health == nil then global.player_health = {} end
-				if global.player_health[index] == nil then global.player_health[index] = health end
-				if global.player_health[index] ~= health then
-					global.player_health[index] = health
-					-- slows the player just slightly if not at full health
-						player.character_running_speed_modifier = -.1*(100-health)*global.crippling_factor/100
-					-- prints player health when < 80%
-					if health < 80 then
-						if health > 50 then
-							player.surface.create_entity{name="flying-text", color={b = 0.2, r= 0.1, g = 1, a = 0.8}, text=(health), position= {player.position.x, player.position.y-2}}
-						elseif health > 29 then
-							player.surface.create_entity{name="flying-text", color={r = 1, g = 1, b = 0}, text=(health), position= {player.position.x, player.position.y-2}}
-						else
-							player.surface.create_entity{name="flying-text", color={b = 0.1, r= 1, g = 0, a = 0.8}, text=(health), position= {player.position.x, player.position.y-2}}
-						end
+	for k, player in pairs(game.players) do
+		if player.connected and player.character and player.character.health ~= nil then
+			local index = player.index
+			local health = math.ceil(player.character.health)
+			if global.player_health == nil then global.player_health = {} end
+			if global.player_health[index] == nil then
+				global.player_health[index] = health
+			elseif global.player_health[index] ~= health then
+				player.character_running_speed_modifier = -.1*(100-health)*global.crippling_factor/100
+				local health_multiplier = 1 + global.modifier_list.character_modifiers.character_health_bonus / 100
+				local text_position = {player.position.x, player.position.y - 2}
+				if health >= global.player_health[index] + 4 then --I could use 20 instead of 4, but then you would not see if they fished near max health
+					player.surface.create_entity{name="flying-text", color={b = 1, r= 0.4, g = 0.4, a = 0.8}, text="Ate fish!", position=text_position}
+					global.player_health[index] = health - 1 --set it to one less so that next time through this function the code below runs
+
+				-- slows the player just slightly if not at full health
+				-- prints player health when < 80%
+				elseif health < 100 * health_multiplier then
+					if health > 50 * health_multiplier then
+						player.surface.create_entity{name="flying-text", color={b = 0.2, r= 0.1, g = 1, a = 0.8}, text=(health), position=text_position}
+					elseif health >= 30 * health_multiplier then
+						player.surface.create_entity{name="flying-text", color={r = 1, g = 1, b = 0}, text=(health), position=text_position}
+					else
+						player.surface.create_entity{name="flying-text", color={b = 0.1, r= 1, g = 0, a = 0.8}, text=(health), position=text_position}
 					end
+					global.player_health[index] = health
 				end
 			end
-				end
 		end
+	end
 end
 
 
