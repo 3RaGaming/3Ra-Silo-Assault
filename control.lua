@@ -1349,6 +1349,24 @@ function kill_force(force)
 	global.silos[force.name].damage(10000, force)
 end
 
+function sudden_death()
+	for _,force in pairs(game.forces) do
+		for name,_ in pairs (global.modifier_list.turret_attack_modifier) do
+			force.set_turret_attack_modifier(name, -0.9)
+		end
+		force.recipes["land-mine"].enabled=false
+	end
+end
+
+function stop_sudden_death()
+	for _,force in pairs(game.forces) do
+		for name, modifier in pairs (global.modifier_list.turret_attack_modifier) do
+			force.set_turret_attack_modifier(name, modifier)
+		end
+		force.recipes["land-mine"].enabled=true
+	end
+end
+
 function get_seed()
 	game.print(game.surfaces["nauvis"].map_gen_settings.seed)
 end
