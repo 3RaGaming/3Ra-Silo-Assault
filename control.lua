@@ -722,10 +722,13 @@ function auto_assign(player)
 		local force = game.forces[global.force_list[force_index].name]
 		local players_online = #force.connected_players
 		local players_total = #force.players
-		if players_online < least_players_online_on_a_team or players_online == least_players_online_on_a_team and players_total < least_players_on_a_team then
+		if players_online < least_players_online_on_a_team then
 			--table.insert(eligible_teams, force)
 			eligible_teams = {force_index}
 			least_players_online_on_a_team = players_online
+			least_players_on_a_team = players_total
+		elseif players_online == least_players_online_on_a_team and players_total < least_players_on_a_team then
+			eligible_teams = {force_index}
 			least_players_on_a_team = players_total
 		elseif players_online == least_players_online_on_a_team and players_total == least_players_on_a_team then
 			table.insert(eligible_teams, force_index)
