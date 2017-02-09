@@ -455,6 +455,7 @@ Event.register(defines.events.on_entity_died, function(event)
 		end
 	end
 	--Spectating admins who were originally on the dead force
+	global.player_spectator_force = global.player_spectator_force or {}
 	for index, sforce in pairs(global.player_spectator_force) do
 		if sforce and force.name == sforce.name then
 			global.player_spectator_force[index] = game.forces["Admins"]
