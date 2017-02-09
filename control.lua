@@ -714,6 +714,30 @@ end)
 
 
 function auto_assign(player)
+	local eligible_teams = {}
+	local least_players_online_on_a_team = 9999
+	local least_players_on_a_team = 9999
+	for force_index = 1, global.config.number_of_teams do
+		local force = game.forces[global.force_list[force_index].name]
+		local players_online = #force.connected_players
+		local players_total = #force.players
+		if players_online < least_players_online_on_a_team or players_online == least_players_online_on_a_team and players_total < least_players_on_a_team then
+			--table.insert(eligible_teams, force)
+			eligible_teams = {force_index}
+			least_players_online_on_a_team = players_online
+			least_players_on_a_team = players_total
+		elseif players_online == least_players_online_on_a_team and players_total == least_players_on_a_team then
+			table.insert(eligible_teams, force_index)
+		end
+	end
+	if #eligible_teams == 0 then error("No eligible teams!") return end
+	--Pick a random team from among those who are eligible
+	local selected_team = global.force_list[eligible_teams[math.random(#eligible_teams)]]
+	local c = selected_team.color
+	local color = {r = fpn(c[1]), g = fpn(c[2]), b = fpn(c[3]), a = fpn(c[4])}
+	set_player(player,game.forces[selected_team.name],color)
+
+--[[
 	local force
 	local team
 	repeat
@@ -740,9 +764,12 @@ function auto_assign(player)
 			end
 		end
 	end
+
 	local c = team.color
 	local color = {r = fpn(c[1]), g = fpn(c[2]), b = fpn(c[3]), a = fpn(c[4])}
 	set_player(player,force,color)
+--]]
+
 end
 
 
