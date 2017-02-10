@@ -144,15 +144,17 @@ function end_round()
 	log_scenario("Begin end_round()")
 
 	-- Force admins out of spectate state
-	for index, value in pairs(global.player_spectator_state) do
-		if global.player_spectator_state[index] ~= nil then
-			local character = global.player_spectator_character[index]
-			global.player_spectator_character[index] = nil
-			if character and character.valid then character.destroy() end
-			force_spectators(index, false)
+	if global.player_spectator_state then
+		for index, value in pairs(global.player_spectator_state) do
+			if global.player_spectator_state[index] ~= nil then
+				local character = global.player_spectator_character[index]
+				global.player_spectator_character[index] = nil
+				if character and character.valid then character.destroy() end
+				force_spectators(index, false)
+			end
 		end
 	end
-	
+		
 	local player_count = 0
 	for k, player in pairs (game.players) do
 		player.force = game.forces.player
