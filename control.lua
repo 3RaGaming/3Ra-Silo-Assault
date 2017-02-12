@@ -153,18 +153,19 @@ function end_round()
 				if game.players[index].connected then
 					force_spectators(index, false)
 				else
-					if player.gui.left.spectate_panel then
-						player.gui.left.spectate_panel.destroy()
+					local offline_player = game.players[index]
+					if offline_player.gui.left.spectate_panel then
+						offline_player.gui.left.spectate_panel.destroy()
 					end
-					if player.gui.left.follow_panel then
-						toggle_follow_panel(player)
+					if offline_player.gui.left.follow_panel then
+						toggle_follow_panel(offline_player)
 					end
-					player.gui.left.admin_pane.spectate.caption = "Spectate"
-					if player.gui.left.admin_pane.character ~= nil then
-						player.gui.left.admin_pane.character.caption = "Character"
+					offline_player.gui.left.admin_pane.spectate.caption = "Spectate"
+					if offline_player.gui.left.admin_pane.character ~= nil then
+						offline_player.gui.left.admin_pane.character.caption = "Character"
 					end
-					global.player_spectator_state[index] = false
-					player.force = "Lobby"
+					global.offline_player_spectator_state[index] = false
+					offline_player.force = "Lobby"
 				end
 			end
 		end
