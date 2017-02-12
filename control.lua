@@ -164,7 +164,7 @@ function end_round()
 					if offline_player.gui.left.admin_pane.character ~= nil then
 						offline_player.gui.left.admin_pane.character.caption = "Character"
 					end
-					global.offline_player_spectator_state[index] = false
+					global.player_spectator_state[index] = false
 					offline_player.force = "Lobby"
 				end
 			end
