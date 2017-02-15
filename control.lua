@@ -17,6 +17,7 @@ require "technologies"
 require "locale/utils/gravestone"
 require "gui"
 require "tag"
+require "bps"
 require "locale/utils/bot"
 
 -- controls how much slower you run as you lose health
