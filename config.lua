@@ -89,7 +89,8 @@ function load_config()
 		{
 			["iron-plate"] = 8,
 			["burner-mining-drill"] = 2,
-			["stone-furnace"] = 2
+			["stone-furnace"] = 2,
+			["blueprint"] = 1
 		},
 		["small"] =
 		{
@@ -98,6 +99,7 @@ function load_config()
 			["pipe-to-ground"] = 20,
 			["copper-plate"] = 10,
 			["transport-belt"] = 200,
+			["blueprint"] = 1,
 			["repair-pack"] = 20,
 			["inserter"] = 20,
 			["fast-inserter"] = 20,
@@ -126,6 +128,7 @@ function load_config()
 			["fast-inserter"] = 70,
 			["burner-inserter"] = 14,
 			["small-electric-pole"] = 40,
+			["blueprint"] = 1,
 			["repair-pack"] = 20,
 			["burner-mining-drill"] = 30,
 			["electric-mining-drill"] = 20,
@@ -142,18 +145,20 @@ function load_config()
 		["large"] =
 		{
 			["iron-plate"] = 200,
-			["pipe"] = 100,
-			["pipe-to-ground"] = 20,
 			["copper-plate"] = 200,
 			["steel-plate"] = 200,
 			["iron-gear-wheel"] = 250,
 			["transport-belt"] = 400,
 			["underground-belt"] = 40,
 			["splitter"] = 40,
-			["repair-pack"] = 20,
+			["pipe"] = 100,
+			["pipe-to-ground"] = 20,
 			["inserter"] = 100,
 			["burner-inserter"] = 28,
+			["fast-inserter"] = 100,
 			["small-electric-pole"] = 50,
+			["blueprint"] = 1,
+			["repair-pack"] = 20,
 			["burner-mining-drill"] = 50,
 			["electric-mining-drill"] = 50,
 			["stone-furnace"] = 35,
@@ -163,7 +168,6 @@ function load_config()
 			["assembling-machine-2"] = 20,
 			["assembling-machine-3"] = 8,
 			["electronic-circuit"] = 200,
-			["fast-inserter"] = 100,
 			["medium-electric-pole"] = 50,
 			["substation"] = 10,
 			["boiler"] = 28,
