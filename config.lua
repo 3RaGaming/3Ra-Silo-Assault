@@ -39,7 +39,8 @@ function load_config()
 			["peaceful_mode"] = false,
 			["ceasefire"] = false,
 			["evolution_factor"] = 0,
-			["chests_neutral"] = true
+			["chests_neutral"] = true,
+			["blueprint_string"] = false
 		}
 
 	global.research_ingredient_list =
@@ -89,7 +90,9 @@ function load_config()
 		{
 			["iron-plate"] = 8,
 			["burner-mining-drill"] = 2,
-			["stone-furnace"] = 2
+			["stone-furnace"] = 2,
+			["blueprint"] = 1,
+			["deconstruction-planner"] = 1
 		},
 		["small"] =
 		{
@@ -98,6 +101,7 @@ function load_config()
 			["pipe-to-ground"] = 20,
 			["copper-plate"] = 10,
 			["transport-belt"] = 200,
+			["blueprint"] = 1,
 			["repair-pack"] = 20,
 			["inserter"] = 20,
 			["fast-inserter"] = 20,
@@ -108,7 +112,8 @@ function load_config()
 			["assembling-machine-1"] = 8,
 			["electric-mining-drill"] = 2,
 			["boiler"] = 7,
-			["steam-engine"] = 5
+			["steam-engine"] = 5,
+			["deconstruction-planner"] = 1
 		},
 		["medium"] =
 		{
@@ -126,6 +131,7 @@ function load_config()
 			["fast-inserter"] = 70,
 			["burner-inserter"] = 14,
 			["small-electric-pole"] = 40,
+			["blueprint"] = 1,
 			["repair-pack"] = 20,
 			["burner-mining-drill"] = 30,
 			["electric-mining-drill"] = 20,
@@ -137,23 +143,26 @@ function load_config()
 			["steam-engine"] = 10,
 			["chemical-plant"] = 5,
 			["oil-refinery"] = 2,
-			["pumpjack"] = 8
+			["pumpjack"] = 8,
+			["deconstruction-planner"] = 1
 		},
 		["large"] =
 		{
 			["iron-plate"] = 200,
-			["pipe"] = 100,
-			["pipe-to-ground"] = 20,
 			["copper-plate"] = 200,
 			["steel-plate"] = 200,
 			["iron-gear-wheel"] = 250,
 			["transport-belt"] = 400,
 			["underground-belt"] = 40,
 			["splitter"] = 40,
-			["repair-pack"] = 20,
+			["pipe"] = 100,
+			["pipe-to-ground"] = 20,
 			["inserter"] = 100,
 			["burner-inserter"] = 28,
+			["fast-inserter"] = 100,
 			["small-electric-pole"] = 50,
+			["blueprint"] = 1,
+			["repair-pack"] = 20,
 			["burner-mining-drill"] = 50,
 			["electric-mining-drill"] = 50,
 			["stone-furnace"] = 35,
@@ -163,14 +172,14 @@ function load_config()
 			["assembling-machine-2"] = 20,
 			["assembling-machine-3"] = 8,
 			["electronic-circuit"] = 200,
-			["fast-inserter"] = 100,
 			["medium-electric-pole"] = 50,
 			["substation"] = 10,
 			["boiler"] = 28,
 			["steam-engine"] = 20,
 			["chemical-plant"] = 10,
 			["oil-refinery"] = 5,
-			["pumpjack"] = 10
+			["pumpjack"] = 10,
+			["deconstruction-planner"] = 1
 		}
 	}
 	global.scenario = {custom_functions={}}
@@ -219,7 +228,9 @@ function give_equipment(player)
 		player.force.worker_robots_speed_modifier = 2.5
 		player.insert{name = "construction-robot", count = 10}
 		player.insert{name = "blueprint", count = 3}
-		player.insert{name = "deconstruction-planner", count = 1}
+		if not global.config.blueprint_string then
+			player.insert{name = "deconstruction-planner", count = 1}
+		end
 		player.insert{name = "car", count = 1}
 		return
 	end
