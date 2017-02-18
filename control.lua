@@ -250,7 +250,7 @@ Event.register(defines.events.on_tick, function(event)
 	end_game()
 	turrets = global.turrets_warming_up
 	if not Queue.is_empty(turrets) and turrets[turrets.first].tick + global.config.turret_warmup_time * 60 <= game.tick then
-		local turret = Queue.dequeue(turrets).entity
+		local turret = Queue.dequeue(turrets).turret
 		if turret and turret.valid then turret.active = true end
 	end
 	
@@ -919,8 +919,11 @@ function give_inventory(player)
 	if not global.inventory_list[global.starting_inventory] then return end
 	local list = global.inventory_list[global.starting_inventory]
 	for name, count in pairs (list) do
-		if game.item_prototypes[name] and ((name ~= "blueprint" and name ~= "deconstruction-planner") or global.config.blueprint_string) then
-			player.insert{name = name, count = count}
+		if game.item_prototypes[name] then
+			-- don't give out a starting blueprint or deconstruction planner if we don't have Blueprint String softmod enabled
+			if not ((name == "blueprint" or name == "deconstruction-planner") and not global.config.blueprint_string) then
+				player.insert{name = name, count = count}
+			end
 		else
 			game.print(name.." is not a valid item")
 		end
@@ -1380,7 +1383,7 @@ function create_wall_for_force(force)
 	surface.set_tiles(tiles)
 end
 
-Event.register(defines.events.on_built_entity, function(event)
+local function on_built_entity(event)
 	local entity = event.created_entity
 	if entity.force.name == "Admins" then
 		entity.destroy()
@@ -1392,9 +1395,12 @@ Event.register(defines.events.on_built_entity, function(event)
 	end
 	if global.config.turret_warmup_time > 0 and (entity.name == "gun-turret" or entity.name == "laser-turret" or entity.name == "flamethrower-turret") then
 		entity.active = false
-		Queue.enqueue(global.turrets_warming_up, {entity = entity, tick = game.tick})
+		Queue.enqueue(global.turrets_warming_up, {turret = entity, tick = game.tick})
 	end
-end)
+end
+
+Event.register(defines.events.on_built_entity, on_built_entity)
+Event.register(defines.events.on_robot_built_entity, on_built_entity)
 
 Event.register(defines.events.on_player_driving_changed_state, function(event)
 	local player = game.players[event.player_index]
