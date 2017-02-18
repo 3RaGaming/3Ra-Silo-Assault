@@ -8,8 +8,9 @@ BlueprintString.LINE_LENGTH = 120
 
 -- Initialise player GUI
 -- @param player
-local function init_gui(player)
-	if (not player.force.technologies["automated-construction"].researched) then
+function init_bps_gui(player)
+	if not global.config or not global.config.blueprint_string or not player.force.technologies["automated-construction"].researched then
+		if player.gui.top["blueprint-string-button"] then player.gui.top["blueprint-string-button"].destroy() end
 		return
 	end
 
@@ -21,24 +22,22 @@ end
 -- Initialise map
 function bps_init()
 	for _, player in pairs(game.players) do
-		init_gui(player)
+		init_bps_gui(player)
 	end
 end
 
 -- Initialise player
 -- @param event on_player_joined event
 local function player_joined(event)
-	init_gui(game.players[event.player_index])
+	init_bps_gui(game.players[event.player_index])
 end
 
 -- Handle research completion
 -- @param event on_research_finished event
 local function on_research_finished(event)
 	if (event.research.name == "automated-construction") then
-		for _, player in pairs(game.players) do
-			if (event.research.force.name == player.force.name) then
-				init_gui(player)
-			end
+		for _, player in pairs(event.research.force.players) do
+			init_bps_gui(player)
 		end
 	end
 end

@@ -39,7 +39,8 @@ function load_config()
 			["peaceful_mode"] = false,
 			["ceasefire"] = false,
 			["evolution_factor"] = 0,
-			["chests_neutral"] = true
+			["chests_neutral"] = true,
+			["blueprint_string"] = false
 		}
 
 	global.research_ingredient_list =
@@ -90,7 +91,8 @@ function load_config()
 			["iron-plate"] = 8,
 			["burner-mining-drill"] = 2,
 			["stone-furnace"] = 2,
-			["blueprint"] = 1
+			["blueprint"] = 1,
+			["deconstruction-planner"] = 1
 		},
 		["small"] =
 		{
@@ -110,7 +112,8 @@ function load_config()
 			["assembling-machine-1"] = 8,
 			["electric-mining-drill"] = 2,
 			["boiler"] = 7,
-			["steam-engine"] = 5
+			["steam-engine"] = 5,
+			["deconstruction-planner"] = 1
 		},
 		["medium"] =
 		{
@@ -140,7 +143,8 @@ function load_config()
 			["steam-engine"] = 10,
 			["chemical-plant"] = 5,
 			["oil-refinery"] = 2,
-			["pumpjack"] = 8
+			["pumpjack"] = 8,
+			["deconstruction-planner"] = 1
 		},
 		["large"] =
 		{
@@ -174,7 +178,8 @@ function load_config()
 			["steam-engine"] = 20,
 			["chemical-plant"] = 10,
 			["oil-refinery"] = 5,
-			["pumpjack"] = 10
+			["pumpjack"] = 10,
+			["deconstruction-planner"] = 1
 		}
 	}
 	global.scenario = {custom_functions={}}
@@ -223,7 +228,9 @@ function give_equipment(player)
 		player.force.worker_robots_speed_modifier = 2.5
 		player.insert{name = "construction-robot", count = 10}
 		player.insert{name = "blueprint", count = 3}
-		player.insert{name = "deconstruction-planner", count = 1}
+		if not global.config.blueprint_string then
+			player.insert{name = "deconstruction-planner", count = 1}
+		end
 		player.insert{name = "car", count = 1}
 		return
 	end

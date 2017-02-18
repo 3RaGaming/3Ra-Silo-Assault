@@ -876,6 +876,7 @@ end
 
 function set_player(player,force,color)
 	if player.gui.left.surrender_dialog then player.gui.left.surrender_dialog.destroy() end
+	init_bps_gui(player)
 	player.force = force
 	player.color = color
 	local position = spread_spawn(player)
@@ -910,7 +911,7 @@ function give_inventory(player)
 	if not global.inventory_list[global.starting_inventory] then return end
 	local list = global.inventory_list[global.starting_inventory]
 	for name, count in pairs (list) do
-		if game.item_prototypes[name] then
+		if game.item_prototypes[name] and ((name ~= "blueprint" and name ~= "deconstruction-planner") or global.config.blueprint_string) then
 			player.insert{name = name, count = count}
 		else
 			game.print(name.." is not a valid item")
@@ -1306,6 +1307,9 @@ function setup_research(force)
 				break
 			end
 		end
+	end
+	if global.config.blueprint_string then
+		force.technologies["automated-construction"].researched = true
 	end
 	global.disable_tech_event = false
 end
