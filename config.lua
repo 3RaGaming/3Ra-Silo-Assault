@@ -40,7 +40,8 @@ function load_config()
 			["ceasefire"] = false,
 			["evolution_factor"] = 0,
 			["chests_neutral"] = true,
-			["blueprint_string"] = false
+			["blueprint_string"] = false,
+			["turret_warmup_time"] = 0
 		}
 
 	global.research_ingredient_list =

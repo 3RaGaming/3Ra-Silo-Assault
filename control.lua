@@ -248,6 +248,11 @@ global.timer_display = 1
 Event.register(defines.events.on_tick, function(event)
 	--runs every tick
 	end_game()
+	turrets = global.turrets_warming_up
+	if not Queue.is_empty(turrets) and turrets[turrets.first].tick + global.config.turret_warmup_time * 60 <= game.tick then
+		local turret = Queue.dequeue(turrets).entity
+		if turret and turret.valid then turret.active = true end
+	end
 	
 	--runs every 500ms
 	if(game.tick % 30 == 0) then
@@ -1373,13 +1378,18 @@ function create_wall_for_force(force)
 end
 
 Event.register(defines.events.on_built_entity, function(event)
-	if event.created_entity.force.name == "Admins" then
-		event.created_entity.destroy()
+	local entity = event.created_entity
+	if entity.force.name == "Admins" then
+		entity.destroy()
 		game.players[event.player_index].print("Admins cannot place entities on the field!")
 		return
 	end
-	if event.created_entity.type == "container" and global.config.chests_neutral then
-		event.created_entity.force = "neutral"
+	if entity.type == "container" and global.config.chests_neutral then
+		entity.force = "neutral"
+	end
+	if global.config.turret_warmup_time > 0 and (entity.name == "gun-turret" or entity.name == "laser-turret" or entity.name == "flamethrower-turret") then
+		entity.active = false
+		Queue.enqueue(global.turrets_warming_up, {entity = entity, tick = game.tick})
 	end
 end)
 
@@ -1434,5 +1444,32 @@ function ongoingRound()
 	end
 	print(tempstring:sub(1,#tempstring-1))
 end
-	
+
+
+Queue = {}
+function Queue.new()
+	return {first = 0, last = -1}
+end
+
+function Queue.enqueue(queue, value)
+	local last = queue.last + 1
+	queue.last = last
+	queue[last] = value
+end
+
+function Queue.dequeue(queue)
+	local first = queue.first
+	if first > queue.last then error("queue is empty") end
+	local value = queue[first]
+	queue[first] = nil        -- to allow garbage collection
+	queue.first = first + 1
+	return value
+end
+
+function Queue.is_empty(queue)
+	return queue.first > queue.last
+end
+
+global.turrets_warming_up = Queue.new()
+
 Event.register(-2, ongoingRound)
