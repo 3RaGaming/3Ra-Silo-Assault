@@ -901,6 +901,9 @@ function set_player(player,force,color)
 		player.print({"objective"})
 		player.print({"objective-warning"})
 		player.print({"wall-warning"})
+		if global.config.turret_warmup_time > 0 then
+			player.print({"turret-warmup-warning",global.config.turret_warmup_time})
+		end
 		if     global.alien_artifacts_source == "biters_enabled"       then player.print({"biters_enabled_message"})
 		elseif global.alien_artifacts_source == "alien_tech_research"  then player.print({"alien_tech_research_message",global.config.num_alien_artifacts_on_tech})
 		elseif global.alien_artifacts_source == "gradual_distribution" then player.print({"gradual_distribution_message",global.config.num_alien_artifacts_gradual})
