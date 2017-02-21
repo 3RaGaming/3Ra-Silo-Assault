@@ -19,6 +19,14 @@ Event.register(defines.events.on_gui_click, function(event)
 		end
 		return
 
+	elseif (gui.name == "game_info_button") then
+		if player.gui.left.game_info_window then
+			player.gui.left.game_info_window.destroy()
+		else
+			open_game_info_window(player)
+		end
+		
+
 	elseif (gui.name == "score_button") then
 		if player.gui.left.score_board then
 			player.gui.left.score_board.destroy()
@@ -202,6 +210,21 @@ function add_surrender_label(player, message)
 	return surrender_error_label
 end
 
+function open_game_info_window(player)
+	if player.gui.left.game_info_window then player.gui.left.game_info_window.destroy() end
+	local game_info_window = player.gui.left.add{name = "game_info_window", type = "frame", direction = "vertical", caption = "Game Info"}
+	game_info_window.add{type = "label", name = "game_info_label_1", caption = {"game-info-1"}}
+	game_info_window.add{type = "label", name = "game_info_label_2", caption = {"game-info-2"}}
+	game_info_window.add{type = "label", name = "game_info_label_3", caption = {"game-info-3"}}
+	game_info_window.add{type = "label", name = "game_info_label_4", caption = {"game-info-4"}}
+	game_info_window.add{type = "label", name = "game_info_label_5", caption = {"game-info-5"}}
+	game_info_window.add{type = "label", name = "game_info_label_6", caption = {"game-info-6"}}
+	game_info_window.add{type = "label", name = "game_info_label_7", caption = {"game-info-7"}}
+	game_info_window.add{type = "label", name = "game_info_label_8", caption = {"game-info-8"}}
+	game_info_window.add{type = "label", name = "game_info_label_9", caption = {"game-info-9"}}
+end
+
+
 function open_score_board_window(player)
 	if player.gui.left.score_board then player.gui.left.score_board.destroy() end
 
@@ -357,8 +380,8 @@ end
 
 --using this to order the gui'
 function create_buttons(player)
-	if (not player.gui.top["flashlight_button"]) then
-		player.gui.top.add{type="button", name="flashlight_button", caption="Flashlight"}
+	if (not player.gui.top["game_info_button"]) then
+		player.gui.top.add{type="button", name="game_info_button", caption="Game Info"}
 	end
 
 	if (not player.gui.top["score_button"]) then
@@ -371,6 +394,10 @@ function create_buttons(player)
 
 	if (not player.gui.top["surrender_button"]) then
 		player.gui.top.add{type="button", name="surrender_button", caption="Surrender Menu"}
+	end
+
+	if (not player.gui.top["flashlight_button"]) then
+		player.gui.top.add{type="button", name="flashlight_button", caption="Flashlight"}
 	end
 end
 

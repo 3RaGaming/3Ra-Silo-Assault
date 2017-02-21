@@ -899,8 +899,8 @@ function set_player(player,force,color)
 		create_silo_progress_bars(player)
 		game.print({"joined", player.name, player.force.name})
 		player.print({"objective"})
-		player.print({"objective-warning"})
-		player.print({"wall-warning"})
+		-- Is this important enough to spam in chat?
+		--player.print({"wall-warning"})
 		if global.config.turret_warmup_time > 0 then
 			player.print({"turret-warmup-warning",global.config.turret_warmup_time})
 		end
