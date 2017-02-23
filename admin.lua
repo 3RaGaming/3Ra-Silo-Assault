@@ -544,3 +544,51 @@ end
 Event.register(defines.events.on_player_joined_game, admin_joined)
 Event.register(defines.events.on_gui_click, gui_click)
 Event.register(defines.events.on_tick, admin_reveal)
+
+-- admin restriction controls
+global.restrict_admin_character = true
+remote.add_interface("admin_control",
+{
+	restrict_admins = function()
+		if global.restrict_admin_character then
+			game.player.print("Admins are already restricted")
+		else
+			global.restrict_admin_character = true
+			for k,p in pairs(game.players) do
+				if p.admin then
+					if p.gui.left.admin_pane.character ~= nil then
+						p.gui.left.admin_pane.character.destroy()
+					elseif p.gui.left.admin_pane.character_panel ~= nil then
+						p.gui.left.admin_pane.character_panel.destroy()
+					end
+					if p.character then
+						global.player_character_stats[p.index] = {
+							item_loot_pickup = false,
+							build_itemdrop_reach_resourcereach_distance = false,
+							crafting_speed = false,
+							mining_speed = false,
+							running_speed = 0
+						}
+						update_character(p.index)
+					end
+					p.print("Admins are now restricted from adjusting their characters. Your character is now reset to its default state.")
+				end
+			end
+		end
+	end,
+	unrestrict_admins = function()
+		if not global.restrict_admin_character then
+			game.player.print("Admins are already unrestricted")
+		else
+			global.restrict_admin_character = false
+			for k,p in pairs(game.players) do
+				if p.admin then
+					if p.gui.left.admin_pane.character == nil then
+						p.gui.left.admin_pane.add{name = "character", type = "button", caption = "Character"}
+					end
+					p.print("Admins have been unrestricted from adjusting their characters. Please do not abuse this if you are on a team, keep PvP fair.")
+				end
+			end
+		end
+	end
+})
