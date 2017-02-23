@@ -12,6 +12,7 @@ local roles = {
 	{ display_name = "Bus" },
 	{ display_name = "Smelting" },
 	{ display_name = "Pest Control" },
+	{ display_name = "Offence" },
 	{ display_name = "Automation" },
 	{ display_name = "Quality Control" },
 	{ display_name = "Power" },
