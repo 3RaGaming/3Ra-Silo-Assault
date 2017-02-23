@@ -449,6 +449,7 @@ Event.register(defines.events.on_entity_died, function(event)
 		global.ending_tick_2 = game.tick + 480
 		global.silo_position = silo.position
 		global.dummie_silo = surface.create_entity{name = "rocket-silo", position = global.silo_position, force = "neutral"}
+		global.dummie_silo.minable = false
 		global.endgame = true
 		for k, player in pairs (game.connected_players) do
 			local character = player.character
@@ -483,7 +484,7 @@ function end_game()
     surface.create_entity{position = {x + math.random(-4,4),y + math.random(-4,4)}, name = "medium-explosion"}
 	end
 	if game.tick == global.ending_tick then
-	if global.dummie_silo then global.dummie_silo.destroy() end
+	if global.dummie_silo and global.dummie_silo.valid then global.dummie_silo.destroy() end
 	surface.create_entity{position = global.silo_position, name = "big-explosion"}
 	end
 	if game.tick == global.ending_tick_2 then
