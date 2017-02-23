@@ -42,6 +42,7 @@ function load_config()
 			["chests_neutral"] = true,
 			["blueprint_string"] = false,
 			["turret_warmup_time"] = 0
+			["laboratory_speed_modifier"] = 1
 		}
 
 	global.research_ingredient_list =

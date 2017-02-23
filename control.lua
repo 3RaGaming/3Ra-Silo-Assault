@@ -9,9 +9,9 @@ team_eliminated = script.generate_event_name()
 
 require "config"
 require "locale/utils/event"
-require "locale/utils/admin"
 require "locale/utils/undecorator"
 require "locale/utils/utils"
+require "admin"
 require "balance"
 require "technologies"
 require "locale/utils/gravestone"
