@@ -41,7 +41,7 @@ function load_config()
 			["evolution_factor"] = 0,
 			["chests_neutral"] = true,
 			["blueprint_string"] = false,
-			["turret_warmup_time"] = 0
+			["turret_warmup_time"] = 0,
 			["laboratory_speed_modifier"] = 1
 		}
 

@@ -1265,6 +1265,7 @@ function setup_research(force)
 	if global.config.blueprint_string then
 		force.technologies["automated-construction"].researched = true
 	end
+	force.laboratory_speed_modifier = global.config.laboratory_speed_modifier
 	global.disable_tech_event = false
 end
 
