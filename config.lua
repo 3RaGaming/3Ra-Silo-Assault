@@ -1,258 +1,305 @@
-
 function load_config()
-	global.shrink_from_edge_constant = 0.75
-	global.percentage_needed_to_surrender = 70 -- percentage
-	global.minimum_yes_votes_to_surrender = 4
-	global.starting_inventory = "medium"
-	global.starting_equipment = "small"
-	global.team_joining = "player_pick"
-	global.alien_artifacts_source = "gradual_distribution"
-	global.alien_artifacts_gradual_remainder = 0
-	global.setup_finished = false
-	global.teams_currently_preparing = false
-	global.time_before_first_surrender_available = 15 -- minutes
-	global.surrender_vote_cooldown_period = 5 -- minutes
-	global.surrender_voting_period = 1 -- minutes
-	global.config =
-		{
-			["number_of_teams"] = 3,
-			["max_players_per_team"] = 0,
-			["average_team_displacement"] = 75*32,
-			["team_max_variance"] = 1,
-			["team_min_variance"] = 1,
-			["map_height"] = 150*32,
-			["map_width"] = 150*32,
-			["copy_starting_area"] = true,
-			["reveal_team_positions"] = true,
-			["team_walls"] = true,
-			["continuous_play"] = true,
-			["time_between_rounds"] = 60, -- seconds
-			["team_prepare_period"] = 60, -- seconds
-			["research_level"] = {"science-pack-1", "science-pack-2", "science-pack-3", "alien-science-pack"}, --TODO fix for 0.15 packs when needed
-			["unlock_combat_research"] = false,
-			["starting_inventory"] = {"none", "small", "medium", "large"},
-			["starting_equipment"] = {"none", "small", "medium", "large"},
-			["team_joining"] = {"player_pick", "random", "auto_assign"},
-			["alien_artifacts_source"] = {"biters_enabled", "alien_tech_research", "gradual_distribution"},
-			["num_alien_artifacts_on_tech"] = 200, -- give this amount to each player on a force when they research alien technology
-			["num_alien_artifacts_gradual"] = 40, -- per hour
-			["peaceful_mode"] = false,
-			["ceasefire"] = false,
-			["evolution_factor"] = 0,
-			["chests_neutral"] = true,
-			["blueprint_string"] = false,
-			["turret_warmup_time"] = 0,
-			["laboratory_speed_modifier"] = 1
-		}
 
-	global.research_ingredient_list =
-		{
-			--false means disabled.
-			["science-pack-1"] = false,
-			["science-pack-2"] = false,
-			["science-pack-3"] = false,
-			["alien-science-pack"] = false
-		}
---[[	global.force_list =
-		{
-			{name = "Blue", color = {0.2, 0.2, 0.8, 0.7}},
-			{name = "Green", color = {0.1, 0.8, 0.1, 0.8}},
-			{name = "Orange", color = {0.8, 0.4, 0.0, 0.8}},
-			{name = "Yellow", color = {0.8, 0.8, 0.0, 0.6}},
-			{name = "Pink", color = {0.8, 0.2, 0.8, 0.2}},
-			{name = "Cyan", color = {0.1, 0.9, 0.9, 0.8}},
-			{name = "Purple", color = {0.8, 0.2, 0.8, 0.9}},
-			{name = "Brown", color = {0.5, 0.3, 0.1, 0.8}},
-			{name = "Gray", color = {0.6, 0.6, 0.6, 0.8}},
-			{name = "White", color = {0.8, 0.8, 0.8, 0.5}},
-			{name = "Black", color = {0.1, 0.1, 0.1, 0.8}},
-			{name = "Lobby", color = {0.9, 0.1, 0.1, 0.8}}
-		}
---]]
-	global.max_teams = 11
-	global.force_list =
-		{
-			{name = "Blue", color = {0, 0.259, 1, 1}},
-			{name = "Orange", color = {0.8, 0.4, 0, 1}},
-			{name = "Purple", color = {0.329, 0, 0.506, 1}},
-			{name = "Yellow", color = {1, 0.988, 0.004, 1}},
-			{name = "Green", color = {0.125, 0.753, 0, 1}},
-			{name = "Teal", color = {0.11, 0.902, 0.725, 1}},
-			{name = "Pink", color = {0.898, 0.357, 0.69, 1}},
-			{name = "Grey", color = {0.584, 0.588, 0.592, 1}},
-			{name = "Brown", color = {0.306, 0.165, 0.016, 1}},
-			{name = "Light Blue", color = {0.494, 0.749, 0.945, 1}},
-			{name = "Dark Green", color = {0.063, 0.384, 0.275, 1}},
-			{name = "Admins", color = {1, 0.012, 0.012, 1}}, -- Red
-			{name = "Lobby", color = {0.8, 0.8, 0.8, 0.5}} -- White
-		}
-	global.inventory_list =
-	{
-		["none"] =
-		{
-			["iron-plate"] = 8,
-			["burner-mining-drill"] = 2,
-			["stone-furnace"] = 2,
-			["blueprint"] = 1,
-			["deconstruction-planner"] = 1
-		},
-		["small"] =
-		{
-			["iron-plate"] = 50,
-			["pipe"] = 100,
-			["pipe-to-ground"] = 20,
-			["copper-plate"] = 10,
-			["transport-belt"] = 200,
-			["blueprint"] = 1,
-			["repair-pack"] = 20,
-			["inserter"] = 20,
-			["fast-inserter"] = 20,
-			["small-electric-pole"] = 40,
-			["burner-mining-drill"] = 16,
-			["stone-furnace"] = 12,
-			["burner-inserter"] = 7,
-			["assembling-machine-1"] = 8,
-			["electric-mining-drill"] = 2,
-			["boiler"] = 7,
-			["steam-engine"] = 5,
-			["deconstruction-planner"] = 1
-		},
-		["medium"] =
-		{
-			["iron-plate"] = 200,
-			["iron-gear-wheel"] = 100,
-			["copper-plate"] = 100,
-			["steel-plate"] = 50,
-			["electronic-circuit"] = 100,
-			["transport-belt"] = 300,
-			["underground-belt"] = 20,
-			["splitter"] = 20,
-			["pipe"] = 100,
-			["pipe-to-ground"] = 20,
-			["inserter"] = 20,
-			["fast-inserter"] = 70,
-			["burner-inserter"] = 14,
-			["small-electric-pole"] = 40,
-			["blueprint"] = 1,
-			["repair-pack"] = 20,
-			["burner-mining-drill"] = 30,
-			["electric-mining-drill"] = 20,
-			["stone-furnace"] = 50,
-			["steel-furnace"] = 20,
-			["assembling-machine-1"] = 20,
-			["assembling-machine-2"] = 8,
-			["boiler"] = 14,
-			["steam-engine"] = 10,
-			["chemical-plant"] = 5,
-			["oil-refinery"] = 2,
-			["pumpjack"] = 8,
-			["deconstruction-planner"] = 1
-		},
-		["large"] =
-		{
-			["iron-plate"] = 200,
-			["copper-plate"] = 200,
-			["steel-plate"] = 200,
-			["iron-gear-wheel"] = 250,
-			["transport-belt"] = 400,
-			["underground-belt"] = 40,
-			["splitter"] = 40,
-			["pipe"] = 100,
-			["pipe-to-ground"] = 20,
-			["inserter"] = 100,
-			["burner-inserter"] = 28,
-			["fast-inserter"] = 100,
-			["small-electric-pole"] = 50,
-			["blueprint"] = 1,
-			["repair-pack"] = 20,
-			["burner-mining-drill"] = 50,
-			["electric-mining-drill"] = 50,
-			["stone-furnace"] = 35,
-			["steel-furnace"] = 20,
-			["electric-furnace"] = 8,
-			["assembling-machine-1"] = 50,
-			["assembling-machine-2"] = 20,
-			["assembling-machine-3"] = 8,
-			["electronic-circuit"] = 200,
-			["medium-electric-pole"] = 50,
-			["substation"] = 10,
-			["boiler"] = 28,
-			["steam-engine"] = 20,
-			["chemical-plant"] = 10,
-			["oil-refinery"] = 5,
-			["pumpjack"] = 10,
-			["deconstruction-planner"] = 1
-		}
-	}
-	global.scenario = {custom_functions={}}
+  global.setup_finished = false
+  global.time_between_rounds = 60*3
+  
+  global.map_config = 
+  {
+    ["average_team_displacement"] = 2000,
+    ["map_height"] = 2000,
+    ["map_width"] = 2000,
+    ["map_seed"] = 0,
+    ["starting_area_size"] = 
+    {
+      options = {"none", "very-low", "low", "normal", "high", "very-high"},
+      selected = "normal"
+    },
+    ["copy_starting_area"] = true,
+    ["always_day"] = false,
+    ["biters_disabled"] = false, 
+    ["peaceful_mode"] = false,
+    ["evolution_factor"] = 0,
+  }
+  
+  global.team_config = 
+  {
+    ["friendly_fire"] = true,
+    ["locked_teams"] = false,
+    ["who_decides_diplomacy"] =
+    {
+      options = {"all_players", "team_leader"},
+      selected = "all_players"
+    },
+    ["team_joining"] =
+    {
+      options = {"player_pick", "random", "auto_assign"},
+      selected = "auto_assign"
+    },
+    ["spawn_position"] = 
+    {
+      options = {"random", "fixed", "team_together"},
+      selected = "team_together"
+    },
+    ["no_rush_time"] = 10,
+    ["reveal_team_positions"] = true,
+    ["team_walls"] = true,
+    ["victory_condition"] =
+    {
+      options = {"standard", "space_race", "last_silo_standing", "freeplay"},
+      selected = "standard",
+      tooltip = {"victory_condition_tooltip", {"standard_description"}, {"space_race_description"}, {"last_silo_standing_description"}, {"freeplay_description"}}
+    },
+    ["research_level"] = 
+    {
+      options = {"none","science-pack-1", "science-pack-2", "science-pack-3", "military-science-pack", "production-science-pack", "high-tech-science-pack", "space-science-pack"},
+      selected = "none"
+    },
+    ["unlock_combat_research"] = false,
+    ["starting_inventory"] = 
+    {
+      options = {"none", "small", "medium", "large"},
+      selected = "none"
+    },
+    ["starting_equipment"] =
+    {
+      options = {"none", "small", "medium", "large"},
+      selected = "none"
+    },
+  }
+    
+  global.research_ingredient_list = {}
+  for k, research in pairs (global.team_config.research_level.options) do
+    global.research_ingredient_list[research] = false
+  end
+  
+  global.colors =
+  {
+    {name = "Blue", color = {0.2, 0.2, 0.8, 0.7}},
+    {name = "Green", color = {0.1, 0.8, 0.1, 0.8}},
+    {name = "Purple", color = {0.8, 0.2, 0.8, 0.9}},
+    {name = "Yellow", color = {0.8, 0.8, 0.0, 0.6}},
+    {name = "Cyan", color = {0.1, 0.9, 0.9, 0.8}},
+    {name = "Orange", color = {0.8, 0.4, 0.0, 0.8}},
+    {name = "Pink", color = {0.8, 0.2, 0.8, 0.2}},
+    {name = "White", color = {0.8, 0.8, 0.8, 0.5}},
+    {name = "Black", color = {0.1, 0.1, 0.1, 0.8}},
+    {name = "Gray", color = {0.6, 0.6, 0.6, 0.8}}
+  }
+  
+  global.color_map = {}
+  for k, color in pairs (global.colors) do
+    global.color_map[color.name] = k
+  end
+    
+  global.teams = 
+  {
+    {name = "Green 1", color = "Green", team = "-"},
+    {name = "Purple 2", color = "Purple", team = "-"}
+  }
+    
+  global.inventory_list = 
+  {
+    ["none"] = 
+    {
+      ["iron-plate"] = 8,
+      ["burner-mining-drill"] = 1,
+      ["stone-furnace"] = 1
+    },
+    ["small"] =
+    {
+      ["iron-plate"] = 20,
+      ["pipe"] = 100,
+      ["pipe-to-ground"] = 20,
+      ["copper-plate"] = 10,
+      ["transport-belt"] = 200,
+      ["repair-pack"] = 20,
+      ["inserter"] = 50,
+      ["small-electric-pole"] = 40,
+      ["burner-mining-drill"] = 16,
+      ["stone-furnace"] = 12,
+      ["burner-inserter"] = 30,
+      ["assembling-machine-1"] = 8,
+      ["electric-mining-drill"] = 2,
+      ["boiler"] = 2,
+      ["steam-engine"] = 4
+    },
+    ["medium"] =
+    {
+      ["iron-plate"] = 200,
+      ["pipe"] = 100,
+      ["pipe-to-ground"] = 20,
+      ["iron-gear-wheel"] = 100,
+      ["copper-plate"] = 100,
+      ["steel-plate"] = 100,
+      ["electronic-circuit"] = 100,
+      ["transport-belt"] = 300,
+      ["underground-belt"] = 20,
+      ["splitter"] = 20,
+      ["repair-pack"] = 20,
+      ["inserter"] = 100,
+      ["small-electric-pole"] = 40,
+      ["fast-inserter"] = 50,
+      ["burner-inserter"] = 50,
+      ["burner-mining-drill"] = 20,
+      ["electric-mining-drill"] = 20,
+      ["stone-furnace"] = 50,
+      ["steel-furnace"] = 20,
+      ["assembling-machine-1"] = 20,
+      ["assembling-machine-2"] = 8,
+      ["boiler"] = 5,
+      ["steam-engine"] = 10,
+      ["chemical-plant"] = 20,
+      ["oil-refinery"] = 5,
+      ["pumpjack"] = 8
+    },
+    ["large"] =
+    {
+      ["iron-plate"] = 200,
+      ["pipe"] = 100,
+      ["pipe-to-ground"] = 20,
+      ["copper-plate"] = 200,
+      ["steel-plate"] = 200,
+      ["iron-gear-wheel"] = 250,
+      ["transport-belt"] = 400,
+      ["underground-belt"] = 40,
+      ["splitter"] = 40,
+      ["repair-pack"] = 20,
+      ["inserter"] = 100,
+      ["burner-inserter"] = 50,
+      ["small-electric-pole"] = 50,
+      ["burner-mining-drill"] = 50,
+      ["electric-mining-drill"] = 50,
+      ["stone-furnace"] = 35,
+      ["steel-furnace"] = 20,
+      ["electric-furnace"] = 8,
+      ["assembling-machine-1"] = 50,
+      ["assembling-machine-2"] = 20,
+      ["assembling-machine-3"] = 8,
+      ["electronic-circuit"] = 200,
+      ["fast-inserter"] = 100,
+      ["long-handed-inserter"] = 100,
+      ["medium-electric-pole"] = 50,
+      ["substation"] = 10,
+      ["boiler"] = 10,
+      ["steam-engine"] = 20,
+      ["chemical-plant"] = 20,
+      ["oil-refinery"] = 5,
+      ["pumpjack"] = 10
+    }
+  }
 end
 
 function give_equipment(player)
 
-	if global.starting_equipment == "none" then
-		player.insert{name = "submachine-gun", count = 1}
-		player.insert{name = "firearm-magazine", count = 30}
-		player.insert{name = "iron-axe", count = 1}
-		return
-	end
-
-	if global.starting_equipment == "small" then
-		player.insert{name = "light-armor", count = 1}
-		player.insert{name = "steel-axe", count = 1}
-		player.insert{name = "submachine-gun", count = 1}
-		player.insert{name = "piercing-rounds-magazine", count = 40}
-		return
-	end
-
-	if global.starting_equipment == "medium" then
-		player.insert{name = "heavy-armor", count = 1}
-		player.insert{name = "steel-axe", count = 3}
-		player.insert{name = "submachine-gun", count = 1}
-		player.insert{name = "piercing-rounds-magazine", count = 40}
-		return
-	end
-
-	if global.starting_equipment == "large" then
-		player.insert{name = "steel-axe", count = 3}
-		player.insert{name = "submachine-gun", count = 1}
-		player.insert{name = "piercing-rounds-magazine", count = 40}
-		player.insert{name = "combat-shotgun", count = 1}
-		player.insert{name = "piercing-shotgun-shell", count = 20}
-		player.insert{name = "rocket-launcher", count = 1}
-		player.insert{name = "rocket", count = 80}
-		player.insert{name = "power-armor", count = 1}
-		local p_armor = player.get_inventory(5)[1].grid
-		p_armor.put({name = "fusion-reactor-equipment"})
-		p_armor.put({name = "exoskeleton-equipment"})
-		p_armor.put({name = "energy-shield-mk2-equipment"})
-		p_armor.put({name = "energy-shield-mk2-equipment"})
-		p_armor.put({name = "personal-roboport-equipment"})
-		player.force.worker_robots_speed_modifier = 2.5
-		player.insert{name = "construction-robot", count = 10}
-		player.insert{name = "blueprint", count = 3}
-		if not global.config.blueprint_string then
-			player.insert{name = "deconstruction-planner", count = 1}
-		end
-		player.insert{name = "car", count = 1}
-		return
-	end
+  local setting = global.team_config.starting_equipment.selected
+  
+  if setting == "none" then
+    player.insert{name = "submachine-gun", count = 1}
+	player.insert{name = "firearm-magazine", count = 30}
+	player.insert{name = "iron-axe", count = 1}
+	return
+  end
+  
+  if setting == "small" then
+    player.insert{name = "submachine-gun", count = 1}
+    player.insert{name = "piercing-rounds-magazine", count = 30}
+    player.insert{name = "shotgun", count = 1}
+    player.insert{name = "shotgun-shell", count = 20}
+    player.insert{name = "iron-axe", count = 1}
+    player.insert{name = "heavy-armor", count = 1}
+    return
+  end
+  
+  if setting == "medium" then
+    player.insert{name = "steel-axe", count = 3}
+    player.insert{name = "submachine-gun", count = 1}
+    player.insert{name = "piercing-rounds-magazine", count = 40}
+    player.insert{name = "shotgun", count = 1}
+    player.insert{name = "shotgun-shell", count = 20}
+    player.insert{name = "car", count = 1}
+    player.insert{name = "modular-armor", count = 1}
+    return
+  end
+  
+  if setting == "large" then
+    player.insert{name = "steel-axe", count = 3}
+    player.insert{name = "submachine-gun", count = 1}
+    player.insert{name = "piercing-rounds-magazine", count = 40}
+    player.insert{name = "combat-shotgun", count = 1}
+    player.insert{name = "piercing-shotgun-shell", count = 20}
+    player.insert{name = "rocket-launcher", count = 1}
+    player.insert{name = "rocket", count = 80}
+    player.insert{name = "power-armor", count = 1}
+    local armor = player.get_inventory(5)[1].grid
+    armor.put({name = "fusion-reactor-equipment"})
+    armor.put({name = "exoskeleton-equipment"})
+    armor.put({name = "energy-shield-equipment"})
+    armor.put({name = "energy-shield-equipment"})
+    armor.put({name = "personal-roboport-equipment"})
+    player.force.worker_robots_speed_modifier = 2.5
+    player.insert{name = "construction-robot", count = 10}
+    player.insert{name = "blueprint", count = 3}
+    player.insert{name = "deconstruction-planner", count = 1}
+    player.insert{name = "car", count = 1}
+    return
+  end  
 
 end
 
 function give_respawn_equipment(player)
 
-	player.insert{name = "submachine-gun", count = 1}
+  local setting = global.team_config.starting_equipment.selected
+  
+  if setting == "none" then
+    player.insert{name = "submachine-gun", count = 1}
 	player.insert{name = "firearm-magazine", count = 30}
 	player.insert{name = "iron-axe", count = 1}
 	return
+  end
+  
+  if setting == "small" then
+    player.insert{name = "submachine-gun", count = 1}
+    player.insert{name = "piercing-rounds-magazine", count = 30}
+    player.insert{name = "iron-axe", count = 1}
+    player.insert{name = "heavy-armor", count = 1}
+    return
+  end
+  
+  if setting == "medium" then
+    player.insert{name = "steel-axe", count = 3}
+    player.insert{name = "submachine-gun", count = 1}
+    player.insert{name = "piercing-rounds-magazine", count = 40}
+    player.insert{name = "modular-armor", count = 1}
+    return
+  end
+  
+  if setting == "large" then
+    player.insert{name = "steel-axe", count = 3}
+    player.insert{name = "submachine-gun", count = 1}
+    player.insert{name = "piercing-rounds-magazine", count = 40}
+    player.insert{name = "power-armor", count = 1}
+    local armor = player.get_inventory(5)[1].grid
+    armor.put({name = "fusion-reactor-equipment"})
+    armor.put({name = "exoskeleton-equipment"})
+    armor.put({name = "energy-shield-equipment"})
+    armor.put({name = "energy-shield-equipment"})
+    armor.put({name = "personal-roboport-equipment"})
+    player.force.worker_robots_speed_modifier = 2.5
+    player.insert{name = "construction-robot", count = 10}
+    player.insert{name = "blueprint", count = 3}
+    player.insert{name = "deconstruction-planner", count = 1}
+    return
+  end  
+  
 end
 
 starting_area_constant =
-	{
-		["none"] = 0,
-		["very-low"] = 120,
-		["low"] = 2*120,
-		["normal"] = 3*120,
-		["high"] = 4*120,
-		["very-high"] = 5*120
-	}
+  {
+    ["none"] = 128,
+    ["very-low"] = 128,
+    ["low"] = 2*128,
+    ["normal"] = 3*128,
+    ["high"] = 4*128,
+    ["very-high"] = 5*128
+  }
+  
