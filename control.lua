@@ -1494,6 +1494,7 @@ Event.register(defines.events.on_tick, function()
   check_no_rush_end()
   check_no_rush_players()
   check_player_color()
+  show_health()
   if global.setup_finished then return end
   check_round_start()
   copy_paste_starting_area_tiles()
