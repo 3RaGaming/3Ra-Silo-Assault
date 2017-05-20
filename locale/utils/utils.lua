@@ -508,8 +508,4 @@ function remove_global_event(name)
 	end
 end
 
-Event.register(-2, function()
-	for i,v in pairs(global.scenario.custom_functions) do
-		Event.register(v.event, v.func)
-	end
-end)
+
