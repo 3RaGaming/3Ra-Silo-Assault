@@ -62,6 +62,7 @@ Event.register(defines.events.on_rocket_launched, function (event)
   if not global.team_won then
     global.team_won = true
     game.print({"team-won",force.name})
+    print("PVPROUND$end," .. global.round_number .. "," .. force.name .. "," .. match_elapsed_time())
   end
 end)
 
@@ -137,15 +138,27 @@ function silo_died(event)
       choose_joining_gui(player)
     end
   end
+  
+  for i = 1, #global.teams do
+    if global.teams[i].name == force.name then
+      global.teams[i].status = "dead"
+      break
+    end
+  end
+
+  
   if force.name == killing_force.name then 
+    print("PVPROUND$eliminated," .. force.name .. ",suicide")
     game.merge_forces(force.name, "neutral")
   else
+    print("PVPROUND$eliminated," .. force.name .. "," .. killing_force.name)
     game.merge_forces(force.name, killing_force.name)
   end
   if index > 1 then return end
   if not global.team_won then
     global.team_won = true
     game.print({"team-won",winner_name})
+    print("PVPROUND$end," .. global.round_number .. "," .. winner_name .. "," .. match_elapsed_time())
   end
 end
 
@@ -1261,6 +1274,7 @@ function setup_teams()
     new_team.reset()
     set_spawn_position(k, new_team, global.surface)
     set_random_team(team)
+    global.teams[k].status = "alive"
   end
   for k, team in pairs (global.teams) do
     local force = game.forces[team.name]
@@ -1628,6 +1642,15 @@ function finish_setup()
   end
   create_wall_for_force(force)
   force.friendly_fire = global.team_config.friendly_fire
+  global.match_start_time = game.tick
+  
+  local tempstring = "PVPROUND$begin," .. global.round_number .. ","
+  for i = 1, #global.teams, 1 do
+    local force_name = global.teams[i].name
+    tempstring = tempstring .. force_name .. ","
+  end
+  print(tempstring:sub(1,#tempstring-1))
+  
 end
 
 function chart_area_for_force(surface, origin, radius, force)
@@ -1906,3 +1929,31 @@ end
 function fpn(n)
   return (math.floor(n*32)/32)
 end
+
+function match_elapsed_time()
+	local returnstring = ""
+	local ticks = game.tick - global.match_start_time
+	if ticks < 0 then
+		ticks = ticks * -1
+		returnstring = "-"
+	end
+	local hours = math.floor(ticks / 60^3)
+	local minutes = math.floor((ticks % 60^3) / 60^2)
+	local seconds = math.floor((ticks % 60^2) / 60)
+	if hours > 0 then returnstring = returnstring .. hours .. (hours > 1 and " hours; " or " hour; ") end
+	if minutes > 0 then returnstring = returnstring .. minutes .. (minutes > 1 and " minutes" or " minute").. " and " end
+	returnstring = returnstring .. seconds .. (seconds ~= 1 and " seconds" or " second")
+	return returnstring
+end
+
+function ongoingRound()
+  if not global.setup_finished then return end
+  local tempstring = "PVPROUND$ongoing," .. global.round_number .. ","
+  for i = 1, #global.teams, 1 do
+    local force_name = global.teams[i].name
+    if global.teams[i].status == "alive" then tempstring = tempstring .. force_name .. "," end
+  end
+  print(tempstring:sub(1,#tempstring-1))
+end
+
+Event.register(-2, ongoingRound)
