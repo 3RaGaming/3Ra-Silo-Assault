@@ -238,7 +238,7 @@ function create_character_gui(index)
 	local player = game.players[index]
 	local character_frame = player.gui.left.add { name = "character_panel", type = "frame", direction = "vertical", caption = "Character" }
 	character_frame.add { name = "character_pickup", type = "button", caption = "Pickup" }
-	character_frame.add { name = "character_reach", type = "button", caption = "Reach" }
+	character_frame.add { name = "character_reach", type = "button", caption = " Reach " }
 	character_frame.add { name = "character_craft", type = "button", caption = "Crafting" }
 	character_frame.add { name = "character_mine", type = "button", caption = "Mining" }
 	character_frame.add { name = "character_invincible", type = "button", caption = "Invincible" }

@@ -1,9 +1,10 @@
+require ("locale/utils/event")
 require("config")
 require("balance")
 require("mod-gui")
 require("silo-script")
+require("locale/utils/admin")
 require ("locale/utils/showhealth")
-require ("locale/utils/event")
 require ("locale/utils/utils")
 require ("locale/utils/bot")
 
@@ -720,6 +721,7 @@ end
 Event.register(defines.events.on_gui_click, function(event)
   local gui = event.element
   local player = game.players[event.player_index]
+  if not gui or not gui.valid then return end
   if gui.name == "balance_options_confirm" then
     set_balance_settings(gui.parent.balance_options_scrollpane)
     gui.parent.destroy()
@@ -1256,7 +1258,8 @@ function setup_teams()
     ["player"] = true,
     ["enemy"] = true,
     ["neutral"] = true,
-    ["spectator"] = true
+    ["spectator"] = true,
+	["Admins"] = true
   }
   for name, force in pairs (game.forces) do
     if not ignore[name] then
@@ -1586,7 +1589,7 @@ function check_no_rush_players()
   local surface = global.surface
   for k, player in pairs (game.connected_players) do
     local force = player.force
-    if force.name ~= "player" then
+    if force.name ~= "player" and force.name ~= "Admins" then
       local origin = force.get_spawn_position(surface)
       local Xo = origin.x
       local Yo = origin.y
