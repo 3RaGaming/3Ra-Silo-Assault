@@ -6,8 +6,8 @@ function load_config()
   global.map_config = 
   {
     ["average_team_displacement"] = 2000,
-    ["map_height"] = 2000,
-    ["map_width"] = 2000,
+    ["map_height"] = 2,
+    ["map_width"] = 2,
     ["map_seed"] = 0,
     ["starting_area_size"] = 
     {
@@ -16,19 +16,19 @@ function load_config()
     },
     ["copy_starting_area"] = true,
     ["always_day"] = false,
-    ["biters_disabled"] = false, 
+    ["biters_disabled"] = true, 
     ["peaceful_mode"] = false,
     ["evolution_factor"] = 0,
   }
   
   global.team_config = 
   {
-    ["friendly_fire"] = true,
-    ["locked_teams"] = false,
+    ["friendly_fire"] = false,
+    ["locked_teams"] = true,
     ["who_decides_diplomacy"] =
     {
       options = {"all_players", "team_leader"},
-      selected = "all_players"
+      selected = "team_leader"
     },
     ["team_joining"] =
     {
@@ -46,7 +46,7 @@ function load_config()
     ["victory_condition"] =
     {
       options = {"standard", "space_race", "last_silo_standing", "freeplay"},
-      selected = "standard",
+      selected = "last_silo_standing",
       tooltip = {"victory_condition_tooltip", {"standard_description"}, {"space_race_description"}, {"last_silo_standing_description"}, {"freeplay_description"}}
     },
     ["research_level"] = 
@@ -62,7 +62,7 @@ function load_config()
     },
     ["starting_equipment"] =
     {
-      options = {"none", "small", "medium", "large"},
+      options = {"none", "small", "medium", "large", "none_with_bots", "small_with_bots", "medium_with_bots"},
       selected = "none"
     },
   }
@@ -238,12 +238,59 @@ function give_equipment(player)
     armor.put({name = "personal-roboport-equipment"})
     player.force.worker_robots_speed_modifier = 2.5
     player.insert{name = "construction-robot", count = 10}
-    player.insert{name = "blueprint", count = 3}
+    player.insert{name = "blueprint", count = 1}
     player.insert{name = "deconstruction-planner", count = 1}
     player.insert{name = "car", count = 1}
     return
   end  
 
+  if setting == "none_with_bots" then
+    player.insert{name = "submachine-gun", count = 1}
+	player.insert{name = "firearm-magazine", count = 30}
+	player.insert{name = "iron-axe", count = 1}
+    player.insert{name = "modular-armor", count = 1}
+    local armor = player.get_inventory(5)[1].grid
+    armor.put({name = "personal-roboport-equipment"})
+    player.force.worker_robots_speed_modifier = 2.5
+    player.insert{name = "construction-robot", count = 10}
+    player.insert{name = "blueprint", count = 1}
+    player.insert{name = "deconstruction-planner", count = 1}
+	return
+  end
+  
+  if setting == "small_with_bots" then
+    player.insert{name = "submachine-gun", count = 1}
+    player.insert{name = "piercing-rounds-magazine", count = 30}
+    player.insert{name = "shotgun", count = 1}
+    player.insert{name = "shotgun-shell", count = 20}
+    player.insert{name = "iron-axe", count = 1}
+    player.insert{name = "modular-armor", count = 1}
+    local armor = player.get_inventory(5)[1].grid
+    armor.put({name = "personal-roboport-equipment"})
+    player.force.worker_robots_speed_modifier = 2.5
+    player.insert{name = "construction-robot", count = 10}
+    player.insert{name = "blueprint", count = 1}
+    player.insert{name = "deconstruction-planner", count = 1}
+    return
+  end
+  
+  if setting == "medium_with_bots" then
+    player.insert{name = "steel-axe", count = 3}
+    player.insert{name = "submachine-gun", count = 1}
+    player.insert{name = "piercing-rounds-magazine", count = 40}
+    player.insert{name = "shotgun", count = 1}
+    player.insert{name = "shotgun-shell", count = 20}
+    player.insert{name = "car", count = 1}
+    player.insert{name = "modular-armor", count = 1}
+    local armor = player.get_inventory(5)[1].grid
+    armor.put({name = "personal-roboport-equipment"})
+    player.force.worker_robots_speed_modifier = 2.5
+    player.insert{name = "construction-robot", count = 10}
+    player.insert{name = "blueprint", count = 1}
+    player.insert{name = "deconstruction-planner", count = 1}
+    return
+  end
+  
 end
 
 function give_respawn_equipment(player)
@@ -273,6 +320,48 @@ function give_respawn_equipment(player)
     return
   end
   
+  if setting == "none_with_bots" then
+    player.insert{name = "submachine-gun", count = 1}
+	player.insert{name = "firearm-magazine", count = 30}
+	player.insert{name = "iron-axe", count = 1}
+    player.insert{name = "modular-armor", count = 1}
+    local armor = player.get_inventory(5)[1].grid
+    armor.put({name = "personal-roboport-equipment"})
+    player.force.worker_robots_speed_modifier = 2.5
+    player.insert{name = "construction-robot", count = 10}
+    player.insert{name = "blueprint", count = 1}
+    player.insert{name = "deconstruction-planner", count = 1}
+	return
+  end
+  
+  if setting == "small_with_bots" then
+    player.insert{name = "submachine-gun", count = 1}
+    player.insert{name = "piercing-rounds-magazine", count = 30}
+    player.insert{name = "iron-axe", count = 1}
+    player.insert{name = "modular-armor", count = 1}
+    local armor = player.get_inventory(5)[1].grid
+    armor.put({name = "personal-roboport-equipment"})
+    player.force.worker_robots_speed_modifier = 2.5
+    player.insert{name = "construction-robot", count = 10}
+    player.insert{name = "blueprint", count = 1}
+    player.insert{name = "deconstruction-planner", count = 1}
+    return
+  end
+  
+  if setting == "medium_with_bots" then
+    player.insert{name = "steel-axe", count = 3}
+    player.insert{name = "submachine-gun", count = 1}
+    player.insert{name = "piercing-rounds-magazine", count = 40}
+    player.insert{name = "modular-armor", count = 1}
+    local armor = player.get_inventory(5)[1].grid
+    armor.put({name = "personal-roboport-equipment"})
+    player.force.worker_robots_speed_modifier = 2.5
+    player.insert{name = "construction-robot", count = 10}
+    player.insert{name = "blueprint", count = 1}
+    player.insert{name = "deconstruction-planner", count = 1}
+    return
+  end
+  
   if setting == "large" then
     player.insert{name = "steel-axe", count = 3}
     player.insert{name = "submachine-gun", count = 1}
@@ -286,7 +375,7 @@ function give_respawn_equipment(player)
     armor.put({name = "personal-roboport-equipment"})
     player.force.worker_robots_speed_modifier = 2.5
     player.insert{name = "construction-robot", count = 10}
-    player.insert{name = "blueprint", count = 3}
+    player.insert{name = "blueprint", count = 1}
     player.insert{name = "deconstruction-planner", count = 1}
     return
   end  
