@@ -135,7 +135,7 @@ function silo_died(event)
       player.print{"join-new-team"}
       destroy_player_gui(player)
       choose_joining_gui(player)
-	  create_silo_progress_bars(player)
+	  --create_silo_progress_bars(player)
     end
   end
   if force.name == killing_force.name then 
@@ -163,7 +163,7 @@ Event.register(defines.events.on_player_joined_game, function(event)
   if global.setup_finished then
     player.teleport({0,1000}, game.surfaces.Lobby)
     choose_joining_gui(player)
-	create_silo_progress_bars(player)
+	--create_silo_progress_bars(player)
   else
     if (global.copy_surface and global.copy_surface.valid) then
       player.teleport({0,0}, global.copy_surface)
@@ -1497,7 +1497,7 @@ Event.register(defines.events.on_tick, function()
   check_no_rush_players()
   check_player_color()
   show_health()
-  update_silo_progress_bars()
+  --update_silo_progress_bars()
   if global.setup_finished then return end
   check_round_start()
   copy_paste_starting_area_tiles()
