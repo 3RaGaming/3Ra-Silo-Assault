@@ -48,13 +48,12 @@ function entity_mined(event)
 	or entity.name == "entity-ghost" 
 	or entity.type == "locomotive" 
 	or entity.type == "cargo-wagon" 
-	or entity.type == "fluid-wagon"
 	or entity.type == "car" 
 	or entity.type:find("robot") 
 	or game.players[event.player_index].force == game.forces.Admins 
 	or entity.name == "tile-ghost"
-    or entity.name == 'item-request-proxy'
-    or (game and game.active_mods.base:sub(1,4) == '0.14' and (entity.type == 'underground-belt' or entity.type == 'electric-pole'))
+        or entity.name == 'item-request-proxy'
+        or (game and game.active_mods.base:sub(1,4) == '0.14' and (entity.type == 'underground-belt' or entity.type == 'electric-pole'))
 	then return end
 	log("Recreating as ghost: "..entity.name.." (name), "..entity.type.." (type).")
 	local ghost = entity.surface.create_entity
