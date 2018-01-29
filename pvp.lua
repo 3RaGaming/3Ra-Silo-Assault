@@ -344,6 +344,7 @@ function end_round(admin)
   end
   if admin then
     game.print({"admin-ended-round", admin.name})
+    print("PVPROUND$end,adminforceend," .. match_elapsed_time())
   end
   global.setup_finished = false
   global.average_deltas = nil
