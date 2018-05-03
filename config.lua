@@ -6,30 +6,39 @@ function load_config(dummy_load)
 
   config.setup_finished = false
 
+  config.game_speed = 1
+
+  config.disabled_items =
+  {
+    ["artillery-targeting-remote"] = 209,
+    ["programmable-speaker"] = 264,
+    ["raw-fish"] = 346
+  }
+  
   config.map_config =
   {
     average_team_displacement = 1024,
-    map_height = 0,
-    map_width = 0,
+    map_height = 2048,
+    map_width = 2048,
     map_seed = 0,
     starting_area_size =
     {
       options = {"none", "very-low", "low", "normal", "high", "very-high"},
       selected = "normal"
     },
-    always_day = false,
-    biters_disabled = false,
-    peaceful_mode = false,
+    always_day = true,
+    biters_disabled = true,
+    peaceful_mode = true,
     evolution_factor = 0,
-    duplicate_starting_area_entities = false
+    duplicate_starting_area_entities = true
   }
 
   config.game_config = 
   {
     game_mode =
     {
-      options = {"conquest", "space_race", "last_silo_standing", "freeplay", "production_score", "oil_harvest"},
-      selected = "conquest",
+      options = {"conquest", "space_race", "last_silo_standing", "freeplay", "production_score", "conquest_production", "oil_harvest"},
+      selected = "conquest_production",
       tooltip = 
       {
         "", {"game_mode_tooltip"},
@@ -38,59 +47,68 @@ function load_config(dummy_load)
         "\n", {"last_silo_standing_description"},
         "\n", {"freeplay_description"},
         "\n", {"production_score_description"},
+        "\n", {"conquest_production_description"},
         "\n", {"oil_harvest_description"}
       }
     },
     disband_on_loss = false,
-    time_limit = 0,
-    required_production_score = 50000000,
+    time_limit = 180,
+    required_production_score = 10000000,
     required_oil_barrels = 1000,
     required_satellites_sent = 1,
-    oil_only_in_center = false,
+    oil_only_in_center = true,
     allow_spectators = false,
     spectator_fog_of_war = true,
-    no_rush_time = 0,
+    no_rush_time = 20,
+    fast_blueprinting = true,
     base_exclusion_time = 0,
     reveal_team_positions = true,
-    reveal_map_center = false,
+    reveal_map_center = true,
     team_walls = true,
     team_turrets = true,
     turret_ammunition =
     {
-      options = {"firearm-magazine"},
-      selected = "firearm-magazine"
+      options = {"piercing-rounds-magazine"},
+      selected = "piercing-rounds-magazine"
     },
     team_artillery = false,
     give_artillery_remote = false,
-    auto_new_round_time = 0,
-    protect_empty_teams = true,
+    auto_new_round_time = 5,
+    protect_empty_teams = false,
     enemy_building_restriction = false,
-    neutral_chests = false
+    neutral_chests = true
   }
 
   local items = game.item_prototypes
 
-  local entity_name = "gun-turret"
-  local prototype = game.entity_prototypes[entity_name]
-  if not prototype then
+  local bullet_entity_name = "gun-turret"
+  local laser_entity_name = "laser-turret"
+  local bullet_prototype = game.entity_prototypes[bullet_entity_name]
+  local laser_prototype = game.entity_prototypes[laser_entity_name]
+  if not bullet_prototype and not laser_prototype then
     config.game_config.team_turrets = nil
     config.game_config.turret_ammunition = nil
   else
-    local category = prototype.attack_parameters.ammo_category
-    if category then
-      local ammos = {}
-      for name, item in pairs (items) do
-        if item.type == "ammo" then
-          local ammo = item.get_ammo_type()
-          if ammo and ammo.category == category then
-            table.insert(ammos, name)
+    local ammos = {}
+    if bullet_prototype then
+      local category = bullet_prototype.attack_parameters.ammo_category
+      if category then
+        for name, item in pairs (items) do
+          if item.type == "ammo" then
+            local ammo = item.get_ammo_type()
+            if ammo and ammo.category == category then
+              table.insert(ammos, name)
+            end
           end
         end
       end
-      config.game_config.turret_ammunition.options = ammos
-      if not items["firearm-magazine"] then
-        config.game_config.turret_ammunition.selected = ammos[1] or ""
-      end
+    end
+    if laser_prototype then
+      table.insert(ammos, laser_entity_name)
+    end
+    config.game_config.turret_ammunition.options = ammos
+    if not items["piercing-rounds-magazine"] then
+      config.game_config.turret_ammunition.selected = ammos[1] or ""
     end
   end
 
@@ -121,17 +139,19 @@ function load_config(dummy_load)
       selected = "none"
     },
     unlock_combat_research = false,
-    defcon_mode = false,
-    defcon_timer = 5,
+    defcon_mode = true,
+    defcon_random = false,
+    defcon_timer = 0.6,
     starting_equipment =
     {
+      --options = {"none", "small", "medium", "medium-with-blueprinting", "large"},
       options = {"none", "small", "medium", "large"},
-      selected = "none"
+      selected = "medium"
     },
     starting_chest =
     {
       options = {"none", "small", "medium", "large"},
-      selected = "none"
+      selected = "medium"
     },
     starting_chest_multiplier = 5
   }
@@ -162,6 +182,8 @@ function load_config(dummy_load)
   for k, t in pairs (sorted_packs) do
     table.insert(config.team_config.research_level.options, t.name)
   end
+  local selected_tier = config.team_config.research_level.options[2]
+  if selected_tier then config.team_config.research_level.selected = selected_tier end
 
   config.research_ingredient_list = {}
   for k, research in pairs (config.team_config.research_level.options) do
@@ -196,6 +218,21 @@ function load_config(dummy_load)
     {name = game.backer_names[math.random(#game.backer_names)], color = "purple", team = "-"}
   }
 
+  config.science_units_per_period = 100
+  
+  --values calculated based on solid raw materials being worth 1 and crude oil being worth 0.2
+  --source is the second table on this page: https://wiki.factorio.com/Science_pack
+  config.science_pack_costs =
+  {
+    ["science-pack-1"] = 3, -- 2 + 1
+    ["science-pack-2"] = 7, -- 5.5 + 1.5
+    ["science-pack-3"] = 48.94, -- 34 + 9.5 + 1 + 22.2 / 5
+    ["military-science-pack"] = 39.5, -- 27 + 7.5 + 5
+    ["production-science-pack"] = 74.18, -- 35.5 + 14 + 2.5 + 60.9 / 5 + 10
+    ["high-tech-science-pack"] = 164.48, -- 44.4 + 84.3 + 5.5 + 151.4 / 5
+    ["space-science-pack"] = 261.74, -- 101.5 + 85.3 + 10 + 324.7 / 5
+  }
+
   config.inventory_list =
   {
     none =
@@ -213,12 +250,11 @@ function load_config(dummy_load)
       ["iron-gear-wheel"] = 200,
       ["electronic-circuit"] = 200,
       ["transport-belt"] = 400,
-      ["repair-pack"] = 20,
       ["inserter"] = 100,
       ["small-electric-pole"] = 50,
       ["burner-mining-drill"] = 50,
       ["stone-furnace"] = 50,
-      ["burner-inserter"] = 100,
+      ["burner-inserter"] = 50,
       ["assembling-machine-1"] = 20,
       ["electric-mining-drill"] = 20,
       ["boiler"] = 5,
@@ -233,29 +269,28 @@ function load_config(dummy_load)
       ["pipe-to-ground"] = 20,
       ["iron-gear-wheel"] = 100,
       ["copper-plate"] = 100,
-      ["steel-plate"] = 100,
-      ["electronic-circuit"] = 400,
+      ["steel-chest"] = 15,
+      ["electronic-circuit"] = 200,
       ["transport-belt"] = 400,
       ["underground-belt"] = 20,
       ["splitter"] = 20,
-      ["repair-pack"] = 20,
       ["inserter"] = 150,
       ["small-electric-pole"] = 100,
       ["medium-electric-pole"] = 50,
       ["fast-inserter"] = 50,
       ["long-handed-inserter"] = 50,
-      ["burner-inserter"] = 100,
-      ["burner-mining-drill"] = 50,
+      ["burner-inserter"] = 20,
+      ["burner-mining-drill"] = 20,
       ["electric-mining-drill"] = 40,
-      ["stone-furnace"] = 100,
+      ["stone-furnace"] = 50,
       ["steel-furnace"] = 30,
-      ["assembling-machine-1"] = 40,
+      ["assembling-machine-1"] = 10,
       ["assembling-machine-2"] = 20,
       ["boiler"] = 10,
       ["steam-engine"] = 20,
-      ["chemical-plant"] = 20,
-      ["oil-refinery"] = 5,
-      ["pumpjack"] = 8,
+      ["chemical-plant"] = 15,
+      ["oil-refinery"] = 3,
+      ["pumpjack"] = 4,
       ["offshore-pump"] = 2,
       ["raw-wood"] = 50
     },
@@ -264,23 +299,23 @@ function load_config(dummy_load)
       ["iron-plate"] = 200,
       ["pipe"] = 100,
       ["pipe-to-ground"] = 20,
-      ["copper-plate"] = 200,
-      ["steel-plate"] = 200,
-      ["electronic-circuit"] = 400,
-      ["iron-gear-wheel"] = 250,
+      ["copper-plate"] = 100,
+      ["steel-chest"] = 15,
+      ["electronic-circuit"] = 200,
+      ["iron-gear-wheel"] = 100,
       ["transport-belt"] = 400,
       ["underground-belt"] = 40,
       ["splitter"] = 40,
       ["repair-pack"] = 20,
       ["inserter"] = 200,
-      ["burner-inserter"] = 50,
+      ["burner-inserter"] = 20,
       ["small-electric-pole"] = 50,
-      ["burner-mining-drill"] = 50,
+      ["burner-mining-drill"] = 20,
       ["electric-mining-drill"] = 50,
-      ["stone-furnace"] = 100,
+      ["stone-furnace"] = 50,
       ["steel-furnace"] = 50,
       ["electric-furnace"] = 20,
-      ["assembling-machine-1"] = 50,
+      ["assembling-machine-1"] = 10,
       ["assembling-machine-2"] = 40,
       ["assembling-machine-3"] = 20,
       ["fast-inserter"] = 100,
@@ -292,7 +327,7 @@ function load_config(dummy_load)
       ["steam-engine"] = 20,
       ["chemical-plant"] = 20,
       ["oil-refinery"] = 5,
-      ["pumpjack"] = 10,
+      ["pumpjack"] = 8,
       ["offshore-pump"] = 2,
       ["raw-wood"] = 50
     }
@@ -314,22 +349,32 @@ function give_equipment(player)
 
   if setting == "small" then
     player.insert{name = "submachine-gun", count = 1}
-    player.insert{name = "firearm-magazine", count = 30}
+    player.insert{name = "piercing-rounds-magazine", count = 40}
     player.insert{name = "shotgun", count = 1}
     player.insert{name = "shotgun-shell", count = 20}
-    player.insert{name = "iron-axe", count = 1}
+    player.insert{name = "steel-axe", count = 1}
     player.insert{name = "heavy-armor", count = 1}
     return
   end
 
+  --if setting == "medium" or setting == "medium-with-blueprinting" then
   if setting == "medium" then
     player.insert{name = "steel-axe", count = 3}
     player.insert{name = "submachine-gun", count = 1}
-    player.insert{name = "firearm-magazine", count = 40}
+    player.insert{name = "piercing-rounds-magazine", count = 40}
     player.insert{name = "shotgun", count = 1}
     player.insert{name = "shotgun-shell", count = 20}
-    player.insert{name = "car", count = 1}
     player.insert{name = "modular-armor", count = 1}
+    local armor = player.get_inventory(defines.inventory.player_armor)[1].grid
+    if setting == "medium" then
+      armor.put({name = "personal-roboport-equipment"})
+      for i=1,21,1 do armor.put({name = "solar-panel-equipment"}) end
+      player.insert{name = "construction-robot", count = 10}
+    else
+      for i=1,4,1 do armor.put({name = "personal-roboport-equipment"}) end
+      player.insert{name = "construction-robot", count = 40}
+    end
+    player.insert{name = "deconstruction-planner", count = 1}
     return
   end
 
@@ -349,7 +394,6 @@ function give_equipment(player)
     armor.put({name = "energy-shield-equipment"})
     armor.put({name = "personal-roboport-mk2-equipment"})
     player.insert{name = "construction-robot", count = 25}
-    player.insert{name = "blueprint", count = 3}
     player.insert{name = "deconstruction-planner", count = 1}
     player.insert{name = "car", count = 1}
     return

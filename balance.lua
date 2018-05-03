@@ -55,12 +55,12 @@ function init_balance_modifiers()
   {
     character_modifiers =
       {
-        character_running_speed_modifier = 0,
-        character_health_bonus = 0,
-        character_crafting_speed_modifier = 0,
+        character_running_speed_modifier = 0.25,
+        character_health_bonus = 250,
+        character_crafting_speed_modifier = 0.5,
         character_mining_speed_modifier = 0,
-        character_build_distance_bonus = 0,
-        character_reach_distance_bonus = 0,
+        character_build_distance_bonus = 0.5,
+        character_reach_distance_bonus = 0.5,
       },
     turret_attack_modifier = {},
     ammo_damage_modifier ={},
@@ -83,6 +83,9 @@ function init_balance_modifiers()
     modifier_list.ammo_damage_modifier[name] = 0
     modifier_list.gun_speed_modifier[name] = 0
   end
+  modifier_list.ammo_damage_modifier["biological"] = 1
+  modifier_list.ammo_damage_modifier["electric"] = -0.5
+  modifier_list.ammo_damage_modifier["shotgun-shell"] = 1
   global.modifier_list = modifier_list
 end
 

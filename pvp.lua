@@ -374,6 +374,8 @@ function end_round(admin)
   global.space_race_scores = nil
   global.last_defcon_tick = nil
   global.next_defcon_tech = nil
+  global.research_time_wasted = nil
+  global.previous_tech = nil
   global.silos = nil
   script.raise_event(events.on_round_end, {})
 end
@@ -381,6 +383,7 @@ end
 function prepare_next_round()
   global.setup_finished = false
   global.team_won = false
+  check_game_speed()
   create_next_surface()
   setup_teams()
   chart_starting_area_for_force_spawns()
@@ -394,7 +397,7 @@ function set_mode_input(player)
       local dropdown = gui.game_mode_dropdown
       if not dropdown then return end
       local name = global.game_config.game_mode.options[dropdown.selected_index]
-      return name == "production_score"
+      return name == "production_score" or name == "conquest_production"
     end,
     required_oil_barrels = function(gui)
       local dropdown = gui.game_mode_dropdown
@@ -412,7 +415,12 @@ function set_mode_input(player)
       local dropdown = gui.game_mode_dropdown
       if not dropdown then return end
       local name = global.game_config.game_mode.options[dropdown.selected_index]
-      return name == "oil_harvest" or name == "production_score"
+      return name == "oil_harvest" or name == "production_score" or name == "conquest_production"
+    end,
+    fast_blueprinting = function(gui)
+      local num = gui.no_rush_time_box
+      if not num then return end
+      return tonumber(num.text) > 0
     end,
     spectator_fog_of_war = function(gui) return gui.allow_spectators_boolean and gui.allow_spectators_boolean.state end,
     starting_chest_multiplier = function(gui)
@@ -424,7 +432,7 @@ function set_mode_input(player)
       local dropdown = gui.game_mode_dropdown
       if not dropdown then return end
       local name = global.game_config.game_mode.options[dropdown.selected_index]
-      return name == "conquest" or name == "last_silo_standing"
+      return name == "conquest" or name == "last_silo_standing" or name == "conquest_production"
     end,
     give_artillery_remote = function(gui)
       local option = gui.team_artillery_boolean
@@ -441,6 +449,11 @@ function set_mode_input(player)
       if not dropdown then return end
       local name = global.game_config.game_mode.options[dropdown.selected_index]
       return name == "space_race"
+    end,
+    defcon_random = function(gui)
+      local option = gui.defcon_mode_boolean
+      if not option then return end
+      return option.state
     end,
     defcon_timer = function(gui)
       local option = gui.defcon_mode_boolean
@@ -476,6 +489,7 @@ end
 
 game_mode_buttons = {
   ["production_score"] = {type = "button", caption = {"production_score"}, name = "production_score_button", style = mod_gui.button_style},
+  ["conquest_production"] = {type = "button", caption = {"production_score"}, name = "production_score_button", style = mod_gui.button_style},
   ["oil_harvest"] = {type = "button", caption = {"oil_harvest"}, name = "oil_harvest_button", style = mod_gui.button_style},
   ["space_race"] = {type = "button", caption = {"space_race"}, name = "space_race_button", style = mod_gui.button_style}
 }
@@ -605,7 +619,9 @@ function set_player(player, team)
   local force = game.forces[team.name]
   local surface = global.surface
   if not surface.valid then return end
-  local position = surface.find_non_colliding_position("player", force.get_spawn_position(surface), 320, 1)
+  local force_spawn = force.get_spawn_position(surface)
+  local offset_spawn = {force_spawn.x, force_spawn.y + 15}
+  local position = surface.find_non_colliding_position("player", offset_spawn, 320, 1)
   if position then
     player.teleport(position, surface)
   else
@@ -1029,12 +1045,14 @@ end
 function auto_assign(player)
   local teams = get_eligible_teams(player)
   if not teams then return end
-  local count = 1000
+  local online_count = 10000
+  local all_count = 10000
   for k, this_team in pairs (teams) do
     local other_force = game.forces[this_team.name]
     if other_force ~= nil then
-      if #other_force.connected_players < count then
-        count = #other_force.connected_players
+      if #other_force.connected_players < online_count or (#other_force.connected_players == online_count and #other_force.players < all_count) then
+        online_count = #other_force.connected_players
+        all_count = #other_force.players
         force = other_force
         team = this_team
       end
@@ -1098,7 +1116,8 @@ function spectator_join(player)
   player.force = "spectator"
   player.teleport(global.spawn_offset, global.surface)
   player.tag = ""
-  player.chat_color = {r = 1, g = 1, b = 1, a = 1}
+  player.color = global.colors[global.color_map["black"]].color
+  player.chat_color = global.colors[global.color_map["red"]].color
   player.spectator = true
   init_player_gui(player)
   game.print({"joined-spectator", player.name})
@@ -1146,6 +1165,10 @@ function objective_button_press(event)
       end
     end
   end
+  label_table.add{type = "label", caption = "Elapsed time:"}
+  label_table.add{type = "label", caption = formattime(game.tick - global.round_start_tick)}
+  label_table.add{type = "label", caption = "Science multiplier:"}
+  label_table.add{type = "label", caption = string.format("%.2f", global.science_speedup)}
 end
 
 function list_teams_button_press(event)
@@ -1687,8 +1710,12 @@ function setup_teams()
     disable_combat_technologies(force)
     force.reset_technology_effects()
     apply_combat_modifiers(force)
-    if global.team_config.starting_equipment.selected == "large" then
+    local starting_equipment = global.team_config.starting_equipment.selected
+    if starting_equipment == "medium" or starting_equipment == "large" then
       force.worker_robots_speed_modifier = 2.5
+    end
+    if global.game_config.fast_blueprinting then
+      force.worker_robots_speed_modifier = 20
     end
   end
   disable_items_for_all()
@@ -1846,7 +1873,7 @@ end
 
 function chart_starting_area_for_force_spawns()
   local surface = global.surface
-  local radius = get_starting_area_radius()
+  local radius = get_starting_area_radius() + 10 --DEBUG: 3Ra added 10
   local size = radius*32
   for k, team in pairs (global.teams) do
     local name = team.name
@@ -1866,7 +1893,8 @@ function check_starting_area_chunks_are_generated()
   if game.tick % (#global.teams) ~= 0 then return end
   local surface = global.surface
   local size = global.map_config.starting_area_size.selected
-  local check_radius = get_starting_area_radius() - 1
+  --local check_radius = get_starting_area_radius() - 1
+  local check_radius = get_starting_area_radius() + 10 --DEBUG: 3Ra changed from -1 to +10
   local total = 0
   local generated = 0
   local width = surface.map_gen_settings.width/2
@@ -1933,6 +1961,16 @@ function check_no_rush()
     global.end_no_rush = nil
     global.surface.peaceful_mode = global.map_config.peaceful_mode
     game.forces.enemy.kill_all_units()
+    local starting_equipment = global.team_config.starting_equipment.selected
+    for force_name, force in pairs (game.forces) do
+      if not is_ignored_force(force_name) then
+        if starting_equipment == "medium" or starting_equipment == "medium-with-blueprinting" or starting_equipment == "large" then
+          force.worker_robots_speed_modifier = 2.5
+        else
+          force.worker_robots_speed_modifier = 0
+        end
+      end
+    end
     return
   end
   local radius = get_starting_area_radius(true)
@@ -1940,6 +1978,19 @@ function check_no_rush()
   for k, player in pairs (game.connected_players) do
     local force = player.force
     if not is_ignored_force(force.name) then
+      if player.character then
+        local armor_slot = player.get_inventory(defines.inventory.player_armor)
+        if armor_slot and not armor_slot.is_empty() then
+          local armor = armor_slot[1]
+          if armor and armor.valid and armor.grid then
+            for _, equipment in pairs(armor.grid.equipment) do
+              if equipment.type == "roboport-equipment" then
+                equipment.energy = 35000000
+              end
+            end
+          end
+        end
+      end
       local origin = force.get_spawn_position(surface)
       local Xo = origin.x
       local Yo = origin.y
@@ -1979,7 +2030,8 @@ function check_no_rush()
 end
 
 function check_update_production_score()
-  if global.game_config.game_mode.selected ~= "production_score" then return end
+  local mode = global.game_config.game_mode.selected
+  if mode ~= "production_score" and mode ~= "conquest_production" then return end
   local tick = game.tick
   if global.team_won then return end
   local new_scores = production_score.get_production_scores(global.price_list)
@@ -2115,8 +2167,9 @@ function finish_setup()
   if not name then return end
   local force = game.forces[name]
   if not force then return end
-  create_silo_for_force(force)
-  local radius = get_starting_area_radius(true) --[[radius in tiles]]
+  --create_silo_for_force(force)
+  --local radius = get_starting_area_radius(true) --[[radius in tiles]]
+  local radius = get_starting_area_radius(true) - 32 --DEBUG: 3Ra added -32
   if global.game_config.reveal_team_positions then
     for name, other_force in pairs (game.forces) do
       if not is_ignored_force(name) then
@@ -2155,15 +2208,17 @@ function final_setup_step()
     choose_joining_gui(player)
   end
   global.end_no_rush = game.tick + (global.game_config.no_rush_time * 60 * 60)
+  local color = {r = 1, g = 0.2, b = 0.8, a = 1}
   if global.game_config.no_rush_time > 0 then
     global.surface.peaceful_mode = true
     game.forces.enemy.kill_all_units()
-    game.print({"no-rush-begins", global.game_config.no_rush_time})
+    game.print({"no-rush-begins", global.game_config.no_rush_time}, color)
+    if global.game_config.fast_blueprinting then game.print({"fast-blueprinting-begins"}, color) end
   end
   create_exclusion_map()
   if global.game_config.base_exclusion_time > 0 then
     global.check_base_exclusion = true
-    game.print({"base-exclusion-begins", global.game_config.base_exclusion_time})
+    game.print({"base-exclusion-begins", global.game_config.base_exclusion_time}, color)
   end
   if global.game_config.reveal_map_center then
     local radius = global.map_config.average_team_displacement/2
@@ -2174,12 +2229,21 @@ function final_setup_step()
     end
   end
   global.space_race_scores = {}
+  global.science_speedup = 1
+  global.elapsed_seconds = 0
   global.oil_harvest_scores = {}
   global.production_scores = {}
+  global.research_time_wasted = {}
+  global.previous_tech = {}
   if global.team_config.defcon_mode then
-    defcon_research()
+    if global.team_config.defcon_random then
+      game.print({"defcon-random-begins"})
+      defcon_research()
+    else
+      game.print({"tanks-research-nerf"}, color)
+      game.print({"atomic-bomb-research-nerf"}, color)
+    end
   end
-
   script.raise_event(events.on_round_start, {})
 end
 
@@ -2274,14 +2338,14 @@ end
 
 function create_silo_for_force(force)
   local condition = global.game_config.game_mode.selected
-  local need_silo = {conquest = true, space_race = true, last_silo_standing = true}
+  local need_silo = {conquest = true, space_race = true, last_silo_standing = true, conquest_production = true}
   if not need_silo[condition] then return end
   if not force then return end
   if not force.valid then return end
   local surface = global.surface
   local origin = force.get_spawn_position(surface)
   local offset_x = 0
-  local offset_y = -25
+  local offset_y = 0 -- DEBUG: 3ra changed to 0 from -25
   local silo_position = {x = origin.x+offset_x, y = origin.y+offset_y}
   local area = {{silo_position.x - 5, silo_position.y - 6}, {silo_position.x + 6, silo_position.y + 6}}
   for i, entity in pairs(surface.find_entities_filtered({area = area, force = "neutral"})) do
@@ -2339,9 +2403,14 @@ end
 function create_starting_turrets(force)
   if not global.game_config.team_turrets then return end
   if not (force and force.valid) then return end
-  local turret_name = "gun-turret"
-  if not game.entity_prototypes[turret_name] then return end
   local ammo_name = global.game_config.turret_ammunition.selected or "firearm-magazine"
+  local turret_name
+  if ammo_name == "laser-turret" then
+    turret_name = "laser-turret"
+  else
+    turret_name = "gun-turret"
+  end
+  if not game.entity_prototypes[turret_name] then return end
   if not game.item_prototypes[ammo_name] then return end
   local surface = global.surface
   local height = global.map_config.map_height/2
@@ -2350,7 +2419,8 @@ function create_starting_turrets(force)
   local radius = get_starting_area_radius(true) - 18 --[[radius in tiles]]
   local limit = math.min(width - math.abs(origin.x), height - math.abs(origin.y)) - 6
   radius = math.min(radius, limit)
-  local positions = {}
+  local turret_positions = {}
+  local pole_positions = {}
   local Xo = origin.x
   local Yo = origin.y
   for X = -radius, radius do
@@ -2358,31 +2428,52 @@ function create_starting_turrets(force)
     if X == -radius then
       for Y = -radius, radius do
         local Yt = Y + Yo
-        if (Yt + 16) % 32 ~= 0 and Yt % 8 == 0 then
-          table.insert(positions, {x = Xo - radius, y = Yt, direction = defines.direction.west})
-          table.insert(positions, {x = Xo + radius, y = Yt, direction = defines.direction.east})
+        if  Yt % 8 == 0 then
+          if turret_name == "laser-turret" then
+            table.insert(pole_positions, {x = Xo - radius + 3, y = Yt})
+            table.insert(pole_positions, {x = Xo + radius - 4, y = Yt})
+          end
+          if (Yt + 16) % 32 ~= 0 then
+            table.insert(turret_positions, {x = Xo - radius, y = Yt, direction = defines.direction.west})
+            table.insert(turret_positions, {x = Xo + radius, y = Yt, direction = defines.direction.east})
+          end
         end
       end
-    elseif (Xt + 16) % 32 ~= 0 and Xt % 8 == 0 then
-      table.insert(positions, {x = Xt, y = Yo - radius, direction = defines.direction.north})
-      table.insert(positions, {x = Xt, y = Yo + radius, direction = defines.direction.south})
+    elseif Xt % 8 == 0 then
+      if turret_name == "laser-turret" then
+        table.insert(pole_positions, {x = Xt, y = Yo - radius + 3})
+        table.insert(pole_positions, {x = Xt, y = Yo + radius - 4})
+      end
+      if (Xt + 16) % 32 ~= 0 then
+        table.insert(turret_positions, {x = Xt, y = Yo - radius, direction = defines.direction.north})
+        table.insert(turret_positions, {x = Xt, y = Yo + radius, direction = defines.direction.south})
+      end
     end
   end
   local tiles = {}
   local tile_name = "refined-hazard-concrete-left"
   if not game.tile_prototypes[tile_name] then tile_name = get_walkable_tile() end
   local stack = {name = ammo_name, count = 20}
-  for k, position in pairs (positions) do
+  for k, position in pairs (turret_positions) do
     local area = {{x = position.x - 1, y = position.y - 1},{x = position.x + 1, y = position.y + 1}}
     for k, entity in pairs (surface.find_entities_filtered{area = area, force = "neutral"}) do
       entity.destroy(true)
     end
     local turret = surface.create_entity{name = turret_name, position = position, force = force, direction = position.direction}
-    turret.insert(stack)
+    if ammo_name ~= "laser-turret" then
+      turret.insert(stack)
+    end
     table.insert(tiles, {name = tile_name, position = {x = position.x, y = position.y}})
     table.insert(tiles, {name = tile_name, position = {x = position.x - 1, y = position.y}})
     table.insert(tiles, {name = tile_name, position = {x = position.x, y = position.y - 1}})
     table.insert(tiles, {name = tile_name, position = {x = position.x - 1, y = position.y - 1}})
+  end
+  for k, position in pairs (pole_positions) do
+    for k, entity in pairs (surface.find_entities_filtered{position = position, force = "neutral"}) do
+      entity.destroy()
+    end
+    surface.create_entity{name = "medium-electric-pole", position = position, force = force}
+    table.insert(tiles, {name = tile_name, position = {x = position.x, y = position.y}})
   end
   set_tiles_safe(surface, tiles)
 end
@@ -2633,7 +2724,18 @@ function duplicate_starting_area_entities()
   if not force then return end
   local surface = global.surface
   local origin_spawn = force.get_spawn_position(surface)
-  local radius = get_starting_area_radius(true) --[[radius in tiles]]
+  local starting_radius = get_starting_area_radius(true)
+  local uranium_x = origin_spawn.x - starting_radius
+  local uranium_y = origin_spawn.y + starting_radius/2
+  local uranium_radius = 10
+  for x_offset = -uranium_radius, uranium_radius do
+    for y_offset = -uranium_radius, uranium_radius do
+      if x_offset * x_offset + y_offset * y_offset < uranium_radius * uranium_radius then
+        surface.create_entity({name = "uranium-ore", amount = 1000, position = {uranium_x + x_offset, uranium_y + y_offset}})
+      end
+    end
+  end
+  radius = starting_radius + 320
   local area = {{origin_spawn.x - radius, origin_spawn.y - radius}, {origin_spawn.x + radius, origin_spawn.y + radius}}
   local entities = surface.find_entities_filtered{area = area, force = "neutral"}
   local insert = table.insert
@@ -2669,10 +2771,11 @@ function duplicate_starting_area_entities()
     end
   end
 
+  local mirror = #global.teams == 2
   for k, team in pairs (global.teams) do
-    if team.name ~= copy_team.name then
-      local force = game.forces[team.name]
-      if force then
+    local force = game.forces[team.name]
+    if force then
+      if team.name ~= copy_team.name then
         local spawn = force.get_spawn_position(surface)
         local area = {{spawn.x - radius, spawn.y - radius}, {spawn.x + radius, spawn.y + radius}}
         for k, entity in pairs (surface.find_entities_filtered{area = area, force = "neutral"}) do
@@ -2687,20 +2790,34 @@ function duplicate_starting_area_entities()
           end
         end
         for k, tile in pairs (tiles) do
-          local position = {x = (tile.position.x - origin_spawn.x) + spawn.x, y = (tile.position.y - origin_spawn.y) + spawn.y}
+          local position
+          if mirror then
+            position = {x = (origin_spawn.x - tile.position.x) + spawn.x - 1, y = (origin_spawn.y - tile.position.y) + spawn.y - 1}
+          else
+             position = {x = (tile.position.x - origin_spawn.x) + spawn.x, y = (tile.position.y - origin_spawn.y) + spawn.y}
+          end
           insert(set_tiles, {name = tile.name, position = position})
         end
         surface.set_tiles(set_tiles)
         for k, entity in pairs (entities) do
           if entity.valid then
-            local position = {x = (entity.position.x - origin_spawn.x) + spawn.x, y = (entity.position.y - origin_spawn.y) + spawn.y}
+            local position
+            if mirror then
+              position = {x = (origin_spawn.x - entity.position.x) + spawn.x, y = (origin_spawn.y - entity.position.y) + spawn.y}
+            else
+              position = {x = (entity.position.x - origin_spawn.x) + spawn.x, y = (entity.position.y - origin_spawn.y) + spawn.y}
+            end
             local type = entity.type
             local amount = (type == "resource" and entity.amount) or nil
             local cliff_orientation = (type == "cliff" and entity.cliff_orientation) or nil
+            if mirror and cliff_orientation then
+              cliff_orientation = cliff_orientation:gsub("[^-]+", {east="west",west="east",north="south",south="north"})
+            end
             surface.create_entity{name = entity.name, position = position, force = "neutral", amount = amount, cliff_orientation = cliff_orientation}
           end
         end
       end
+      create_silo_for_force(force)
     end
   end
 end
@@ -3206,30 +3323,120 @@ end
 
 function check_defcon()
   if not global.team_config.defcon_mode then return end
-  local defcon_tick = global.last_defcon_tick
-  if not defcon_tick then
-    global.last_defcon_tick = game.tick
-    return
-  end
-  local duration = math.max(60, (global.team_config.defcon_timer * 60 * 60))
-  local tick_of_defcon = defcon_tick + duration
-  local current_tick = game.tick
-  local progress = math.max(0, math.min(1, 1 - (tick_of_defcon - current_tick) / duration))
-  local tech = global.next_defcon_tech
-  if tech and tech.valid then
+  if global.team_config.defcon_random then
+    local defcon_tick = global.last_defcon_tick
+    if not defcon_tick then
+      global.last_defcon_tick = game.tick
+      return
+    end
+    local duration = math.max(60, (global.team_config.defcon_timer * 60 * 60))
+    local tick_of_defcon = defcon_tick + duration
+    local current_tick = game.tick
+    local progress = math.max(0, math.min(1, 1 - (tick_of_defcon - current_tick) / duration))
+    local tech = global.next_defcon_tech
+    if tech and tech.valid then
+      for k, team in pairs (global.teams) do
+        local force = game.forces[team.name]
+        if force then
+          if force.current_research ~= tech.name then
+            force.current_research = tech.name
+          end
+          force.research_progress = progress
+        end
+      end
+    end
+    if current_tick >= tick_of_defcon then
+      defcon_research()
+      global.last_defcon_tick = current_tick
+    end
+  else
+    local seconds = global.elapsed_seconds
+    if seconds == nil then
+      seconds = 0
+    else
+      seconds = seconds + 1
+    end
+    global.elapsed_seconds = seconds
     for k, team in pairs (global.teams) do
       local force = game.forces[team.name]
       if force then
-        if force.current_research ~= tech.name then
-          force.current_research = tech.name
+        local tech = force.current_research
+        if tech and tech.valid then
+          local cost = 0
+          for j, ingredient in pairs (tech.research_unit_ingredients) do
+            local ingredient_cost = global.science_pack_costs[ingredient.name] * ingredient.amount * tech.research_unit_count
+            cost = cost + ingredient_cost
+          end
+          local warn_science_buff_nerf = false
+          if tech.name == "tanks" then
+            cost = cost * 8
+            if global.previous_tech[team.name] ~= tech.name then warn_science_buff_nerf = true end
+          end
+          if tech.name == "atomic-bomb" then
+            cost = cost / 4
+            if global.previous_tech[team.name] ~= tech.name then warn_science_buff_nerf = true end
+          end
+          if warn_science_buff_nerf then
+            local color = {r = 1, g = 0.2, b = 0.8, a = 1} --hot pink
+            force.print({tech.name.."-research-nerf"}, color)
+          end
+          local progress = force.research_progress
+          local increment = (force.laboratory_speed_modifier + 1) * global.science_units_per_period * global.science_speedup / (cost * global.team_config.defcon_timer * 60)
+          progress = math.min(1, progress + increment)
+          force.research_progress = progress
+          if global.research_time_wasted then global.research_time_wasted[team.name] = 100 end
+          if global.previous_tech then global.previous_tech[team.name] = tech.name end
+        else
+          if global.previous_tech then 
+            global.previous_tech[team.name] = "none"
+            if global.research_time_wasted then 
+              local time_wasted = global.research_time_wasted[team.name]
+              if not time_wasted then time_wasted = 100 end
+              if time_wasted % 120 == 0 then
+                local color = {r = 1, g = 0.2, b = 0.8, a = 1} --hot pink
+                force.print({"defcon-select-research-warning"}, color)
+              end
+              global.research_time_wasted[team.name] = time_wasted + 1
+            end
+          end
         end
-        force.research_progress = progress
+      end
+    end
+    local match_ticks = math.max(0, game.tick - global.round_start_tick)
+    local minutes = match_ticks / 60 / 60
+    local minutes_squared = minutes * minutes
+    -- global.science_speedup = 1 + 0.1 * minutes + 0.003 * minutes * minutes
+    global.science_speedup = 1 + 0.03 * minutes + 0.0015 * minutes_squared + 0.0000002 * minutes_squared * minutes_squared
+  end
+end
+
+function check_game_speed(wakeup)
+  if game.tick % 300 ~= 0 and game.speed == 1 then return end
+  if wakeup then
+    game.speed = global.game_speed
+    return
+  end
+  local game_slowed
+  if not global.setup_finished then
+    game_slowed = false
+  else
+    game_slowed = true
+    for k, player in pairs (game.players) do
+      if player.connected and player.afk_time < 60 * 60 then
+        game_slowed = false
+        break
       end
     end
   end
-  if current_tick >= tick_of_defcon then
-    defcon_research()
-    global.last_defcon_tick = current_tick
+  if game_slowed then
+    if game.speed == 0.05 then
+      global.game_speed = 1
+    else
+      global.game_speed = game.speed
+    end
+    game.speed = 0.05
+  else
+    game.speed = global.game_speed
   end
 end
 
@@ -3425,12 +3632,18 @@ pvp.on_init = function()
   init_balance_modifiers()
   verify_oil_harvest()
   local surface = game.surfaces[1]
-  local settings = surface.map_gen_settings
-  global.map_config.starting_area_size.selected = settings.starting_area
-  global.map_config.map_height = settings.height
-  global.map_config.map_width = settings.width
-  global.map_config.starting_area_size.selected = settings.starting_area
+  --local settings = surface.map_gen_settings
+  --global.map_config.starting_area_size.selected = settings.starting_area
+  --global.map_config.map_height = settings.height
+  --global.map_config.map_width = settings.width
+  --global.map_config.starting_area_size.selected = settings.starting_area
   global.round_number = 0
+
+  --global variables for the server host info spam
+  global.timer_value = 0
+  global.timer_wait = 600
+  global.timer_display = 1
+
   local surface = game.create_surface("Lobby",{width = 1, height = 1})
   surface.set_tiles({{name = "out-of-map",position = {1,1}}})
   for k, force in pairs (game.forces) do
@@ -3453,7 +3666,7 @@ pvp.on_rocket_launched = function(event)
     end
     return
   end
-  if mode ~= "conquest" then return end
+  if mode ~= "conquest" and mode ~= "conquest_production" then return end
   local force = event.rocket.force
   if event.rocket.get_item_count("satellite") == 0 then
     force.print({"rocket-launched-without-satellite"})
@@ -3466,7 +3679,7 @@ end
 
 pvp.on_entity_died = function(event)
   local mode = global.game_config.game_mode.selected
-  if not (mode == "conquest" or mode == "last_silo_standing") then return end
+  if not (mode == "conquest" or mode == "last_silo_standing" or mode == "conquest_production") then return end
   local silo = event.entity
   if not (silo and silo.valid and silo.name == "rocket-silo") then
     return
@@ -3501,6 +3714,7 @@ end
 
 pvp.on_player_joined_game = function(event)
   local player = game.players[event.player_index]
+  check_game_speed(true)
   if not (player and player.valid) then return end
   if player.force.name ~= "player" then
     --If they are not on the player force, they have already picked a team this round.
@@ -3535,6 +3749,12 @@ end
 
 pvp.on_gui_checked_state_changed = function(event)
   diplomacy_check_press(event)
+  local player = game.players[event.player_index]
+  if not (player and player.valid) then return end
+  set_mode_input(player)
+end
+
+pvp.on_gui_text_changed = function(event)
   local player = game.players[event.player_index]
   if not (player and player.valid) then return end
   set_mode_input(player)
@@ -3600,6 +3820,16 @@ pvp.on_tick = function(event)
 end
 
 pvp.on_nth_tick = {
+  [5] = function(event)
+    if global.setup_finished == true then
+      check_game_speed()
+    end
+  end,
+  [30] = function(event)
+    if global.setup_finished == true then
+      slowdown_damaged_players()
+    end
+  end,
   [60] = function(event)
     if global.setup_finished == true then
       check_no_rush()
@@ -3616,8 +3846,29 @@ pvp.on_nth_tick = {
       check_player_color()
       check_spectator_chart()
     end
+  end,
+  [54000] = function(event)
+    if global.setup_finished == true then
+      game.print({"msg-announce"..global.timer_display})
+      global.timer_display = global.timer_display + 1
+      if global.timer_display == 6 then global.timer_display = 1 end
+    end
   end
 }
+
+function slowdown_damaged_players()
+  for k, player in pairs (game.connected_players) do
+		if player.character and player.character.health ~= nil then
+			local index = player.index
+			local health_missing = 1 - math.ceil(player.character.health) / (250 + player.character.character_health_bonus)
+      if health_missing > 0 then
+        --player.character_running_speed_modifier = -.1*(250-health)*global.crippling_factor/100
+        current_modifier = global.modifier_list.character_modifiers.character_running_speed_modifier
+        player.character_running_speed_modifier = (1 + health_missing / -10) * (current_modifier + 1) - 1
+      end
+    end
+  end
+end
 
 pvp.on_chunk_generated = function(event)
   oil_harvest_prune_oil(event)
