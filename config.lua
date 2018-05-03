@@ -5,13 +5,10 @@ function load_config(dummy_load)
   end
 
   config.setup_finished = false
-  config.admin_config = 
-  {
-  }
 
   config.map_config =
   {
-    average_team_displacement = 2048,
+    average_team_displacement = 1024,
     map_height = 0,
     map_width = 0,
     map_seed = 0,
@@ -20,11 +17,11 @@ function load_config(dummy_load)
       options = {"none", "very-low", "low", "normal", "high", "very-high"},
       selected = "normal"
     },
-    always_day = true,
-    biters_disabled = true,
+    always_day = false,
+    biters_disabled = false,
     peaceful_mode = false,
     evolution_factor = 0,
-    duplicate_starting_area_entities = true
+    duplicate_starting_area_entities = false
   }
 
   config.game_config = 
@@ -32,11 +29,11 @@ function load_config(dummy_load)
     game_mode =
     {
       options = {"conquest", "space_race", "last_silo_standing", "freeplay", "production_score", "oil_harvest"},
-      selected = "last_silo_standing",
+      selected = "conquest",
       tooltip = 
       {
         "", {"game_mode_tooltip"},
-        "\n",{"conquest_description"},
+        "\n", {"conquest_description"},
         "\n", {"space_race_description"},
         "\n", {"last_silo_standing_description"},
         "\n", {"freeplay_description"},
@@ -44,11 +41,12 @@ function load_config(dummy_load)
         "\n", {"oil_harvest_description"}
       }
     },
-    disband_on_loss = true,
+    disband_on_loss = false,
     time_limit = 0,
     required_production_score = 50000000,
     required_oil_barrels = 1000,
-    oil_only_in_center = true,
+    required_satellites_sent = 1,
+    oil_only_in_center = false,
     allow_spectators = false,
     spectator_fog_of_war = true,
     no_rush_time = 0,
@@ -57,25 +55,60 @@ function load_config(dummy_load)
     reveal_map_center = false,
     team_walls = true,
     team_turrets = true,
-    team_artillery = true,
+    turret_ammunition =
+    {
+      options = {"firearm-magazine"},
+      selected = "firearm-magazine"
+    },
+    team_artillery = false,
     give_artillery_remote = false,
-    auto_new_round_time = 1
+    auto_new_round_time = 0,
+    protect_empty_teams = true,
+    enemy_building_restriction = false,
+    neutral_chests = false
   }
+
+  local items = game.item_prototypes
+
+  local entity_name = "gun-turret"
+  local prototype = game.entity_prototypes[entity_name]
+  if not prototype then
+    config.game_config.team_turrets = nil
+    config.game_config.turret_ammunition = nil
+  else
+    local category = prototype.attack_parameters.ammo_category
+    if category then
+      local ammos = {}
+      for name, item in pairs (items) do
+        if item.type == "ammo" then
+          local ammo = item.get_ammo_type()
+          if ammo and ammo.category == category then
+            table.insert(ammos, name)
+          end
+        end
+      end
+      config.game_config.turret_ammunition.options = ammos
+      if not items["firearm-magazine"] then
+        config.game_config.turret_ammunition.selected = ammos[1] or ""
+      end
+    end
+  end
 
   config.team_config =
   {
+    max_players = 0,
     friendly_fire = true,
-    locked_teams = false,
     share_chart = true,
+    diplomacy_enabled = false,
     who_decides_diplomacy =
     {
       options = {"all_players", "team_leader"},
-      selected = "team_leader"
+      selected = "all_players"
     },
     team_joining =
     {
       options = {"player_pick", "random", "auto_assign"},
-      selected = "player_pick"
+      selected = "auto_assign"
     },
     spawn_position =
     {
@@ -84,16 +117,13 @@ function load_config(dummy_load)
     },
     research_level =
     {
-      options = {"none","science-pack-1", "science-pack-2", "science-pack-3", "military-science-pack", "production-science-pack", "high-tech-science-pack", "space-science-pack"},
-      selected = "military-science-pack"
+      options = {"none"},
+      selected = "none"
     },
     unlock_combat_research = false,
+    defcon_mode = false,
+    defcon_timer = 5,
     starting_equipment =
-    {
-      options = {"none", "small", "medium", "large"},
-      selected = "large"
-    },
-    starting_inventory =
     {
       options = {"none", "small", "medium", "large"},
       selected = "none"
@@ -101,10 +131,37 @@ function load_config(dummy_load)
     starting_chest =
     {
       options = {"none", "small", "medium", "large"},
-      selected = "large"
+      selected = "none"
     },
     starting_chest_multiplier = 5
   }
+
+  local packs = {}
+  local sorted_packs = {}
+  local techs = game.technology_prototypes
+  for k, tech in pairs (techs) do
+    for k, ingredient in pairs (tech.research_unit_ingredients) do
+      if not packs[ingredient.name] then
+        packs[ingredient.name] = true
+        local order = tostring(items[ingredient.name].order) or "Z-Z"
+        local added = false
+        for k, t in pairs (sorted_packs) do
+          if order < t.order then
+            table.insert(sorted_packs, k, {name = ingredient.name, order = order})
+            added = true
+            break
+          end
+        end
+        if not added then
+          table.insert(sorted_packs, {name = ingredient.name, order = order})
+        end
+      end
+    end
+  end
+
+  for k, t in pairs (sorted_packs) do
+    table.insert(config.team_config.research_level.options, t.name)
+  end
 
   config.research_ingredient_list = {}
   for k, research in pairs (config.team_config.research_level.options) do
@@ -113,18 +170,21 @@ function load_config(dummy_load)
 
   config.colors =
   {
-    {name = "Blue", color = {0.2, 0.2, 0.8, 0.7}},
-    {name = "Green", color = {0.1, 0.8, 0.1, 0.8}},
-    {name = "Purple", color = {0.8, 0.2, 0.8, 0.9}},
-    {name = "Yellow", color = {0.8, 0.8, 0.0, 0.6}},
-    {name = "Cyan", color = {0.1, 0.9, 0.9, 0.8}},
-    {name = "Orange", color = {0.8, 0.4, 0.0, 0.8}},
-    {name = "Pink", color = {0.8, 0.2, 0.8, 0.2}},
-    {name = "White", color = {0.8, 0.8, 0.8, 0.5}},
-    {name = "Black", color = {0.1, 0.1, 0.1, 0.8}},
-    {name = "Gray", color = {0.6, 0.6, 0.6, 0.8}}
+    { name = "orange" , color = { r = 0.869, g = 0.5  , b = 0.130, a = 0.5 }},
+    { name = "purple" , color = { r = 0.485, g = 0.111, b = 0.659, a = 0.5 }},
+    { name = "red"    , color = { r = 0.815, g = 0.024, b = 0.0  , a = 0.5 }},
+    { name = "green"  , color = { r = 0.093, g = 0.768, b = 0.172, a = 0.5 }},
+    { name = "blue"   , color = { r = 0.155, g = 0.540, b = 0.898, a = 0.5 }},
+    { name = "yellow" , color = { r = 0.835, g = 0.666, b = 0.077, a = 0.5 }},
+    { name = "pink"   , color = { r = 0.929, g = 0.386, b = 0.514, a = 0.5 }},
+    { name = "white"  , color = { r = 0.8  , g = 0.8  , b = 0.8  , a = 0.5 }},
+    { name = "black"  , color = { r = 0.1  , g = 0.1  , b = 0.1,   a = 0.5 }},
+    { name = "gray"   , color = { r = 0.4  , g = 0.4  , b = 0.4,   a = 0.5 }},
+    { name = "brown"  , color = { r = 0.300, g = 0.117, b = 0.0,   a = 0.5 }},
+    { name = "cyan"   , color = { r = 0.275, g = 0.755, b = 0.712, a = 0.5 }},
+    { name = "acid"   , color = { r = 0.559, g = 0.761, b = 0.157, a = 0.5 }},
   }
-
+  
   config.color_map = {}
   for k, color in pairs (config.colors) do
     config.color_map[color.name] = k
@@ -132,8 +192,8 @@ function load_config(dummy_load)
 
   config.teams =
   {
-    {name = "Green 1", color = "Green", team = "-"},
-    {name = "Purple 2", color = "Purple", team = "-"}
+    {name = game.backer_names[math.random(#game.backer_names)], color = "orange", team = "-"},
+    {name = game.backer_names[math.random(#game.backer_names)], color = "purple", team = "-"}
   }
 
   config.inventory_list =
@@ -181,6 +241,7 @@ function load_config(dummy_load)
       ["repair-pack"] = 20,
       ["inserter"] = 150,
       ["small-electric-pole"] = 100,
+      ["medium-electric-pole"] = 50,
       ["fast-inserter"] = 50,
       ["long-handed-inserter"] = 50,
       ["burner-inserter"] = 100,
@@ -222,7 +283,6 @@ function load_config(dummy_load)
       ["assembling-machine-1"] = 50,
       ["assembling-machine-2"] = 40,
       ["assembling-machine-3"] = 20,
-      ["electronic-circuit"] = 200,
       ["fast-inserter"] = 100,
       ["long-handed-inserter"] = 100,
       ["medium-electric-pole"] = 50,
@@ -287,9 +347,8 @@ function give_equipment(player)
     armor.put({name = "exoskeleton-equipment"})
     armor.put({name = "energy-shield-equipment"})
     armor.put({name = "energy-shield-equipment"})
-    armor.put({name = "personal-roboport-equipment"})
-    player.force.worker_robots_speed_modifier = 2.5
-    player.insert{name = "construction-robot", count = 10}
+    armor.put({name = "personal-roboport-mk2-equipment"})
+    player.insert{name = "construction-robot", count = 25}
     player.insert{name = "blueprint", count = 3}
     player.insert{name = "deconstruction-planner", count = 1}
     player.insert{name = "car", count = 1}
@@ -322,12 +381,15 @@ function parse_config_from_gui(gui, config)
       local n = tonumber(text)
       if text == "" then n = 0 end
       if n ~= nil then
-        if n <= 4294967295 then
-          config[name] = n
-        else
+        if n > 4294967295 then
           game.players[config_table.player_index].print({"value-too-big", {name}})
           return
         end
+        if n < 0 then
+          game.players[config_table.player_index].print({"value-below-zero", {name}})
+          return
+        end
+        config[name] = n
       else
         game.players[config_table.player_index].print({"must-be-number", {name}})
         return
@@ -369,7 +431,6 @@ function make_config_table(gui, config)
     else
       label = config_table.add{type = "label", name = k, tooltip = {k.."_tooltip"}}
       local menu = config_table.add{type = "drop-down", name = k.."_dropdown"}
-      menu.style.maximal_width = 150
       local index
       for j, option in pairs (name.options) do
         if items[option] then

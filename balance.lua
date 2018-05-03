@@ -35,8 +35,18 @@ function disable_combat_technologies(force)
 end
 
 function apply_character_modifiers(player)
-  for name, modifier in pairs (global.modifier_list.character_modifiers) do
+  local apply = function(player, name, modifier)
     player[name] = modifier
+  end
+  --Because some things want greater than 0, others wants greater than -1.
+  --Better to just catch the error than making some complicated code.
+  for name, modifier in pairs (global.modifier_list.character_modifiers) do
+    local status, error = pcall(apply, player, name, modifier)
+    if not status then
+      log(name)
+      log(error)
+      global.modifier_list.character_modifiers[name] = 0
+    end
   end
 end
 
@@ -49,7 +59,8 @@ function init_balance_modifiers()
         character_health_bonus = 0,
         character_crafting_speed_modifier = 0,
         character_mining_speed_modifier = 0,
-        character_inventory_slots_bonus = 0
+        character_build_distance_bonus = 0,
+        character_reach_distance_bonus = 0,
       },
     turret_attack_modifier = {},
     ammo_damage_modifier ={},
@@ -68,25 +79,7 @@ function init_balance_modifiers()
       modifier_list.turret_attack_modifier[name] = 0
     end
   end
-  local categories = {
-    "bullet",
-    "combat-robot-beam",
-    "combat-robot-laser",
-    "laser-turret",
-    "rocket",
-    "shotgun-shell",
-    "biological",
-    "cannon-shell",
-    "capsule",
-    "electric",
-    "flamethrower",
-    "melee",
-    "railgun",
-    "grenade",
-    "fluid",
-    "artillery-shell"
-  }
-  for k, name in pairs (categories) do
+  for name, ammo in pairs (game.ammo_category_prototypes) do
     modifier_list.ammo_damage_modifier[name] = 0
     modifier_list.gun_speed_modifier[name] = 0
   end
@@ -94,16 +87,35 @@ function init_balance_modifiers()
 end
 
 function apply_combat_modifiers(force)
+
+  local entities = game.entity_prototypes
+
   for name, modifier in pairs (global.modifier_list.turret_attack_modifier) do
-    force.set_turret_attack_modifier(name, force.get_turret_attack_modifier(name) + modifier)
+    if entities[name] then
+      force.set_turret_attack_modifier(name, force.get_turret_attack_modifier(name) + modifier)
+    else
+      log(name.." removed from turret attack modifiers, as it is not a valid turret prototype")
+      global.modifier_list.turret_attack_modifier[name] = nil
+    end
   end
 
+  local ammo = game.ammo_category_prototypes
+
   for name, modifier in pairs (global.modifier_list.ammo_damage_modifier) do
-    force.set_ammo_damage_modifier(name, force.get_ammo_damage_modifier(name) + modifier)
+    if ammo[name] then
+      force.set_ammo_damage_modifier(name, force.get_ammo_damage_modifier(name) + modifier)
+    else
+      log(name.." removed from ammo damage modifiers, as it is not a valid turret prototype")
+      global.modifier_list.ammo_damage_modifier[name] = nil
+    end
   end
 
   for name, modifier in pairs (global.modifier_list.gun_speed_modifier) do
-    force.set_gun_speed_modifier(name, force.get_gun_speed_modifier(name) + modifier)
+    if ammo[name] then
+      force.set_gun_speed_modifier(name, force.get_gun_speed_modifier(name) + modifier)
+    else
+      global.modifier_list.gun_speed_modifier[name] = nil
+    end
   end
 
 end
