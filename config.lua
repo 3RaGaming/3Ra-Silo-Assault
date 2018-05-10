@@ -5,6 +5,7 @@ function load_config(dummy_load)
   end
 
   config.setup_finished = false
+  config.match_started = true
 
   config.game_speed = 1
 
@@ -58,10 +59,11 @@ function load_config(dummy_load)
     required_satellites_sent = 1,
     oil_only_in_center = true,
     allow_spectators = false,
-    spectator_fog_of_war = true,
+    spectator_fog_of_war = false,
     no_rush_time = 20,
-    fast_blueprinting = true,
     base_exclusion_time = 0,
+    fast_blueprinting_time = 20,
+    character_speed_when_hurt = "90%",
     reveal_team_positions = true,
     reveal_map_center = true,
     team_walls = true,
@@ -73,10 +75,11 @@ function load_config(dummy_load)
     },
     team_artillery = false,
     give_artillery_remote = false,
-    auto_new_round_time = 5,
     protect_empty_teams = false,
     enemy_building_restriction = false,
-    neutral_chests = true
+    neutral_chests = true,
+    auto_new_round_time = 3,
+    team_prep_time = 1
   }
 
   local items = game.item_prototypes
@@ -144,7 +147,6 @@ function load_config(dummy_load)
     defcon_timer = 0.6,
     starting_equipment =
     {
-      --options = {"none", "small", "medium", "medium-with-blueprinting", "large"},
       options = {"none", "small", "medium", "large"},
       selected = "medium"
     },
@@ -337,7 +339,7 @@ function load_config(dummy_load)
   end
 end
 
-function give_equipment(player)
+function give_equipment(player, respawn)
 
   local setting = global.team_config.starting_equipment.selected
 
@@ -349,7 +351,7 @@ function give_equipment(player)
 
   if setting == "small" then
     player.insert{name = "submachine-gun", count = 1}
-    player.insert{name = "piercing-rounds-magazine", count = 40}
+    player.insert{name = "piercing-rounds-magazine", count = 30}
     player.insert{name = "shotgun", count = 1}
     player.insert{name = "shotgun-shell", count = 20}
     player.insert{name = "steel-axe", count = 1}
@@ -357,24 +359,27 @@ function give_equipment(player)
     return
   end
 
-  --if setting == "medium" or setting == "medium-with-blueprinting" then
   if setting == "medium" then
     player.insert{name = "steel-axe", count = 3}
     player.insert{name = "submachine-gun", count = 1}
     player.insert{name = "piercing-rounds-magazine", count = 40}
     player.insert{name = "shotgun", count = 1}
     player.insert{name = "shotgun-shell", count = 20}
-    player.insert{name = "modular-armor", count = 1}
-    local armor = player.get_inventory(defines.inventory.player_armor)[1].grid
-    if setting == "medium" then
-      armor.put({name = "personal-roboport-equipment"})
-      for i=1,21,1 do armor.put({name = "solar-panel-equipment"}) end
+    player.insert{name = "deconstruction-planner", count = 1}
+    -- @todo the following commented out code is the first attempt at removing bots and modular armor after fast blueprinting period ends.
+    if not respawn then
+      player.insert{name = "modular-armor", count = 1}
+    --if global.end_fast_blueprinting > game.tick then
+      local armor = player.get_inventory(defines.inventory.player_armor)[1]
+      armor.grid.put({name = "personal-roboport-equipment"})
+      --if not global.fast_blueprinting_items then
+      --  global.fast_blueprinting_items = {}
+      --end
+      --table.insert(global.fast_blueprinting_items, armor)
       player.insert{name = "construction-robot", count = 10}
     else
-      for i=1,4,1 do armor.put({name = "personal-roboport-equipment"}) end
-      player.insert{name = "construction-robot", count = 40}
+      player.insert{name = "heavy-armor", count = 1}
     end
-    player.insert{name = "deconstruction-planner", count = 1}
     return
   end
 
@@ -422,7 +427,7 @@ function parse_config_from_gui(gui, config)
   for name, value in pairs (config) do
     if config_table[name.."_box"] then
       local text = config_table[name.."_box"].text
-      local n = tonumber(text)
+      local n = tonumber(text:match("^([^%%]+)%%?$")) --remove trailing %
       if text == "" then n = 0 end
       if n ~= nil then
         if n > 4294967295 then
@@ -464,7 +469,8 @@ function make_config_table(gui, config)
   local items = game.item_prototypes
   for k, name in pairs (config) do
     local label
-    if tonumber(name) then
+    --if tonumber(name) or ({tostring(name):gsub("^(%d+)%%", "%1")})[2] ~= 0 then
+    if tonumber(name) or tostring(name):find("^%d+%%$") then
       label = config_table.add{type = "label", name = k, tooltip = {k.."_tooltip"}}
       local input = config_table.add{type = "textfield", name = k.."_box"}
       input.text = name

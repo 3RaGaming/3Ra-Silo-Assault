@@ -5,6 +5,7 @@ require("production-score")
 local util = require("util")
 
 local statistics_period = 150 -- Seconds
+local game_message_color = {r = 1, g = 0.2, b = 0.8, a = 1} --hot pink
 
 local events =
 {
@@ -169,7 +170,7 @@ function destroy_player_gui(player)
     end
   end
   local center_gui = player.gui.center
-  for k, name in pairs ({"diplomacy_frame", "progress_bar"}) do
+  for k, name in pairs ({"diplomacy_frame", "progress_bar", "start_match_frame"}) do
     if center_gui[name] then
       center_gui[name].destroy()
     end
@@ -334,6 +335,16 @@ function create_waiting_gui(player)
   local label = frame.add{type = "label", caption = {"setup-in-progress"}}
 end
 
+function player_join_lobby(player)
+  local character = player.character
+  player.character = nil
+  if character then character.destroy() end
+  player.set_controller{type = defines.controllers.ghost}
+  player.teleport({0, 1000}, game.surfaces.Lobby)
+  player.color = global.colors[global.color_map["black"]].color
+  player.chat_color = global.colors[global.color_map["yellow"]].color
+end
+
 function end_round(admin)
   for k, player in pairs (game.players) do
     player.force = game.forces.player
@@ -344,11 +355,7 @@ function end_round(admin)
       if player.ticks_to_respawn then
         player.ticks_to_respawn = nil
       end
-      local character = player.character
-      player.character = nil
-      if character then character.destroy() end
-      player.set_controller{type = defines.controllers.ghost}
-      player.teleport({0,1000}, game.surfaces.Lobby)
+      player_join_lobby(player)
       if player.admin then
         create_config_gui(player)
       else
@@ -383,7 +390,7 @@ end
 function prepare_next_round()
   global.setup_finished = false
   global.team_won = false
-  check_game_speed()
+  --check_game_speed()
   create_next_surface()
   setup_teams()
   chart_starting_area_for_force_spawns()
@@ -417,12 +424,6 @@ function set_mode_input(player)
       local name = global.game_config.game_mode.options[dropdown.selected_index]
       return name == "oil_harvest" or name == "production_score" or name == "conquest_production"
     end,
-    fast_blueprinting = function(gui)
-      local num = gui.no_rush_time_box
-      if not num then return end
-      return tonumber(num.text) > 0
-    end,
-    spectator_fog_of_war = function(gui) return gui.allow_spectators_boolean and gui.allow_spectators_boolean.state end,
     starting_chest_multiplier = function(gui)
       local dropdown = gui.starting_chest_dropdown
       local name = global.team_config.starting_chest.options[dropdown.selected_index]
@@ -513,6 +514,9 @@ function init_player_gui(player)
   end
   if player.force.name == "spectator" then
     button_flow.add{type = "button", caption = {"join-team"}, name = "spectator_join_team_button", style = mod_gui.button_style}
+  end
+  if not global.match_started then
+    create_start_match_gui(player)
   end
 end
 
@@ -615,8 +619,8 @@ function update_diplomacy_frame(player)
   end
 end
 
-function set_player(player, team)
-  local force = game.forces[team.name]
+function place_player_on_battle_surface(player)
+  local force = player.force
   local surface = global.surface
   if not surface.valid then return end
   local force_spawn = force.get_spawn_position(surface)
@@ -625,27 +629,21 @@ function set_player(player, team)
   if position then
     player.teleport(position, surface)
   else
-    player.print({"cant-find-position"})
+    player.print({"cant-find-position"}, player.name)
+    player.force = "player"
+    player.tag = ""
     choose_joining_gui(player)
-    return
+    return false
   end
   if player.character then
     player.character.destroy()
   end
-  player.force = force
-  player.color = get_color(team)
-  player.chat_color = get_color(team, true)
-  player.tag = "["..force.name.."]"
   player.set_controller
   {
     type = defines.controllers.character,
     character = surface.create_entity{name = "player", position = position, force = force}
   }
   player.spectator = false
-  init_player_gui(player)
-  for k, other_player in pairs (game.connected_players) do
-    update_team_list_frame(player)
-  end
   if global.game_config.team_artillery and global.game_config.give_artillery_remote and game.item_prototypes["artillery-targeting-remote"] then
     player.insert("artillery-targeting-remote")
   end
@@ -653,6 +651,22 @@ function set_player(player, team)
 
   apply_character_modifiers(player)
   check_force_protection(force)
+  init_player_gui(player)
+  return true
+end
+
+function set_player(player, team)
+  local force = game.forces[team.name]
+  player.force = force
+  player.color = get_color(team)
+  player.chat_color = get_color(team, true)
+  player.tag = "["..force.name.."]"
+  if global.match_started then
+    if not place_player_on_battle_surface(player) then return end
+  end
+  for k, other_player in pairs (game.connected_players) do
+    update_team_list_frame(player)
+  end
   game.print({"joined", player.name, player.force.name})
 end
 
@@ -775,6 +789,15 @@ function on_pick_join_button_press(event)
     update_team_list_frame(player)
   end
 
+end
+
+function create_start_match_gui(player)
+  if not player.admin then return end
+  local gui = player.gui.center
+  local name = "start_match_frame"
+  local frame = gui[name] or gui.add{type = "frame", name = name, caption = {"admin"}}
+  frame.clear()
+  set_button_style(frame.add{type = "button", name = "start_match_button", caption = {"start-match-button"}})
 end
 
 function add_team_button_press(event)
@@ -1110,17 +1133,19 @@ function random_join(player)
   set_player(player, teams[math.random(#teams)])
 end
 
-function spectator_join(player)
+function spectator_join(player, game_end)
   if player.character then player.character.destroy() end
   player.set_controller{type = defines.controllers.ghost}
   player.force = "spectator"
   player.teleport(global.spawn_offset, global.surface)
-  player.tag = ""
-  player.color = global.colors[global.color_map["black"]].color
-  player.chat_color = global.colors[global.color_map["red"]].color
+  if not game_end then
+    player.tag = ""
+    player.color = global.colors[global.color_map["black"]].color
+    player.chat_color = global.colors[global.color_map["red"]].color
+    game.print({"joined-spectator", player.name})
+  end
   player.spectator = true
   init_player_gui(player)
-  game.print({"joined-spectator", player.name})
 end
 
 function objective_button_press(event)
@@ -1714,7 +1739,7 @@ function setup_teams()
     if starting_equipment == "medium" or starting_equipment == "large" then
       force.worker_robots_speed_modifier = 2.5
     end
-    if global.game_config.fast_blueprinting then
+    if global.game_config.fast_blueprinting_time > 0 then
       force.worker_robots_speed_modifier = 20
     end
   end
@@ -1873,7 +1898,7 @@ end
 
 function chart_starting_area_for_force_spawns()
   local surface = global.surface
-  local radius = get_starting_area_radius() + 10 --DEBUG: 3Ra added 10
+  local radius = get_starting_area_radius() + 10
   local size = radius*32
   for k, team in pairs (global.teams) do
     local name = team.name
@@ -1893,8 +1918,7 @@ function check_starting_area_chunks_are_generated()
   if game.tick % (#global.teams) ~= 0 then return end
   local surface = global.surface
   local size = global.map_config.starting_area_size.selected
-  --local check_radius = get_starting_area_radius() - 1
-  local check_radius = get_starting_area_radius() + 10 --DEBUG: 3Ra changed from -1 to +10
+  local check_radius = get_starting_area_radius() + 10
   local total = 0
   local generated = 0
   local width = surface.map_gen_settings.width/2
@@ -1952,15 +1976,13 @@ function check_player_color()
   end
 end
 
-function check_no_rush()
-  if not global.end_no_rush then return end
-  if game.tick > global.end_no_rush then
-    if global.game_config.no_rush_time > 0 then
-      game.print({"no-rush-ends"})
+function check_fast_blueprinting()
+  if not global.end_fast_blueprinting then return end
+  if game.tick > global.end_fast_blueprinting then
+    if global.game_config.fast_blueprinting_time > 0 then
+      game.print({"fast-blueprinting-ends"})
     end
-    global.end_no_rush = nil
-    global.surface.peaceful_mode = global.map_config.peaceful_mode
-    game.forces.enemy.kill_all_units()
+    global.end_fast_blueprinting = nil
     local starting_equipment = global.team_config.starting_equipment.selected
     for force_name, force in pairs (game.forces) do
       if not is_ignored_force(force_name) then
@@ -1971,19 +1993,21 @@ function check_no_rush()
         end
       end
     end
+    -- @todo the following was the first pass at attempting to remove construction bots and roboports
+    --if global.fast_blueprinting_items then
+    --  for k, item in pairs (global.fast_blueprinting_items) do
+    --    item.clear()
+    --  end
+    --end
     return
-  end
-  local radius = get_starting_area_radius(true)
-  local surface = global.surface
-  for k, player in pairs (game.connected_players) do
-    local force = player.force
-    if not is_ignored_force(force.name) then
-      if player.character then
+  else
+    for k, player in pairs (game.connected_players) do
+      if not is_ignored_force(player.force.name) and player.character then
         local armor_slot = player.get_inventory(defines.inventory.player_armor)
         if armor_slot and not armor_slot.is_empty() then
           local armor = armor_slot[1]
           if armor and armor.valid and armor.grid then
-            for _, equipment in pairs(armor.grid.equipment) do
+            for k, equipment in pairs(armor.grid.equipment) do
               if equipment.type == "roboport-equipment" then
                 equipment.energy = 35000000
               end
@@ -1991,6 +2015,26 @@ function check_no_rush()
           end
         end
       end
+    end
+  end
+end
+
+function check_no_rush()
+  if not global.end_no_rush then return end
+  if game.tick > global.end_no_rush then
+    if global.game_config.no_rush_time > 0 then
+      game.print({"no-rush-ends"})
+    end
+    global.end_no_rush = nil
+    global.surface.peaceful_mode = global.map_config.peaceful_mode
+    game.forces.enemy.kill_all_units()
+    return
+  end
+  local radius = get_starting_area_radius(true)
+  local surface = global.surface
+  for k, player in pairs (game.connected_players) do
+    local force = player.force
+    if not is_ignored_force(force.name) then
       local origin = force.get_spawn_position(surface)
       local Xo = origin.x
       local Yo = origin.y
@@ -2161,15 +2205,17 @@ function finish_setup()
   local surface = global.surface
   if index == 0 then
     final_setup_step()
+    global.match_started = false
+    for k, player in pairs (game.players) do
+      create_start_match_gui(player)
+    end
     return
   end
   local name = global.teams[index].name
   if not name then return end
   local force = game.forces[name]
   if not force then return end
-  --create_silo_for_force(force)
-  --local radius = get_starting_area_radius(true) --[[radius in tiles]]
-  local radius = get_starting_area_radius(true) - 32 --DEBUG: 3Ra added -32
+  local radius = get_starting_area_radius(true) - 32 --[[radius in tiles]]
   if global.game_config.reveal_team_positions then
     for name, other_force in pairs (game.forces) do
       if not is_ignored_force(name) then
@@ -2177,11 +2223,6 @@ function finish_setup()
       end
     end
   end
-  create_wall_for_force(force)
-  create_starting_chest(force)
-  create_starting_turrets(force)
-  create_starting_artillery(force)
-  protect_force_area(force)
   force.friendly_fire = global.team_config.friendly_fire
   force.share_chart = global.team_config.share_chart
   local hide_crude_recipe_in_stats = global.game_config.game_mode.selected ~= "oil_harvest"
@@ -2199,27 +2240,21 @@ function final_setup_step()
   local surface = global.surface
   duplicate_starting_area_entities()
   global.finish_setup = nil
-  game.print({"map-ready"})
+  if global.game_config.team_prep_time > 0 then
+    game.print({"map-ready-auto", global.game_config.team_prep_time}, game_message_color)
+  else
+    game.print({"map-ready"}, game_message_color)
+  end
+
+  global.map_prepared_tick = game.tick
   global.setup_finished = true
-  global.round_start_tick = game.tick
   for k, player in pairs (game.connected_players) do
     destroy_player_gui(player)
     player.teleport({0, 1000}, "Lobby")
     choose_joining_gui(player)
   end
-  global.end_no_rush = game.tick + (global.game_config.no_rush_time * 60 * 60)
-  local color = {r = 1, g = 0.2, b = 0.8, a = 1}
-  if global.game_config.no_rush_time > 0 then
-    global.surface.peaceful_mode = true
-    game.forces.enemy.kill_all_units()
-    game.print({"no-rush-begins", global.game_config.no_rush_time}, color)
-    if global.game_config.fast_blueprinting then game.print({"fast-blueprinting-begins"}, color) end
-  end
-  create_exclusion_map()
-  if global.game_config.base_exclusion_time > 0 then
-    global.check_base_exclusion = true
-    game.print({"base-exclusion-begins", global.game_config.base_exclusion_time}, color)
-  end
+  global.surface.peaceful_mode = true
+  game.forces.enemy.kill_all_units()
   if global.game_config.reveal_map_center then
     local radius = global.map_config.average_team_displacement/2
     local origin = global.spawn_offset
@@ -2235,13 +2270,43 @@ function final_setup_step()
   global.production_scores = {}
   global.research_time_wasted = {}
   global.previous_tech = {}
+end
+
+function start_match()
+  global.match_started = true
+  global.round_start_tick = game.tick
+  game.print({"match-started"})
+  global.end_no_rush = game.tick + (global.game_config.no_rush_time * 60 * 60)
+  if global.game_config.no_rush_time > 0 then
+    game.forces.enemy.kill_all_units()
+    game.print({"no-rush-begins", global.game_config.no_rush_time}, game_message_color)
+  else
+    global.surface.peaceful_mode = global.map_config.peaceful_mode
+  end
+  local fast_bp_time = global.game_config.fast_blueprinting_time
+  global.end_fast_blueprinting = game.tick + (fast_bp_time * 60 * 60)
+  if fast_bp_time > 0 then
+    game.print({"fast-blueprinting-begins", fast_bp_time}, game_message_color)
+  end
+  create_exclusion_map()
+  if global.game_config.base_exclusion_time > 0 then
+    global.check_base_exclusion = true
+    game.print({"base-exclusion-begins", global.game_config.base_exclusion_time}, game_message_color)
+  end
   if global.team_config.defcon_mode then
     if global.team_config.defcon_random then
       game.print({"defcon-random-begins"})
       defcon_research()
     else
-      game.print({"tanks-research-nerf"}, color)
-      game.print({"atomic-bomb-research-nerf"}, color)
+      game.print({"tanks-research-nerf"}, game_message_color)
+      game.print({"nuclear-research-buff"}, game_message_color)
+    end
+  end
+  for k, player in pairs (game.players) do
+    local start_match_frame = player.gui.center.start_match_frame
+    if start_match_frame then start_match_frame.destroy() end
+    if player.force.name ~= "player" and player.force.name ~= "spectator" then
+      place_player_on_battle_surface(player)
     end
   end
   script.raise_event(events.on_round_start, {})
@@ -2345,7 +2410,7 @@ function create_silo_for_force(force)
   local surface = global.surface
   local origin = force.get_spawn_position(surface)
   local offset_x = 0
-  local offset_y = 0 -- DEBUG: 3ra changed to 0 from -25
+  local offset_y = 0
   local silo_position = {x = origin.x+offset_x, y = origin.y+offset_y}
   local area = {{silo_position.x - 5, silo_position.y - 6}, {silo_position.x + 6, silo_position.y + 6}}
   for i, entity in pairs(surface.find_entities_filtered({area = area, force = "neutral"})) do
@@ -2699,6 +2764,7 @@ button_press_functions = {
   balance_options_confirm = function(event) local player = game.players[event.player_index]  if set_balance_settings(player) then toggle_balance_options_gui(player) end end,
   balance_options = function(event) toggle_balance_options_gui(game.players[event.player_index]) end,
   config_confirm = function(event) config_confirm(game.players[event.player_index]) end,
+  start_match_button = start_match,
   diplomacy_button = diplomacy_button_press,
   diplomacy_cancel = function(event) game.players[event.player_index].opened.destroy() end,
   diplomacy_confirm = diplomacy_confirm,
@@ -2725,13 +2791,13 @@ function duplicate_starting_area_entities()
   local surface = global.surface
   local origin_spawn = force.get_spawn_position(surface)
   local starting_radius = get_starting_area_radius(true)
-  local uranium_x = origin_spawn.x - starting_radius
+  local uranium_x = origin_spawn.x - starting_radius - 8
   local uranium_y = origin_spawn.y + starting_radius/2
-  local uranium_radius = 10
+  local uranium_radius = 17
   for x_offset = -uranium_radius, uranium_radius do
     for y_offset = -uranium_radius, uranium_radius do
       if x_offset * x_offset + y_offset * y_offset < uranium_radius * uranium_radius then
-        surface.create_entity({name = "uranium-ore", amount = 1000, position = {uranium_x + x_offset, uranium_y + y_offset}})
+        surface.create_entity({name = "uranium-ore", amount = 200, position = {uranium_x + x_offset, uranium_y + y_offset}})
       end
     end
   end
@@ -2817,7 +2883,17 @@ function duplicate_starting_area_entities()
           end
         end
       end
+    end
+  end
+  for k, team in pairs (global.teams) do
+    local force = game.forces[team.name]
+    if force then
       create_silo_for_force(force)
+      create_wall_for_force(force)
+      create_starting_chest(force)
+      create_starting_turrets(force)
+      create_starting_artillery(force)
+      protect_force_area(force)
     end
   end
 end
@@ -3055,11 +3131,16 @@ function set_button_style(button)
   button.style.bottom_padding = 0
 end
 
+function check_start_match()
+  if global.game_config.team_prep_time <= 0 or game.tick < (global.game_config.team_prep_time * 60 * 60) + global.map_prepared_tick then return end
+  start_match()
+end
+
 function check_restart_round()
   if not global.team_won then return end
-  local time = global.game_config.auto_new_round_time
-  if not (time > 0) then return end
-  if game.tick < (global.game_config.auto_new_round_time * 60 * 60) + global.team_won then return end
+  local new_round_time = global.game_config.auto_new_round_time
+  if not (new_round_time > 0) then return end
+  if game.tick < (new_round_time * 60 * 60) + global.team_won then return end
   end_round()
   destroy_config_for_all()
   prepare_next_round()
@@ -3068,9 +3149,12 @@ end
 function team_won(name)
   global.team_won = game.tick
   if global.game_config.auto_new_round_time > 0 then
-    game.print({"team-won-auto", name, global.game_config.auto_new_round_time})
+    game.print({"team-won-auto", name, global.game_config.auto_new_round_time}, game_message_color)
   else
-    game.print({"team-won", name})
+    game.print({"team-won", name}, game_message_color)
+  end
+  for k, player in pairs(game.players) do
+    spectator_join(player, true)
   end
   script.raise_event(events.on_team_won, {name = name})
 end
@@ -3367,18 +3451,17 @@ function check_defcon()
             local ingredient_cost = global.science_pack_costs[ingredient.name] * ingredient.amount * tech.research_unit_count
             cost = cost + ingredient_cost
           end
-          local warn_science_buff_nerf = false
           if tech.name == "tanks" then
             cost = cost * 8
-            if global.previous_tech[team.name] ~= tech.name then warn_science_buff_nerf = true end
+            if global.previous_tech[team.name] ~= tech.name then
+              force.print({"tanks-research-nerf"}, game_message_color)
+            end
           end
-          if tech.name == "atomic-bomb" then
+          if tech.name == "atomic-bomb" or tech.name == "nuclear-power" then
             cost = cost / 4
-            if global.previous_tech[team.name] ~= tech.name then warn_science_buff_nerf = true end
-          end
-          if warn_science_buff_nerf then
-            local color = {r = 1, g = 0.2, b = 0.8, a = 1} --hot pink
-            force.print({tech.name.."-research-nerf"}, color)
+            if global.previous_tech[team.name] ~= tech.name then
+              force.print({"nuclear-research-buff"}, game_message_color)
+            end
           end
           local progress = force.research_progress
           local increment = (force.laboratory_speed_modifier + 1) * global.science_units_per_period * global.science_speedup / (cost * global.team_config.defcon_timer * 60)
@@ -3393,8 +3476,7 @@ function check_defcon()
               local time_wasted = global.research_time_wasted[team.name]
               if not time_wasted then time_wasted = 100 end
               if time_wasted % 120 == 0 then
-                local color = {r = 1, g = 0.2, b = 0.8, a = 1} --hot pink
-                force.print({"defcon-select-research-warning"}, color)
+                force.print({"defcon-select-research-warning"}, game_message_color)
               end
               global.research_time_wasted[team.name] = time_wasted + 1
             end
@@ -3405,7 +3487,6 @@ function check_defcon()
     local match_ticks = math.max(0, game.tick - global.round_start_tick)
     local minutes = match_ticks / 60 / 60
     local minutes_squared = minutes * minutes
-    -- global.science_speedup = 1 + 0.1 * minutes + 0.003 * minutes * minutes
     global.science_speedup = 1 + 0.03 * minutes + 0.0015 * minutes_squared + 0.0000002 * minutes_squared * minutes_squared
   end
 end
@@ -3450,7 +3531,6 @@ recursive_technology_prerequisite = function(tech)
 end
 
 function defcon_research()
-
   local tech = global.next_defcon_tech
   if tech and tech.valid then
     for k, team in pairs (global.teams) do
@@ -3689,9 +3769,9 @@ pvp.on_entity_died = function(event)
   if not global.silos then return end
   global.silos[force.name] = nil
   if killing_force then
-    game.print({"silo-destroyed", force.name, killing_force.name})
+    game.print({"silo-destroyed", force.name, killing_force.name}, game_message_color)
   else
-    game.print({"silo-destroyed", force.name, {"neutral"}})
+    game.print({"silo-destroyed", force.name, {"neutral"}}, game_message_color)
   end
   script.raise_event(events.on_team_lost, {name = force.name})
   if global.game_config.disband_on_loss then
@@ -3714,7 +3794,7 @@ end
 
 pvp.on_player_joined_game = function(event)
   local player = game.players[event.player_index]
-  check_game_speed(true)
+  --check_game_speed(true)
   if not (player and player.valid) then return end
   if player.force.name ~= "player" then
     --If they are not on the player force, they have already picked a team this round.
@@ -3724,14 +3804,13 @@ pvp.on_player_joined_game = function(event)
     end
     return
   end
-  local character = player.character
-  player.character = nil
-  if character then character.destroy() end
-  player.set_controller{type = defines.controllers.ghost}
-  player.teleport({0, 1000}, game.surfaces.Lobby)
+  player_join_lobby(player)
   player.gui.center.clear()
   if global.setup_finished then
     choose_joining_gui(player)
+    if not global.match_started then
+      create_start_match_gui(player)
+    end
   else
     if player.admin then
       create_config_gui(player)
@@ -3749,12 +3828,6 @@ end
 
 pvp.on_gui_checked_state_changed = function(event)
   diplomacy_check_press(event)
-  local player = game.players[event.player_index]
-  if not (player and player.valid) then return end
-  set_mode_input(player)
-end
-
-pvp.on_gui_text_changed = function(event)
   local player = game.players[event.player_index]
   if not (player and player.valid) then return end
   set_mode_input(player)
@@ -3820,25 +3893,30 @@ pvp.on_tick = function(event)
 end
 
 pvp.on_nth_tick = {
-  [5] = function(event)
+  --[5] = function(event)
+  --  if global.setup_finished == true then
+  --    check_game_speed()
+  --  end
+  --end,
+  [20] = function(event)
     if global.setup_finished == true then
-      check_game_speed()
-    end
-  end,
-  [30] = function(event)
-    if global.setup_finished == true then
-      slowdown_damaged_players()
+      check_damaged_players()
+      check_no_rush()
+      check_base_exclusion()
     end
   end,
   [60] = function(event)
     if global.setup_finished == true then
-      check_no_rush()
-      check_update_production_score()
-      check_update_oil_harvest_score()
-      check_update_space_race_score()
-      check_restart_round()
-      check_base_exclusion()
-      check_defcon()
+      if global.match_started == true then
+        check_fast_blueprinting()
+        check_update_production_score()
+        check_update_oil_harvest_score()
+        check_update_space_race_score()
+        check_restart_round()
+        check_defcon()
+      else
+        check_start_match()
+      end
     end
   end,
   [300] = function(event)
@@ -3856,15 +3934,16 @@ pvp.on_nth_tick = {
   end
 }
 
-function slowdown_damaged_players()
+function check_damaged_players()
   for k, player in pairs (game.connected_players) do
 		if player.character and player.character.health ~= nil then
 			local index = player.index
 			local health_missing = 1 - math.ceil(player.character.health) / (250 + player.character.character_health_bonus)
       if health_missing > 0 then
-        --player.character_running_speed_modifier = -.1*(250-health)*global.crippling_factor/100
         current_modifier = global.modifier_list.character_modifiers.character_running_speed_modifier
-        player.character_running_speed_modifier = (1 + health_missing / -10) * (current_modifier + 1) - 1
+        local hurt_speed_percent = string.match(global.game_config.character_speed_when_hurt, "^([^%%]+)%%?$")
+        local reduction = 1 - hurt_speed_percent / 100
+        player.character_running_speed_modifier = (1 - health_missing * reduction) * (current_modifier + 1) - 1
       end
     end
   end
@@ -3877,8 +3956,8 @@ end
 pvp.on_player_respawned = function(event)
   local player = game.players[event.player_index]
   if not (player and player.valid) then return end
-  if global.setup_finished == true then
-    give_equipment(player)
+  if global.setup_finished == true and global.match_started == true then
+    give_equipment(player, true)
     offset_respawn_position(player)
     apply_character_modifiers(player)
   else
@@ -3943,11 +4022,7 @@ pvp.on_forces_merged = function (event)
     if player and player.valid then
       player.force = game.forces.player
       if player.connected then
-        local character = player.character
-        player.character = nil
-        if character then character.destroy() end
-        player.set_controller{type = defines.controllers.ghost}
-        player.teleport({0, 1000}, game.surfaces.Lobby)
+        player_join_lobby(player)
         destroy_player_gui(player)
         choose_joining_gui(player)
       end

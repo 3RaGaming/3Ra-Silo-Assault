@@ -47,10 +47,6 @@ Event.register(defines.events.on_gui_checked_state_changed, function (event)
   pvp.on_gui_checked_state_changed(event)
 end)
 
-Event.register(defines.events.on_gui_text_changed, function (event)
-  pvp.on_gui_text_changed(event)
-end)
-
 Event.register(defines.events.on_player_left_game, function(event)
   pvp.on_player_left_game(event)
 end)
@@ -116,12 +112,12 @@ Event.register(defines.events.on_forces_merged, function(event)
   pvp.on_forces_merged(event)
 end)
 
-script.on_nth_tick(5, function(event)
-  pvp.on_nth_tick[5](event)
-end)
+--script.on_nth_tick(5, function(event)
+--  pvp.on_nth_tick[5](event)
+--end)
 
-script.on_nth_tick(30, function(event)
-  pvp.on_nth_tick[30](event)
+script.on_nth_tick(20, function(event)
+  pvp.on_nth_tick[20](event)
 end)
 
 script.on_nth_tick(60, function(event)
