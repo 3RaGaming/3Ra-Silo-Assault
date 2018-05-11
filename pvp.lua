@@ -512,7 +512,7 @@ function init_player_gui(player)
   if player.admin then
     button_flow.add{type = "button", caption = {"admin"}, name = "admin_button", style = mod_gui.button_style}
   end
-  if player.force.name == "spectator" then
+  if player.force.name == "spectator" and not global.team_won then
     button_flow.add{type = "button", caption = {"join-team"}, name = "spectator_join_team_button", style = mod_gui.button_style}
   end
   if not global.match_started then
@@ -694,7 +694,7 @@ end
 
 function add_join_spectator_button(gui)
   local player = game.players[gui.player_index]
-  if (not global.game_config.allow_spectators) and (not player.admin) then return end
+  if (not global.game_config.allow_spectators) and (not player.admin) and (not global.team_won) then return end
   set_button_style(gui.add{type = "button", name = "join_spectator", caption = {"join-spectator"}})
 end
 
@@ -702,7 +702,9 @@ function create_random_join_gui(gui)
   local name = "random_join_frame"
   local frame = gui[name] or gui.add{type = "frame", name = name, caption = {"random-join"}}
   frame.clear()
-  set_button_style(frame.add{type = "button", name = "random_join_button", caption = {"random-join-button"}})
+  if not global.team_won then
+    set_button_style(frame.add{type = "button", name = "random_join_button", caption = {"random-join-button"}})
+  end
   add_join_spectator_button(frame)
 end
 
@@ -711,7 +713,9 @@ function create_auto_assign_gui(gui)
   local name = "auto_assign_frame"
   local frame = gui[name] or gui.add{type = "frame", name = name, caption = {"auto-assign"}}
   frame.clear()
-  set_button_style(frame.add{type = "button", name = "auto_assign_button", caption = {"auto-assign-button"}})
+  if not global.team_won then
+    set_button_style(frame.add{type = "button", name = "auto_assign_button", caption = {"auto-assign-button"}})
+  end
   add_join_spectator_button(frame)
 end
 
@@ -719,41 +723,43 @@ function create_pick_join_gui(gui)
   local name = "pick_join_frame"
   local frame = gui[name] or gui.add{type = "frame", name = name, caption = {"pick-join"}, direction = "vertical"}
   frame.clear()
-  local inner_frame = frame.add{type = "frame", style = "image_frame", name = "pick_join_inner_frame", direction = "vertical"}
-  inner_frame.style.left_padding = 8
-  inner_frame.style.top_padding = 8
-  inner_frame.style.right_padding = 8
-  inner_frame.style.bottom_padding = 8
-  local pick_join_table = inner_frame.add{type = "table", name = "pick_join_table", column_count = 4}
-  pick_join_table.style.horizontal_spacing = 16
-  pick_join_table.style.vertical_spacing = 8
-  pick_join_table.draw_horizontal_lines = true
-  pick_join_table.draw_vertical_lines = true
-  pick_join_table.style.column_alignments[3] = "right"
-  pick_join_table.add{type = "label", name = "pick_join_table_force_name", caption = {"team-name"}}.style.font = "default-semibold"
-  pick_join_table.add{type = "label", name = "pick_join_table_player_count", caption = {"players"}}.style.font = "default-semibold"
-  pick_join_table.add{type = "label", name = "pick_join_table_team", caption = {"team-number"}}.style.font = "default-semibold"
-  pick_join_table.add{type = "label", name = "pick_join_table_pad"}.style.font = "default-semibold"
-  local limit = global.team_config.max_players
-  local teams = get_eligible_teams(game.players[gui.player_index])
-  if not teams then return end
-  for k, team in pairs (teams) do
-    local force = game.forces[team.name]
-    if force then
-      local name = pick_join_table.add{type = "label", name = force.name.."_label", caption = force.name}
-      name.style.font = "default-semibold"
-      name.style.font_color = get_color(team, true)
-      add_player_list_gui(force, pick_join_table)
-      local caption
-      if tonumber(team.team) then
-        caption = team.team
-      elseif team.team:find("?") then
-        caption = team.team:gsub("?", "")
-      else
-        caption = team.team
+  if not global.team_won then
+    local inner_frame = frame.add{type = "frame", style = "image_frame", name = "pick_join_inner_frame", direction = "vertical"}
+    inner_frame.style.left_padding = 8
+    inner_frame.style.top_padding = 8
+    inner_frame.style.right_padding = 8
+    inner_frame.style.bottom_padding = 8
+    local pick_join_table = inner_frame.add{type = "table", name = "pick_join_table", column_count = 4}
+    pick_join_table.style.horizontal_spacing = 16
+    pick_join_table.style.vertical_spacing = 8
+    pick_join_table.draw_horizontal_lines = true
+    pick_join_table.draw_vertical_lines = true
+    pick_join_table.style.column_alignments[3] = "right"
+    pick_join_table.add{type = "label", name = "pick_join_table_force_name", caption = {"team-name"}}.style.font = "default-semibold"
+    pick_join_table.add{type = "label", name = "pick_join_table_player_count", caption = {"players"}}.style.font = "default-semibold"
+    pick_join_table.add{type = "label", name = "pick_join_table_team", caption = {"team-number"}}.style.font = "default-semibold"
+    pick_join_table.add{type = "label", name = "pick_join_table_pad"}.style.font = "default-semibold"
+    local limit = global.team_config.max_players
+    local teams = get_eligible_teams(game.players[gui.player_index])
+    if not teams then return end
+    for k, team in pairs (teams) do
+      local force = game.forces[team.name]
+      if force then
+        local name = pick_join_table.add{type = "label", name = force.name.."_label", caption = force.name}
+        name.style.font = "default-semibold"
+        name.style.font_color = get_color(team, true)
+        add_player_list_gui(force, pick_join_table)
+        local caption
+        if tonumber(team.team) then
+          caption = team.team
+        elseif team.team:find("?") then
+          caption = team.team:gsub("?", "")
+        else
+          caption = team.team
+        end
+        pick_join_table.add{type = "label", name = force.name.."_team", caption = caption}
+        set_button_style(pick_join_table.add{type = "button", name = force.name.."_pick_join", caption = {"join"}})
       end
-      pick_join_table.add{type = "label", name = force.name.."_team", caption = caption}
-      set_button_style(pick_join_table.add{type = "button", name = force.name.."_pick_join", caption = {"join"}})
     end
   end
   add_join_spectator_button(frame)
@@ -779,7 +785,7 @@ function on_pick_join_button_press(event)
   local force = game.forces[joined_team.name]
   if not force then return end
   set_player(player, joined_team)
-  player.gui.center.clear()
+  player.gui.center.pick_join_frame.destroy()
 
   for k, player in pairs (game.forces.player.players) do
     create_pick_join_gui(player.gui.center)
@@ -1133,18 +1139,27 @@ function random_join(player)
   set_player(player, teams[math.random(#teams)])
 end
 
-function spectator_join(player, game_end)
+function spectator_join(player, winning_team)
   if player.character then player.character.destroy() end
   player.set_controller{type = defines.controllers.ghost}
-  player.force = "spectator"
-  player.teleport(global.spawn_offset, global.surface)
-  if not game_end then
+  if winning_team ~= nil then
+    local winning_team_name = winning_team[1] or winning_team
+    if winning_team_name == "none" then
+      player.teleport(global.spawn_offset, global.surface)
+    else
+      local winning_spawn_position = game.forces[winning_team_name].get_spawn_position(global.surface)
+      player.teleport(winning_spawn_position, global.surface)
+    end
+  else
+    player.force = "spectator"
+    player.teleport(global.spawn_offset, global.surface)
     player.tag = ""
     player.color = global.colors[global.color_map["black"]].color
     player.chat_color = global.colors[global.color_map["red"]].color
     game.print({"joined-spectator", player.name})
   end
   player.spectator = true
+  destroy_joining_guis(player.gui.center)
   init_player_gui(player)
 end
 
@@ -2241,9 +2256,9 @@ function final_setup_step()
   duplicate_starting_area_entities()
   global.finish_setup = nil
   if global.game_config.team_prep_time > 0 then
-    game.print({"map-ready-auto", global.game_config.team_prep_time}, game_message_color)
+    game.print({"map-ready-auto", global.game_config.team_prep_time})
   else
-    game.print({"map-ready"}, game_message_color)
+    game.print({"map-ready"})
   end
 
   global.map_prepared_tick = game.tick
@@ -3154,7 +3169,7 @@ function team_won(name)
     game.print({"team-won", name}, game_message_color)
   end
   for k, player in pairs(game.players) do
-    spectator_join(player, true)
+    spectator_join(player, name)
   end
   script.raise_event(events.on_team_won, {name = name})
 end
@@ -3899,7 +3914,7 @@ pvp.on_nth_tick = {
   --  end
   --end,
   [20] = function(event)
-    if global.setup_finished == true then
+    if global.setup_finished == true and global.match_started == true then
       check_damaged_players()
       check_no_rush()
       check_base_exclusion()

@@ -5,7 +5,7 @@ function load_config(dummy_load)
   end
 
   config.setup_finished = false
-  config.match_started = true
+  config.match_started = false
 
   config.game_speed = 1
 
