@@ -1933,12 +1933,7 @@ function check_starting_area_chunks_are_generated()
   if game.tick % (#global.teams) ~= 0 then return end
   local surface = global.surface
   local size = global.map_config.starting_area_size.selected
-<<<<<<< HEAD
   local check_radius = get_starting_area_radius() + 10
-=======
-  --local check_radius = get_starting_area_radius() - 1
-  local check_radius = get_starting_area_radius() -1 --DEBUG: 3Ra changed from -1 to +10
->>>>>>> Kill cowards using ne event
   local total = 0
   local generated = 0
   local width = surface.map_gen_settings.width/2
