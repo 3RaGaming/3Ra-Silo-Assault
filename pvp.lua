@@ -1933,7 +1933,12 @@ function check_starting_area_chunks_are_generated()
   if game.tick % (#global.teams) ~= 0 then return end
   local surface = global.surface
   local size = global.map_config.starting_area_size.selected
+<<<<<<< HEAD
   local check_radius = get_starting_area_radius() + 10
+=======
+  --local check_radius = get_starting_area_radius() - 1
+  local check_radius = get_starting_area_radius() -1 --DEBUG: 3Ra changed from -1 to +10
+>>>>>>> Kill cowards using ne event
   local total = 0
   local generated = 0
   local width = surface.map_gen_settings.width/2
@@ -3865,6 +3870,10 @@ pvp.on_player_left_game = function(event)
   end
 end
 
+pvp.on_pre_player_left_game = function(event)
+  kill_cowards(event)
+end
+
 pvp.on_gui_elem_changed = function(event)
   disable_items_elem_changed(event)
   recipe_picker_elem_changed(event)
@@ -3962,6 +3971,17 @@ function check_damaged_players()
       end
     end
   end
+end
+
+kill_cowards = function(event)
+  if not global.game_config.kill_cowards then return end
+  local player = game.players[event.player_index]
+  if not player and player.valid then return end
+  if not player.in_combat then return end
+  local character = player.character
+  if not character then game.print("has no character") return end
+  character.die()
+  game.print({"cowards-way-out", player.name})
 end
 
 pvp.on_chunk_generated = function(event)
