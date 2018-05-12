@@ -51,6 +51,10 @@ Event.register(defines.events.on_player_left_game, function(event)
   pvp.on_player_left_game(event)
 end)
 
+Event.register(defines.events.on_pre_player_left_game, function(event)
+  pvp.on_pre_player_left_game(event)
+end)
+
 Event.register(defines.events.on_gui_click, function(event)
   pvp.on_gui_click(event)
   silo_script.on_gui_click(event)

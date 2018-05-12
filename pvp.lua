@@ -3865,6 +3865,10 @@ pvp.on_player_left_game = function(event)
   end
 end
 
+pvp.on_pre_player_left_game = function(event)
+  kill_cowards(event)
+end
+
 pvp.on_gui_elem_changed = function(event)
   disable_items_elem_changed(event)
   recipe_picker_elem_changed(event)
@@ -3962,6 +3966,17 @@ function check_damaged_players()
       end
     end
   end
+end
+
+kill_cowards = function(event)
+  if not global.game_config.kill_cowards then return end
+  local player = game.players[event.player_index]
+  if not player and player.valid then return end
+  if not player.in_combat then return end
+  local character = player.character
+  if not character then game.print("has no character") return end
+  character.die()
+  game.print({"cowards-way-out", player.name})
 end
 
 pvp.on_chunk_generated = function(event)

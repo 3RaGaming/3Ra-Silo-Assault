@@ -79,7 +79,8 @@ function load_config(dummy_load)
     enemy_building_restriction = false,
     neutral_chests = true,
     auto_new_round_time = 3,
-    team_prep_time = 1
+    team_prep_time = 1,
+    kill_cowards = true
   }
 
   local items = game.item_prototypes
