@@ -85,7 +85,7 @@ function init_balance_modifiers()
   end
   modifier_list.ammo_damage_modifier["biological"] = 1
   modifier_list.ammo_damage_modifier["electric"] = -0.5
-  modifier_list.ammo_damage_modifier["shotgun-shell"] = 1
+  modifier_list.ammo_damage_modifier["shotgun-shell"] = 3
   global.modifier_list = modifier_list
 end
 

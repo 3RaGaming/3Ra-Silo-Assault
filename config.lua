@@ -367,20 +367,13 @@ function give_equipment(player, respawn)
     player.insert{name = "shotgun", count = 1}
     player.insert{name = "shotgun-shell", count = 20}
     player.insert{name = "deconstruction-planner", count = 1}
-    -- @todo the following commented out code is the first attempt at removing bots and modular armor after fast blueprinting period ends.
     if not respawn then
       player.insert{name = "modular-armor", count = 1}
-    --if global.end_fast_blueprinting > game.tick then
       local armor = player.get_inventory(defines.inventory.player_armor)[1]
       armor.grid.put({name = "personal-roboport-equipment"})
-      --if not global.fast_blueprinting_items then
-      --  global.fast_blueprinting_items = {}
-      --end
-      --table.insert(global.fast_blueprinting_items, armor)
       player.insert{name = "construction-robot", count = 10}
-    else
-      player.insert{name = "heavy-armor", count = 1}
     end
+    player.insert{name = "heavy-armor", count = 1}
     return
   end
 

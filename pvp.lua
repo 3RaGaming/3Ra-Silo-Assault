@@ -1991,6 +1991,26 @@ function check_player_color()
   end
 end
 
+local is_fast_blueprinting_item =
+{
+  ["construction-robot"] = true,
+  ["modular-armor"] = true,
+  ["personal-roboport-equipment"] = true
+}
+
+function clear_inventory_of_fast_blueprinting_items(inventory)
+  if inventory then
+    for i = 1, #inventory do
+      local inventory_slot = inventory[i]
+      if inventory_slot.valid_for_read then
+        if is_fast_blueprinting_item[inventory_slot.name] then
+          inventory_slot.clear()
+        end
+      end
+    end
+  end
+end
+
 function check_fast_blueprinting()
   if not global.end_fast_blueprinting then return end
   if game.tick > global.end_fast_blueprinting then
@@ -2001,23 +2021,47 @@ function check_fast_blueprinting()
     local starting_equipment = global.team_config.starting_equipment.selected
     for force_name, force in pairs (game.forces) do
       if not is_ignored_force(force_name) then
-        if starting_equipment == "medium" or starting_equipment == "medium-with-blueprinting" or starting_equipment == "large" then
+        if starting_equipment == "medium" or starting_equipment == "large" then
           force.worker_robots_speed_modifier = 2.5
         else
           force.worker_robots_speed_modifier = 0
         end
       end
     end
-    -- @todo the following was the first pass at attempting to remove construction bots and roboports
-    --if global.fast_blueprinting_items then
-    --  for k, item in pairs (global.fast_blueprinting_items) do
-    --    item.clear()
-    --  end
-    --end
-    return
+    if starting_equipment == "medium" then
+      for k, player in pairs (game.players) do
+        for j, inventory_type in pairs ({"player_main", "player_quickbar", "player_armor"}) do
+          local inventory = player.get_inventory(defines.inventory[inventory_type])
+          clear_inventory_of_fast_blueprinting_items(inventory)
+        end
+        local cursor = player.cursor_stack
+        if cursor and cursor.valid_for_read and is_fast_blueprinting_item[cursor.name] then
+          cursor.clear()
+        end
+      end
+      for k, item in pairs (global.surface.find_entities_filtered{name="item-on-ground"}) do
+        if is_fast_blueprinting_item[item.stack.name] then
+          item.destroy()
+        end
+      end
+      -- for flying bots:
+      for k, item in pairs (global.surface.find_entities_filtered{name="construction-robot"}) do
+        item.destroy()
+      end
+      for k, container_type in pairs ({"container", "character-corpse", "item-with-entity-data", "roboport", "assembling-machine"}) do
+        for j, container in pairs(global.surface.find_entities_filtered{type=container_type}) do
+          local inventory = container.get_output_inventory() or container.get_inventory(defines.inventory.character_corpse)
+          clear_inventory_of_fast_blueprinting_items(inventory)
+        end
+      end
+    end
   else
     for k, player in pairs (game.connected_players) do
       if not is_ignored_force(player.force.name) and player.character then
+        local pos = player.position
+        for k, bot in pairs (global.surface.find_entities_filtered{name="construction-robot", area={{pos.x-4, pos.y-4}, {pos.x+4, pos.y+4}}}) do
+          bot.energy = 1500000
+        end
         local armor_slot = player.get_inventory(defines.inventory.player_armor)
         if armor_slot and not armor_slot.is_empty() then
           local armor = armor_slot[1]
