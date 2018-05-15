@@ -1756,9 +1756,6 @@ function setup_teams()
     force.reset_technology_effects()
     apply_combat_modifiers(force)
     local starting_equipment = global.team_config.starting_equipment.selected
-    if starting_equipment == "medium" or starting_equipment == "large" then
-      force.worker_robots_speed_modifier = 2.5
-    end
     if global.game_config.fast_blueprinting_time > 0 then
       force.worker_robots_speed_modifier = 20
     end
@@ -2026,13 +2023,9 @@ function check_fast_blueprinting()
     local starting_equipment = global.team_config.starting_equipment.selected
     for force_name, force in pairs (game.forces) do
       if not is_ignored_force(force_name) then
-        if starting_equipment == "medium" or starting_equipment == "large" then
-          force.worker_robots_speed_modifier = 2.5
-        else
           force.worker_robots_speed_modifier = 0
         end
       end
-    end
     if starting_equipment == "medium" then
       for k, player in pairs (game.players) do
         for j, inventory_type in pairs ({"player_main", "player_quickbar", "player_armor"}) do
