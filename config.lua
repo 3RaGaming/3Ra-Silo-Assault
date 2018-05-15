@@ -78,6 +78,7 @@ function load_config(dummy_load)
     protect_empty_teams = false,
     enemy_building_restriction = false,
     neutral_chests = true,
+    neutral_vehicles = true,
     auto_new_round_time = 3,
     team_prep_time = 1,
     kill_cowards = true
@@ -463,7 +464,6 @@ function make_config_table(gui, config)
   local items = game.item_prototypes
   for k, name in pairs (config) do
     local label
-    --if tonumber(name) or ({tostring(name):gsub("^(%d+)%%", "%1")})[2] ~= 0 then
     if tonumber(name) or tostring(name):find("^%d+%%$") then
       label = config_table.add{type = "label", name = k, tooltip = {k.."_tooltip"}}
       local input = config_table.add{type = "textfield", name = k.."_box"}

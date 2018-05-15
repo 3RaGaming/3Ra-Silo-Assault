@@ -2023,9 +2023,9 @@ function check_fast_blueprinting()
     local starting_equipment = global.team_config.starting_equipment.selected
     for force_name, force in pairs (game.forces) do
       if not is_ignored_force(force_name) then
-          force.worker_robots_speed_modifier = 0
-        end
+        force.worker_robots_speed_modifier = 0
       end
+    end
     if starting_equipment == "medium" then
       for k, player in pairs (game.players) do
         for j, inventory_type in pairs ({"player_main", "player_quickbar", "player_armor"}) do
@@ -2046,7 +2046,7 @@ function check_fast_blueprinting()
       for k, item in pairs (global.surface.find_entities_filtered{name="construction-robot"}) do
         item.destroy()
       end
-      for k, container_type in pairs ({"container", "character-corpse", "item-with-entity-data", "roboport", "assembling-machine"}) do
+      for k, container_type in pairs ({"container", "logistic-container", "character-corpse", "item-with-entity-data", "roboport", "assembling-machine"}) do
         for j, container in pairs(global.surface.find_entities_filtered{type=container_type}) do
           local inventory = container.get_output_inventory() or container.get_inventory(defines.inventory.character_corpse)
           clear_inventory_of_fast_blueprinting_items(inventory)
@@ -3633,11 +3633,12 @@ function defcon_research()
   end
 end
 
-function check_neutral_chests(event)
-  if not global.game_config.neutral_chests then return end
+function check_neutral_chests_and_vehicles(event)
   local entity = event.created_entity
   if not (entity and entity.valid) then return end
-  if entity.type == "container" then
+  local disable_chest = global.game_config.neutral_chests and (entity.type == "container" or entity.type == "logistic-container")
+  local disable_vehicle = global.game_config.neutral_vehicles and entity.type == "item-with-entity-data" and entity.name ~= "locomotive"
+  if disable_chest or disable_vehicle then
     entity.force = "neutral"
   end
 end
@@ -4066,11 +4067,11 @@ end
 
 pvp.on_built_entity = function(event)
   check_on_built_protection(event)
-  check_neutral_chests(event)
+  check_neutral_chests_and_vehicles(event)
 end
 
 pvp.on_robot_built_entity = function(event)
-  check_neutral_chests(event)
+  check_neutral_chests_and_vehicles(event)
 end
 
 pvp.on_research_started = function(event)
