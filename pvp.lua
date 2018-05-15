@@ -384,6 +384,7 @@ function end_round(admin)
   global.research_time_wasted = nil
   global.previous_tech = nil
   global.silos = nil
+  global.wrecks = nil
   script.raise_event(events.on_round_end, {})
 end
 
@@ -1757,7 +1758,7 @@ function setup_teams()
     apply_combat_modifiers(force)
     local starting_equipment = global.team_config.starting_equipment.selected
     if global.game_config.fast_blueprinting_time > 0 then
-      force.worker_robots_speed_modifier = 20
+      force.worker_robots_speed_modifier = -1
     end
   end
   disable_items_for_all()
@@ -2960,11 +2961,20 @@ function duplicate_starting_area_entities()
 end
 
 function check_spectator_chart()
-  if global.game_config.spectator_fog_of_war then return end
-  local force = game.forces.spectator
-  if not (force and force.valid) then return end
-  if #force.connected_players > 0 then
-    force.chart_all(global.surface)
+  chart_all = function(force)
+    if not (force and force.valid) then return end
+    if #force.connected_players > 0 then
+      force.chart_all(global.surface)
+    end
+  end
+  if global.team_won or not global.game_config.spectator_fog_of_war then
+    chart_all(game.forces.spectator)
+  end
+  if global.team_won then
+    for k, team in pairs (global.teams) do
+      local force = game.forces[team.name]
+      chart_all(force)
+    end
   end
 end
 
@@ -3647,6 +3657,18 @@ function check_neutral_chests_and_vehicles(event)
   end
 end
 
+function check_wrecks_corpse_timer()
+  if not global.wrecks then return end
+  for wreck, tick in pairs(global.wrecks) do
+    if wreck and wreck.valid then
+      local wreck_inventory = wreck.get_inventory(defines.inventory.item_main)
+      if wreck_inventory.is_empty() or game.tick > tick + 15 * 60 * 60 then
+        wreck.destroy()
+      end
+    end
+  end
+end
+
 function export_button_press(player)
   if not (player and player.valid) then return end
   if not parse_config(player) then return end
@@ -3820,36 +3842,53 @@ pvp.on_rocket_launched = function(event)
 end
 
 pvp.on_entity_died = function(event)
-  local mode = global.game_config.game_mode.selected
-  if not (mode == "conquest" or mode == "last_silo_standing" or mode == "conquest_production") then return end
-  local silo = event.entity
-  if not (silo and silo.valid and silo.name == "rocket-silo") then
-    return
-  end
-  local killing_force = event.force
-  local force = silo.force
-  if not global.silos then return end
-  global.silos[force.name] = nil
-  if killing_force then
-    game.print({"silo-destroyed", force.name, killing_force.name}, game_message_color)
-  else
-    game.print({"silo-destroyed", force.name, {"neutral"}}, game_message_color)
-  end
-  script.raise_event(events.on_team_lost, {name = force.name})
-  if global.game_config.disband_on_loss then
-    disband_team(force, killing_force)
-  end
-  if not global.team_won then
-    local index = 0
-    local winner_name = {"none"}
-    for name, listed_silo in pairs (global.silos) do
-      if listed_silo ~= nil then
-        index = index + 1
-        winner_name = name
+  local dying_entity = event.entity
+  if not (dying_entity and dying_entity.valid) then return end
+  local force = dying_entity.force
+  if global.game_config.vehicle_wreckage and dying_entity.type == "car" then
+    local wreck = global.surface.create_entity{name = "big-ship-wreck-2", position = dying_entity.position, force = "neutral"}
+    wreck.destructible = false
+    wreck_inventory = wreck.get_inventory(defines.inventory.item_main)
+    for k, inventory_type in pairs ({"car_ammo", "fuel", "car_trunk"}) do
+      dying_inventory = dying_entity.get_inventory(defines.inventory[inventory_type])
+      for i = 1, #dying_inventory do
+        local item = dying_inventory[i]
+        if item.valid_for_read then
+          wreck_inventory.insert(item)
+        end
       end
     end
-    if index == 1  then
-        team_won(winner_name)
+    if not global.wrecks then
+      global.wrecks = {}
+    end
+    global.wrecks[wreck] = game.tick
+  elseif dying_entity.name == "rocket-silo" then
+    local mode = global.game_config.game_mode.selected
+    if not (mode == "conquest" or mode == "last_silo_standing" or mode == "conquest_production") then return end
+    local killing_force = event.force
+    if not global.silos then return end
+    global.silos[force.name] = nil
+    if killing_force then
+      game.print({"silo-destroyed", force.name, killing_force.name}, game_message_color)
+    else
+      game.print({"silo-destroyed", force.name, {"neutral"}}, game_message_color)
+    end
+    script.raise_event(events.on_team_lost, {name = force.name})
+    if global.game_config.disband_on_loss then
+      disband_team(force, killing_force)
+    end
+    if not global.team_won then
+      local index = 0
+      local winner_name = {"none"}
+      for name, listed_silo in pairs (global.silos) do
+        if listed_silo ~= nil then
+          index = index + 1
+          winner_name = name
+        end
+      end
+      if index == 1  then
+          team_won(winner_name)
+      end
     end
   end
 end
@@ -3980,6 +4019,7 @@ pvp.on_nth_tick = {
         check_update_space_race_score()
         check_restart_round()
         check_defcon()
+        check_wrecks_corpse_timer()
       else
         check_start_match()
       end

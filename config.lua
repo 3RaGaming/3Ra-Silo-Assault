@@ -79,6 +79,7 @@ function load_config(dummy_load)
     enemy_building_restriction = false,
     neutral_chests = true,
     neutral_vehicles = true,
+    vehicle_wreckage = true,
     auto_new_round_time = 3,
     team_prep_time = 1,
     kill_cowards = true
