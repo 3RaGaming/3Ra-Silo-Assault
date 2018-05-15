@@ -479,6 +479,11 @@ function set_mode_input(player)
           local mapped = visibility_map[name]
           if mapped then
             local bool = mapped(config)
+            local localized_caption = children[k].caption
+            local indent = "    "
+            if localized_caption[3] ~= indent then
+              children[k].caption = {"", indent, localized_caption}
+            end
             children[k].style.visible = bool
             children[k+1].style.visible = bool
           end
