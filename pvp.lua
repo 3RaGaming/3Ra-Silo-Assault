@@ -401,6 +401,11 @@ end
 function set_mode_input(player)
   if not (player and player.valid and player.gui.center.config_holding_frame) then return end
   local visibility_map = {
+    peaceful_mode = function(gui)
+      local option = gui.biters_disabled_boolean
+      if not option then return end
+      return not option.state
+    end,
     required_production_score = function(gui)
       local dropdown = gui.game_mode_dropdown
       if not dropdown then return end
@@ -650,7 +655,7 @@ function place_player_on_battle_surface(player)
     character = surface.create_entity{name = "player", position = position, force = force}
   }
   player.spectator = false
-  if global.game_config.team_artillery and global.game_config.give_artillery_remote and game.item_prototypes["artillery-targeting-remote"] then
+  if global.map_config.team_artillery and global.map_config.give_artillery_remote and game.item_prototypes["artillery-targeting-remote"] then
     player.insert("artillery-targeting-remote")
   end
   give_equipment(player)
@@ -700,7 +705,7 @@ end
 
 function add_join_spectator_button(gui)
   local player = game.players[gui.player_index]
-  if (not global.game_config.allow_spectators) and (not player.admin) and (not global.team_won) then return end
+  if (not global.map_config.allow_spectators) and (not player.admin) and (not global.team_won) then return end
   set_button_style(gui.add{type = "button", name = "join_spectator", caption = {"join-spectator"}})
 end
 
@@ -2274,7 +2279,7 @@ function finish_setup()
   local force = game.forces[name]
   if not force then return end
   local radius = get_starting_area_radius(true) - 32 --[[radius in tiles]]
-  if global.game_config.reveal_team_positions then
+  if global.map_config.reveal_team_positions then
     for name, other_force in pairs (game.forces) do
       if not is_ignored_force(name) then
         force.chart(surface, get_force_area(other_force))
@@ -2313,7 +2318,7 @@ function final_setup_step()
   end
   global.surface.peaceful_mode = true
   game.forces.enemy.kill_all_units()
-  if global.game_config.reveal_map_center then
+  if global.map_config.reveal_map_center then
     local radius = global.map_config.average_team_displacement/2
     local origin = global.spawn_offset
     local area = {{origin.x - radius, origin.y - radius}, {origin.x + (radius - 32), origin.y + (radius - 32)}}
@@ -2371,7 +2376,7 @@ function start_match()
 end
 
 function check_force_protection(force)
-  if not global.game_config.protect_empty_teams then return end
+  if not global.map_config.protect_empty_teams then return end
   if not (force and force.valid) then return end
   if is_ignored_force(force.name) then return end
   if not global.protected_teams then global.protected_teams = {} end
@@ -2391,7 +2396,7 @@ function check_force_protection(force)
 end
 
 function protect_force_area(force)
-  if not global.game_config.protect_empty_teams then return end
+  if not global.map_config.protect_empty_teams then return end
   local surface = global.surface
   if not (surface and surface.valid) then return end
   local non_destructible = {}
@@ -2408,7 +2413,7 @@ function protect_force_area(force)
 end
 
 function unprotect_force_area(force)
-  if not global.game_config.protect_empty_teams then return end
+  if not global.map_config.protect_empty_teams then return end
   local surface = global.surface
   if not (surface and surface.valid) then return end
   if not global.protected_teams then
@@ -2524,9 +2529,9 @@ function setup_research(force)
 end
 
 function create_starting_turrets(force)
-  if not global.game_config.team_turrets then return end
+  if not global.map_config.team_turrets then return end
   if not (force and force.valid) then return end
-  local ammo_name = global.game_config.turret_ammunition.selected or "firearm-magazine"
+  local ammo_name = global.map_config.turret_ammunition.selected or "firearm-magazine"
   local turret_name
   if ammo_name == "laser-turret" then
     turret_name = "laser-turret"
@@ -2602,7 +2607,7 @@ function create_starting_turrets(force)
 end
 
 function create_starting_artillery(force)
-  if not global.game_config.team_artillery then return end
+  if not global.map_config.team_artillery then return end
   if not (force and force.valid) then return end
   local turret_name = "artillery-turret"
   if not game.entity_prototypes[turret_name] then return end
@@ -2673,7 +2678,7 @@ function create_starting_artillery(force)
 end
 
 function create_wall_for_force(force)
-  if not global.game_config.team_walls then return end
+  if not global.map_config.team_walls then return end
   if not force.valid then return end
   local surface = global.surface
   local height = global.map_config.map_height/2
@@ -2967,7 +2972,7 @@ function check_spectator_chart()
       force.chart_all(global.surface)
     end
   end
-  if global.team_won or not global.game_config.spectator_fog_of_war then
+  if global.team_won or not global.map_config.spectator_fog_of_war then
     chart_all(game.forces.spectator)
   end
   if global.team_won then
@@ -3459,7 +3464,7 @@ function add_pusher(gui)
 end
 
 function check_on_built_protection(event)
-  if not global.game_config.enemy_building_restriction then return end
+  if not global.map_config.enemy_building_restriction then return end
   local entity = event.created_entity
   local player = game.players[event.player_index]
   if not (entity and entity.valid and player and player.valid) then return end
@@ -3944,7 +3949,7 @@ pvp.on_player_left_game = function(event)
       update_team_list_frame(player)
     end
   end
-  if global.game_config.protect_empty_teams then
+  if global.map_config.protect_empty_teams then
     local player = game.players[event.player_index]
     local force = player.force
     check_force_protection(force)

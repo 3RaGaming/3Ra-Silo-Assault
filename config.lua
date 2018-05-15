@@ -31,7 +31,22 @@ function load_config(dummy_load)
     biters_disabled = true,
     peaceful_mode = true,
     evolution_factor = 0,
-    duplicate_starting_area_entities = true
+    duplicate_starting_area_entities = true,
+    allow_spectators = false,
+    spectator_fog_of_war = false,
+    reveal_team_positions = true,
+    reveal_map_center = true,
+    team_walls = true,
+    team_turrets = true,
+    turret_ammunition =
+    {
+      options = {"piercing-rounds-magazine"},
+      selected = "piercing-rounds-magazine"
+    },
+    team_artillery = false,
+    give_artillery_remote = false,
+    protect_empty_teams = false,
+    enemy_building_restriction = false
   }
 
   config.game_config = 
@@ -58,25 +73,10 @@ function load_config(dummy_load)
     required_oil_barrels = 1000,
     required_satellites_sent = 1,
     oil_only_in_center = true,
-    allow_spectators = false,
-    spectator_fog_of_war = false,
     no_rush_time = 20,
     base_exclusion_time = 0,
     fast_blueprinting_time = 20,
     character_speed_when_hurt = "90%",
-    reveal_team_positions = true,
-    reveal_map_center = true,
-    team_walls = true,
-    team_turrets = true,
-    turret_ammunition =
-    {
-      options = {"piercing-rounds-magazine"},
-      selected = "piercing-rounds-magazine"
-    },
-    team_artillery = false,
-    give_artillery_remote = false,
-    protect_empty_teams = false,
-    enemy_building_restriction = false,
     neutral_chests = true,
     neutral_vehicles = true,
     vehicle_wreckage = true,
@@ -92,8 +92,8 @@ function load_config(dummy_load)
   local bullet_prototype = game.entity_prototypes[bullet_entity_name]
   local laser_prototype = game.entity_prototypes[laser_entity_name]
   if not bullet_prototype and not laser_prototype then
-    config.game_config.team_turrets = nil
-    config.game_config.turret_ammunition = nil
+    config.map_config.team_turrets = nil
+    config.map_config.turret_ammunition = nil
   else
     local ammos = {}
     if bullet_prototype then
@@ -112,9 +112,9 @@ function load_config(dummy_load)
     if laser_prototype then
       table.insert(ammos, laser_entity_name)
     end
-    config.game_config.turret_ammunition.options = ammos
+    config.map_config.turret_ammunition.options = ammos
     if not items["piercing-rounds-magazine"] then
-      config.game_config.turret_ammunition.selected = ammos[1] or ""
+      config.map_config.turret_ammunition.selected = ammos[1] or ""
     end
   end
 
