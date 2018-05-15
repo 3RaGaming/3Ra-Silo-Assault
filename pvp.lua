@@ -2848,13 +2848,17 @@ function duplicate_starting_area_entities()
   local surface = global.surface
   local origin_spawn = force.get_spawn_position(surface)
   local starting_radius = get_starting_area_radius(true)
-  local uranium_x = origin_spawn.x - starting_radius - 8
-  local uranium_y = origin_spawn.y + starting_radius/2
+  local uranium_x = origin_spawn.x - starting_radius - 8 + 0.5
+  local uranium_y = origin_spawn.y + starting_radius/2 + 0.5
   local uranium_radius = 17
   for x_offset = -uranium_radius, uranium_radius do
     for y_offset = -uranium_radius, uranium_radius do
       if x_offset * x_offset + y_offset * y_offset < uranium_radius * uranium_radius then
-        surface.create_entity({name = "uranium-ore", amount = 200, position = {uranium_x + x_offset, uranium_y + y_offset}})
+        local pos = {x = uranium_x + x_offset, y = uranium_y + y_offset}
+        for k, resource_tile in pairs(surface.find_entities_filtered{position = pos, type = "resource"}) do
+          resource_tile.destroy()
+        end
+        surface.create_entity({name = "uranium-ore", amount = 200, position = pos})
       end
     end
   end
@@ -3636,9 +3640,9 @@ end
 function check_neutral_chests_and_vehicles(event)
   local entity = event.created_entity
   if not (entity and entity.valid) then return end
-  local disable_chest = global.game_config.neutral_chests and (entity.type == "container" or entity.type == "logistic-container")
-  local disable_vehicle = global.game_config.neutral_vehicles and entity.type == "item-with-entity-data" and entity.name ~= "locomotive"
-  if disable_chest or disable_vehicle then
+  local neutralize_chest = global.game_config.neutral_chests and entity.type == "container"
+  local neutralize_vehicle = global.game_config.neutral_vehicles and entity.type == "item-with-entity-data" and entity.name ~= "locomotive"
+  if neutralize_chest or neutralize_vehicle then
     entity.force = "neutral"
   end
 end
