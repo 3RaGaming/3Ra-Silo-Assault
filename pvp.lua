@@ -406,6 +406,11 @@ function set_mode_input(player)
       if not option then return end
       return not option.state
     end,
+    chunks_to_extend_duplication = function(gui)
+      local option = gui.duplicate_starting_area_entities_boolean
+      if not option then return end
+      return option.state
+    end,
     time_limit = function(gui)
       local score_option = gui.production_score_boolean
       local oil_option = gui.oil_harvest_boolean
@@ -1968,7 +1973,7 @@ end
 
 function chart_starting_area_for_force_spawns()
   local surface = global.surface
-  local radius = get_starting_area_radius() + 10
+  local radius = get_starting_area_radius() + global.map_config.chunks_to_extend_duplication
   local size = radius*32
   for k, team in pairs (global.teams) do
     local name = team.name
@@ -1988,7 +1993,7 @@ function check_starting_area_chunks_are_generated()
   if game.tick % (#global.teams) ~= 0 then return end
   local surface = global.surface
   local size = global.map_config.starting_area_size.selected
-  local check_radius = get_starting_area_radius() + 10
+  local check_radius = get_starting_area_radius() + global.map_config.chunks_to_extend_duplication
   local total = 0
   local generated = 0
   local width = surface.map_gen_settings.width/2
@@ -2324,7 +2329,6 @@ function finish_setup()
   if not name then return end
   local force = game.forces[name]
   if not force then return end
-  local radius = get_starting_area_radius(true) - 32 --[[radius in tiles]]
   if global.map_config.reveal_team_positions then
     for name, other_force in pairs (game.forces) do
       if not is_ignored_force(name) then
@@ -2912,7 +2916,7 @@ function duplicate_starting_area_entities()
       end
     end
   end
-  radius = starting_radius + 320
+  radius = starting_radius + global.map_config.chunks_to_extend_duplication * 32
   local area = {{origin_spawn.x - radius, origin_spawn.y - radius}, {origin_spawn.x + radius, origin_spawn.y + radius}}
   local entities = surface.find_entities_filtered{area = area, force = "neutral"}
   local insert = table.insert
@@ -3912,11 +3916,18 @@ pvp.on_entity_died = function(event)
         local posx = player.position.x
         local posy = player.position.y
         if posx > area.left_top.x and posx < area.right_bottom.x and posy > area.left_top.y and posy < area.right_bottom.y then
-          local non_collide = global.surface.find_non_colliding_position("big-ship-wreck-2", player.position, 32, 1)
+          local non_collide = global.surface.find_non_colliding_position("player", player.position, 32, 1)
           if non_collide then
-            if not player.teleport({non_collide.x, non_collide.y}) then
-              -- @fixme I'm not sure why this ever happens -JuicyJuuce
-              --game.print("player.teleport failed, non_collide.x = "..non_collide.x.." non_collide.y = "..non_collide.y)
+            if player.vehicle then
+              player.vehicle.set_driver(nil)
+            end
+            if player.vehicle then
+              player.vehicle.set_passenger(nil)
+            end
+            player.driving = false
+            if not player.teleport(non_collide) then
+              -- @fixme This should never happen.
+              game.print("player.teleport failed, non_collide.x = "..non_collide.x.." non_collide.y = "..non_collide.y)
             end
           end
         end

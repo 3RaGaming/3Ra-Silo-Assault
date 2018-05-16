@@ -32,6 +32,7 @@ function load_config(dummy_load)
     peaceful_mode = true,
     evolution_factor = 0,
     duplicate_starting_area_entities = true,
+    chunks_to_extend_duplication = 10,
     allow_spectators = false,
     spectator_fog_of_war = false,
     reveal_team_positions = true,
