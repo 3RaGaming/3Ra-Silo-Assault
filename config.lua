@@ -51,27 +51,16 @@ function load_config(dummy_load)
 
   config.game_config = 
   {
-    game_mode =
-    {
-      options = {"conquest", "space_race", "last_silo_standing", "freeplay", "production_score", "conquest_production", "oil_harvest"},
-      selected = "conquest_production",
-      tooltip = 
-      {
-        "", {"game_mode_tooltip"},
-        "\n", {"conquest_description"},
-        "\n", {"space_race_description"},
-        "\n", {"last_silo_standing_description"},
-        "\n", {"freeplay_description"},
-        "\n", {"production_score_description"},
-        "\n", {"conquest_production_description"},
-        "\n", {"oil_harvest_description"}
-      }
-    },
-    disband_on_loss = false,
+    game_mode = "dummy",
     time_limit = 180,
+    last_silo_standing = true,
+    disband_on_loss = false,
+    production_score = true,
     required_production_score = 10000000,
-    required_oil_barrels = 1000,
+    space_race = true,
     required_satellites_sent = 1,
+    oil_harvest = false,
+    required_oil_barrels = 1000,
     oil_only_in_center = true,
     no_rush_time = 20,
     base_exclusion_time = 0,
@@ -80,9 +69,9 @@ function load_config(dummy_load)
     neutral_chests = true,
     neutral_vehicles = true,
     vehicle_wreckage = true,
+    kill_cowards = true,
     auto_new_round_time = 3,
-    team_prep_time = 1,
-    kill_cowards = true
+    team_prep_time = 1
   }
 
   local items = game.item_prototypes
@@ -465,7 +454,10 @@ function make_config_table(gui, config)
   local items = game.item_prototypes
   for k, name in pairs (config) do
     local label
-    if tonumber(name) or tostring(name):find("^%d+%%$") then
+    if name == "dummy" then
+      label = config_table.add{type = "label", name = k, tooltip = {k.."_tooltip"}}
+      config_table.add{type = "label", name = k.."_dummy"}
+    elseif tonumber(name) or tostring(name):find("^%d+%%$") then
       label = config_table.add{type = "label", name = k, tooltip = {k.."_tooltip"}}
       local input = config_table.add{type = "textfield", name = k.."_box"}
       input.text = name

@@ -406,43 +406,34 @@ function set_mode_input(player)
       if not option then return end
       return not option.state
     end,
-    required_production_score = function(gui)
-      local dropdown = gui.game_mode_dropdown
-      if not dropdown then return end
-      local name = global.game_config.game_mode.options[dropdown.selected_index]
-      return name == "production_score" or name == "conquest_production"
-    end,
-    required_oil_barrels = function(gui)
-      local dropdown = gui.game_mode_dropdown
-      if not dropdown then return end
-      local name = global.game_config.game_mode.options[dropdown.selected_index]
-      return name == "oil_harvest"
-    end,
-    oil_only_in_center = function(gui)
-      local dropdown = gui.game_mode_dropdown
-      if not dropdown then return end
-      local name = global.game_config.game_mode.options[dropdown.selected_index]
-      return name == "oil_harvest"
-    end,
     time_limit = function(gui)
-      local dropdown = gui.game_mode_dropdown
-      if not dropdown then return end
-      local name = global.game_config.game_mode.options[dropdown.selected_index]
-      return name == "oil_harvest" or name == "production_score" or name == "conquest_production"
-    end,
-    starting_chest_multiplier = function(gui)
-      local dropdown = gui.starting_chest_dropdown
-      local name = global.team_config.starting_chest.options[dropdown.selected_index]
-      return name ~= "none"
+      local score_option = gui.production_score_boolean
+      local oil_option = gui.oil_harvest_boolean
+      if not (score_option and oil_option) then return end
+      return score_option.state or oil_option.state
     end,
     disband_on_loss = function(gui)
-      local dropdown = gui.game_mode_dropdown
-      if not dropdown then return end
-      local name = global.game_config.game_mode.options[dropdown.selected_index]
-      return name == "conquest" or name == "last_silo_standing" or name == "conquest_production"
+      local option = gui.last_silo_standing_boolean
+      if not option then return end
+      return option.state
     end,
-    give_artillery_remote = function(gui)
-      local option = gui.team_artillery_boolean
+    required_production_score = function(gui)
+      local option = gui.production_score_boolean
+      if not option then return end
+      return option.state
+    end,
+    required_satellites_sent = function(gui)
+      local option = gui.space_race_boolean
+      if not option then return end
+      return option.state
+    end,
+    required_oil_barrels = function(gui)
+      local option = gui.oil_harvest_boolean
+      if not option then return end
+      return option.state
+    end,
+    oil_only_in_center = function(gui)
+      local option = gui.oil_harvest_boolean
       if not option then return end
       return option.state
     end,
@@ -451,11 +442,15 @@ function set_mode_input(player)
       if not option then return end
       return option.state
     end,
-    required_satellites_sent = function(gui)
-      local dropdown = gui.game_mode_dropdown
-      if not dropdown then return end
-      local name = global.game_config.game_mode.options[dropdown.selected_index]
-      return name == "space_race"
+    give_artillery_remote = function(gui)
+      local option = gui.team_artillery_boolean
+      if not option then return end
+      return option.state
+    end,
+    who_decides_diplomacy = function(gui)
+      local option = gui.diplomacy_enabled_boolean
+      if not option then return end
+      return option.state
     end,
     defcon_random = function(gui)
       local option = gui.defcon_mode_boolean
@@ -467,12 +462,11 @@ function set_mode_input(player)
       if not option then return end
       return option.state
     end,
-    who_decides_diplomacy = function(gui)
-      local option = gui.diplomacy_enabled_boolean
-      if not option then return end
-      return option.state
+    starting_chest_multiplier = function(gui)
+      local dropdown = gui.starting_chest_dropdown
+      local name = global.team_config.starting_chest.options[dropdown.selected_index]
+      return name ~= "none"
     end,
-
   }
   local gui = get_config_holder(player)
   for k, frame in pairs ({gui.map_config_gui, gui.game_config_gui, gui.team_config_gui}) do
@@ -480,31 +474,60 @@ function set_mode_input(player)
       local config = frame.config_table
       if (config and config.valid) then
         local children = config.children
+        if frame == gui.game_config_gui then
+          local silo_option = config.last_silo_standing_boolean
+          local score_option = config.production_score_boolean
+          local space_option = config.space_race_boolean
+          local oil_option = config.oil_harvest_boolean
+          if silo_option and score_option and space_option and oil_option then
+            local is_freeplay = not (silo_option.state or score_option.state or space_option.state or oil_option.state)
+            if is_freeplay then
+              config.game_mode_dummy.caption = {"", "(", {"freeplay"}, ")"}
+              config.game_mode_dummy.tooltip = {"freeplay_tooltip"}
+            else
+              config.game_mode_dummy.caption = ""
+              config.game_mode_dummy.tooltip = ""
+            end
+          end
+        end          
         for k, child in pairs (children) do
           local name = child.name or ""
           local mapped = visibility_map[name]
+          local localized_caption = children[k].caption
+          local is_victory_option = {
+            ["last_silo_standing"] = true,
+            ["production_score"] = true,
+            ["space_race"] = true,
+            ["oil_harvest"] = true,
+            ["last_silo_standing"] = true,
+            ["production_score"] = true,
+            ["required_production_score"] = true,
+            ["space_race"] = true,
+            ["required_satellites_sent"] = true,
+            ["oil_harvest"] = true,
+            ["required_oil_barrels"] = true,
+            ["oil_only_in_center"] = true,
+            ["time_limit"] = true,
+            ["disband_on_loss"] = true
+          }
+          local indent = ""
+          if is_victory_option[name] then
+            indent = "    "
+          end
           if mapped then
             local bool = mapped(config)
-            local localized_caption = children[k].caption
-            local indent = "    "
-            if localized_caption[3] ~= indent then
-              children[k].caption = {"", indent, localized_caption}
-            end
             children[k].style.visible = bool
             children[k+1].style.visible = bool
+            indent = indent.."    "
+          end
+          if localized_caption[3] ~= indent and (mapped or is_victory_option[name]) then
+            children[k].caption = {"", indent, localized_caption}
           end
         end
       end
     end
   end
 end
-
-game_mode_buttons = {
-  ["production_score"] = {type = "button", caption = {"production_score"}, name = "production_score_button", style = mod_gui.button_style},
-  ["conquest_production"] = {type = "button", caption = {"production_score"}, name = "production_score_button", style = mod_gui.button_style},
-  ["oil_harvest"] = {type = "button", caption = {"oil_harvest"}, name = "oil_harvest_button", style = mod_gui.button_style},
-  ["space_race"] = {type = "button", caption = {"space_race"}, name = "space_race_button", style = mod_gui.button_style}
-}
 
 function init_player_gui(player)
   destroy_player_gui(player)
@@ -516,9 +539,14 @@ function init_player_gui(player)
     local button = button_flow.add{type = "button", caption = {"diplomacy"}, name = "diplomacy_button", style = mod_gui.button_style}
     button.style.visible = #global.teams > 1 and player.force.name ~= "spectator"
   end
-  local game_mode_button = game_mode_buttons[global.game_config.game_mode.selected]
-  if game_mode_button then
-    button_flow.add(game_mode_button)
+  if global.game_config.production_score then
+    button_flow.add{type = "button", caption = {"production_score"}, name = "production_score_button", style = mod_gui.button_style}
+  end
+  if global.game_config.space_race then
+    button_flow.add{type = "button", caption = {"space_race"}, name = "space_race_button", style = mod_gui.button_style}
+  end
+  if global.game_config.oil_harvest then
+    button_flow.add{type = "button", caption = {"oil_harvest"}, name = "oil_harvest_button", style = mod_gui.button_style}
   end
   if player.admin then
     button_flow.add{type = "button", caption = {"admin"}, name = "admin_button", style = mod_gui.button_style}
@@ -1174,6 +1202,14 @@ function spectator_join(player, winning_team)
   init_player_gui(player)
 end
 
+local victory_conditions =
+{
+  ["last_silo_standing"] = true,
+  ["production_score"] = true,
+  ["space_race"] = true,
+  ["oil_harvest"] = true
+}
+
 function objective_button_press(event)
   local gui = event.element
   local player = game.players[event.player_index]
@@ -1185,12 +1221,23 @@ function objective_button_press(event)
   end
   frame = flow.add{type = "frame", name = "objective_frame", caption = {"objective"}, direction = "vertical"}
   frame.style.visible = true
-  local big_label = frame.add{type = "label", caption = {global.game_config.game_mode.selected.."_description"}}
-  big_label.style.single_line = false
+  local label_table = frame.add{type = "table", column_count = 2}
+  local big_label = label_table.add{type = "label", caption = {"", {"game_mode"}, {"colon"}}}
   big_label.style.font = "default-bold"
   big_label.style.top_padding = 0
-  big_label.style.maximal_width = 300
-  local label_table = frame.add{type = "table", column_count = 2}
+  local is_freeplay = true
+  for mode, k in pairs (victory_conditions) do
+    if global.game_config[mode] then
+      label_table.add{type = "label", caption = {mode}, tooltip = {mode.."_tooltip"}}
+      label_table.add{type = "label", name = mode.."_dummy"}
+      is_freeplay = false
+    end
+  end
+  if is_freeplay then
+    label_table.add{type = "label", caption = {"freeplay"}, tooltip = {"freeplay_tooltip"}}
+    label_table.add{type = "label", name = "freeplay_dummy"}
+  end
+  label_table.add{type = "label", name = "game_mode_dummy"}
   for k, name in pairs ({"friendly_fire", "diplomacy_enabled", "team_joining", "spawn_position"}) do
     label_table.add{type = "label", caption = {"", {name}, {"colon"}}, tooltip = {name.."_tooltip"}}
     local setting = global.team_config[name]
@@ -2137,8 +2184,7 @@ function check_no_rush()
 end
 
 function check_update_production_score()
-  local mode = global.game_config.game_mode.selected
-  if mode ~= "production_score" and mode ~= "conquest_production" then return end
+  if not global.game_config.production_score then return end
   local tick = game.tick
   if global.team_won then return end
   local new_scores = production_score.get_production_scores(global.price_list)
@@ -2201,7 +2247,7 @@ end
 
 function check_update_oil_harvest_score()
   if global.team_won then return end
-  if global.game_config.game_mode.selected ~= "oil_harvest" then return end
+  if not global.game_config.oil_harvest then return end
   local item_to_check = "crude-oil-barrel"
   if not game.item_prototypes[item_to_check] then error("Playing oil harvest game mode when crude oil barrels don't exist") end
   local scores = {}
@@ -2238,7 +2284,7 @@ end
 
 function check_update_space_race_score()
   if global.team_won then return end
-  if global.game_config.game_mode.selected ~= "space_race" then return end
+  if not global.game_config.space_race then return end
   local item_to_check = "satellite"
   if not game.item_prototypes[item_to_check] then error("Playing space race when satellites don't exist") end
   local scores = {}
@@ -2288,7 +2334,7 @@ function finish_setup()
   end
   force.friendly_fire = global.team_config.friendly_fire
   force.share_chart = global.team_config.share_chart
-  local hide_crude_recipe_in_stats = global.game_config.game_mode.selected ~= "oil_harvest"
+  local hide_crude_recipe_in_stats = not global.game_config.oil_harvest
   local fill_recipe = force.recipes["fill-crude-oil-barrel"]
   if fill_recipe then
     fill_recipe.hidden_from_flow_stats = hide_crude_recipe_in_stats
@@ -2465,9 +2511,7 @@ function update_progress_bar()
 end
 
 function create_silo_for_force(force)
-  local condition = global.game_config.game_mode.selected
-  local need_silo = {conquest = true, space_race = true, last_silo_standing = true, conquest_production = true}
-  if not need_silo[condition] then return end
+  if not (global.game_config.last_silo_standing or global.game_config.space_race) then return end
   if not force then return end
   if not force.valid then return end
   local surface = global.surface
@@ -2486,7 +2530,7 @@ function create_silo_for_force(force)
   silo.minable = false
   silo.backer_name = tostring(force.name)
 
-  if global.game_config.game_mode.selected == "space_race" then
+  if not global.game_config.last_silo_standing then
     silo.destructible = false
   end
   if not global.silos then global.silos = {} end
@@ -2796,9 +2840,9 @@ end
 
 function verify_oil_harvest()
   if game.item_prototypes["crude-oil-barrel"] and game.entity_prototypes["crude-oil"] and game.recipe_prototypes["fill-crude-oil-barrel"] and game.recipe_prototypes["empty-crude-oil-barrel"] then return end
-  for k, mode in pairs (global.game_config.game_mode.options) do
-    if mode == "oil_harvest" then
-      table.remove(global.game_config.game_mode.options, k)
+  for option, k in pairs (global.game_config) do
+    if option == "oil_harvest" then
+      table.remove(global.game_config, option)
       log("Oil harvest mode removed from scenario, as oil barrels and crude oil were not present in this configuration.")
       break
     end
@@ -2806,7 +2850,7 @@ function verify_oil_harvest()
 end
 
 function oil_harvest_prune_oil(event)
-  if global.game_config.game_mode.selected ~= "oil_harvest" then return end
+  if not global.game_config.oil_harvest then return end
   if not global.game_config.oil_only_in_center then return end
   local area = event.area
   local center = {x = (area.left_top.x + area.right_bottom.x) / 2, y = (area.left_top.y + area.right_bottom.y) / 2}
@@ -3828,21 +3872,15 @@ end
 
 pvp.on_rocket_launched = function(event)
   production_score.on_rocket_launched(event)
-  local mode = global.game_config.game_mode.selected
-  if mode == "freeplay" then
-    if silo_script then
-      silo_script.on_rocket_launched(event)
+  local is_freeplay = true
+  for mode, k in pairs(victory_conditions) do
+    if global.game_config[mode] then
+      is_freeplay = false
+      break
     end
-    return
   end
-  if mode ~= "conquest" and mode ~= "conquest_production" then return end
-  local force = event.rocket.force
-  if event.rocket.get_item_count("satellite") == 0 then
-    force.print({"rocket-launched-without-satellite"})
-    return
-  end
-  if not global.team_won then
-    team_won(force.name)
+  if is_freeplay and silo_script then
+      silo_script.on_rocket_launched(event)
   end
 end
 
@@ -3851,7 +3889,8 @@ pvp.on_entity_died = function(event)
   if not (dying_entity and dying_entity.valid) then return end
   local force = dying_entity.force
   if global.game_config.vehicle_wreckage and dying_entity.type == "car" then
-    local wreck = global.surface.create_entity{name = "big-ship-wreck-2", position = dying_entity.position, force = "neutral"}
+    local pos = dying_entity.position
+    local wreck = global.surface.create_entity{name = "big-ship-wreck-2", position = pos, force = "neutral"}
     wreck.destructible = false
     wreck_inventory = wreck.get_inventory(defines.inventory.item_main)
     for k, inventory_type in pairs ({"car_ammo", "fuel", "car_trunk"}) do
@@ -3867,9 +3906,24 @@ pvp.on_entity_died = function(event)
       global.wrecks = {}
     end
     global.wrecks[wreck] = game.tick
+    local area = {left_top = {x = pos.x - 3, y = pos.y - 3}, right_bottom = {x = pos.x + 3, y = pos.y + 3}}
+    for k, player in pairs(game.connected_players) do
+      if not is_ignored_force(player.force.name) then
+        local posx = player.position.x
+        local posy = player.position.y
+        if posx > area.left_top.x and posx < area.right_bottom.x and posy > area.left_top.y and posy < area.right_bottom.y then
+          local non_collide = global.surface.find_non_colliding_position("big-ship-wreck-2", player.position, 32, 1)
+          if non_collide then
+            if not player.teleport({non_collide.x, non_collide.y}) then
+              -- @fixme I'm not sure why this ever happens -JuicyJuuce
+              --game.print("player.teleport failed, non_collide.x = "..non_collide.x.." non_collide.y = "..non_collide.y)
+            end
+          end
+        end
+      end
+    end
   elseif dying_entity.name == "rocket-silo" then
-    local mode = global.game_config.game_mode.selected
-    if not (mode == "conquest" or mode == "last_silo_standing" or mode == "conquest_production") then return end
+    if not global.game_config.last_silo_standing then return end
     local killing_force = event.force
     if not global.silos then return end
     global.silos[force.name] = nil
