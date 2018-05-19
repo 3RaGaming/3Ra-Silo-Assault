@@ -71,6 +71,8 @@ function load_config(dummy_load)
     neutral_vehicles = true,
     vehicle_wreckage = true,
     kill_cowards = true,
+    nuclear_research_buff = true,
+    tanks_research_nerf = true,
     auto_new_round_time = 3,
     team_prep_time = 1
   }
@@ -359,7 +361,7 @@ function give_equipment(player, respawn)
     player.insert{name = "shotgun", count = 1}
     player.insert{name = "shotgun-shell", count = 20}
     player.insert{name = "deconstruction-planner", count = 1}
-    if not respawn then
+    if not respawn and global.end_fast_blueprinting ~= nil then
       player.insert{name = "modular-armor", count = 1}
       local armor = player.get_inventory(defines.inventory.player_armor)[1]
       armor.grid.put({name = "personal-roboport-equipment"})

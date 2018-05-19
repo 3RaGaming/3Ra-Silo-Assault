@@ -2411,8 +2411,12 @@ function start_match()
       game.print({"defcon-random-begins"})
       defcon_research()
     else
-      game.print({"tanks-research-nerf"}, game_message_color)
-      game.print({"nuclear-research-buff"}, game_message_color)
+      if global.game_config.nuclear_research_buff then
+        game.print({"nuclear-research-buff-alert"}, game_message_color)
+      end
+      if global.game_config.tanks_research_nerf then
+        game.print({"tanks-research-nerf-alert"}, game_message_color)
+      end
     end
   end
   for k, player in pairs (game.players) do
@@ -2916,7 +2920,7 @@ function duplicate_starting_area_entities()
       end
     end
   end
-  radius = starting_radius + global.map_config.chunks_to_extend_duplication * 32
+  local radius = starting_radius + global.map_config.chunks_to_extend_duplication * 32
   local area = {{origin_spawn.x - radius, origin_spawn.y - radius}, {origin_spawn.x + radius, origin_spawn.y + radius}}
   local entities = surface.find_entities_filtered{area = area, force = "neutral"}
   local insert = table.insert
@@ -3575,16 +3579,16 @@ function check_defcon()
             local ingredient_cost = global.science_pack_costs[ingredient.name] * ingredient.amount * tech.research_unit_count
             cost = cost + ingredient_cost
           end
-          if tech.name == "tanks" then
-            cost = cost * 8
-            if global.previous_tech[team.name] ~= tech.name then
-              force.print({"tanks-research-nerf"}, game_message_color)
-            end
-          end
-          if tech.name == "atomic-bomb" or tech.name == "nuclear-power" then
+          if global.game_config.nuclear_research_buff and (tech.name == "atomic-bomb" or tech.name == "nuclear-power") then
             cost = cost / 4
             if global.previous_tech[team.name] ~= tech.name then
-              force.print({"nuclear-research-buff"}, game_message_color)
+              force.print({"nuclear-research-buff-alert"}, game_message_color)
+            end
+          end
+          if global.game_config.tanks_research_nerf and tech.name == "tanks" then
+            cost = cost * 8
+            if global.previous_tech[team.name] ~= tech.name then
+              force.print({"tanks-research-nerf-alert"}, game_message_color)
             end
           end
           local progress = force.research_progress
