@@ -2826,6 +2826,13 @@ function create_wall_for_force(force)
       surface.create_entity{name = wall_name, position = position, force = force}
     end
   end
+  if global.map_config.team_paved then
+    for X = origin.x - radius + 2, origin.x + radius - 2 do
+      for Y = origin.y - radius + 2, origin.y + radius - 2 do
+        insert(tiles, {name = tile_name, position = {X, Y}})
+      end
+    end
+  end
   set_tiles_safe(surface, tiles)
 end
 
@@ -3007,8 +3014,8 @@ function duplicate_starting_area_entities()
   for k, team in pairs (global.teams) do
     local force = game.forces[team.name]
     if force then
-      create_silo_for_force(force)
       create_wall_for_force(force)
+      create_silo_for_force(force)
       create_starting_chest(force)
       create_starting_turrets(force)
       create_starting_artillery(force)

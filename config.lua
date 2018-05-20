@@ -38,6 +38,7 @@ function load_config(dummy_load)
     reveal_team_positions = true,
     reveal_map_center = true,
     team_walls = true,
+    team_paved = true,
     team_turrets = true,
     turret_ammunition =
     {
@@ -66,7 +67,7 @@ function load_config(dummy_load)
     no_rush_time = 20,
     base_exclusion_time = 0,
     fast_blueprinting_time = 20,
-    character_speed_when_hurt = "90%",
+    character_speed_when_hurt = "80%",
     neutral_chests = true,
     neutral_vehicles = true,
     vehicle_wreckage = true,
