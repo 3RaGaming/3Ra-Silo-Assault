@@ -48,7 +48,7 @@ function load_config(dummy_load)
     team_artillery = false,
     give_artillery_remote = false,
     protect_empty_teams = false,
-    enemy_building_restriction = false
+    enemy_building_restriction = true
   }
 
   config.game_config = 
@@ -67,6 +67,7 @@ function load_config(dummy_load)
     no_rush_time = 20,
     base_exclusion_time = 0,
     fast_blueprinting_time = 20,
+    disable_starting_blueprints = false,
     character_speed_when_hurt = "80%",
     neutral_chests = true,
     neutral_vehicles = true,

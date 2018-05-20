@@ -3348,7 +3348,8 @@ check_cursor_for_disabled_items = function(event)
   if not (player and player.valid) then return end
   local stack = player.cursor_stack
   if (stack and stack.valid_for_read) then
-    if global.disabled_items[stack.name] then
+    local disable_bp = global.game_config.disable_starting_blueprints and not player.force.technologies["construction-robotics"].researched
+    if global.disabled_items[stack.name] or disable_bp and (stack.name == "blueprint" or stack.name == "blueprint-book") then
       stack.clear()
     end
   end
