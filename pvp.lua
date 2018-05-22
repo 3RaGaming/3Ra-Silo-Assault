@@ -392,6 +392,7 @@ function prepare_next_round()
   global.setup_finished = false
   global.team_won = false
   --check_game_speed()
+  game.speed = 3
   create_next_surface()
   setup_teams()
   chart_starting_area_for_force_spawns()
@@ -2392,19 +2393,19 @@ function start_match()
   global.end_no_rush = game.tick + (global.game_config.no_rush_time * 60 * 60)
   if global.game_config.no_rush_time > 0 then
     game.forces.enemy.kill_all_units()
-    game.print({"no-rush-begins", global.game_config.no_rush_time}, game_message_color)
+    game.print({"no-rush-begins", global.game_config.no_rush_time})
   else
     global.surface.peaceful_mode = global.map_config.peaceful_mode
   end
   local fast_bp_time = global.game_config.fast_blueprinting_time
   global.end_fast_blueprinting = game.tick + (fast_bp_time * 60 * 60)
   if fast_bp_time > 0 then
-    game.print({"fast-blueprinting-begins", fast_bp_time}, game_message_color)
+    game.print({"fast-blueprinting-begins", fast_bp_time})
   end
   create_exclusion_map()
   if global.game_config.base_exclusion_time > 0 then
     global.check_base_exclusion = true
-    game.print({"base-exclusion-begins", global.game_config.base_exclusion_time}, game_message_color)
+    game.print({"base-exclusion-begins", global.game_config.base_exclusion_time})
   end
   if global.team_config.defcon_mode then
     if global.team_config.defcon_random then
@@ -2412,10 +2413,10 @@ function start_match()
       defcon_research()
     else
       if global.game_config.nuclear_research_buff then
-        game.print({"nuclear-research-buff-alert"}, game_message_color)
+        game.print({"nuclear-research-buff-alert"})
       end
       if global.game_config.tanks_research_nerf then
-        game.print({"tanks-research-nerf-alert"}, game_message_color)
+        game.print({"tanks-research-nerf-alert"})
       end
     end
   end
@@ -2829,7 +2830,10 @@ function create_wall_for_force(force)
   if global.map_config.team_paved then
     for X = origin.x - radius + 2, origin.x + radius - 2 do
       for Y = origin.y - radius + 2, origin.y + radius - 2 do
-        insert(tiles, {name = tile_name, position = {X, Y}})
+        local tile = surface.get_tile(X, Y)
+        if not tile.collides_with("water-tile") then
+          insert(tiles, {name = tile_name, position = {X, Y}})
+        end
       end
     end
   end
@@ -3590,13 +3594,13 @@ function check_defcon()
           if global.game_config.nuclear_research_buff and (tech.name == "atomic-bomb" or tech.name == "nuclear-power") then
             cost = cost / 4
             if global.previous_tech[team.name] ~= tech.name then
-              force.print({"nuclear-research-buff-alert"}, game_message_color)
+              force.print({"nuclear-research-buff-alert"})
             end
           end
           if global.game_config.tanks_research_nerf and tech.name == "tanks" then
             cost = cost * 8
             if global.previous_tech[team.name] ~= tech.name then
-              force.print({"tanks-research-nerf-alert"}, game_message_color)
+              force.print({"tanks-research-nerf-alert"})
             end
           end
           local progress = force.research_progress
@@ -3938,7 +3942,7 @@ pvp.on_entity_died = function(event)
             end
             player.driving = false
             if not player.teleport(non_collide) then
-              -- @fixme This should never happen.
+              -- This should never happen.
               game.print("player.teleport failed, non_collide.x = "..non_collide.x.." non_collide.y = "..non_collide.y)
             end
           end
