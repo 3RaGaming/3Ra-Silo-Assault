@@ -32,6 +32,7 @@ function load_config(dummy_load)
     peaceful_mode = true,
     evolution_factor = 0,
     duplicate_starting_area_entities = true,
+    technology_price_multiplier = 1,
     chunks_to_extend_duplication = 10,
     allow_spectators = false,
     spectator_fog_of_war = false,
@@ -271,8 +272,8 @@ function load_config(dummy_load)
       ["steel-chest"] = 15,
       ["electronic-circuit"] = 200,
       ["transport-belt"] = 400,
-      ["underground-belt"] = 20,
-      ["splitter"] = 20,
+      ["underground-belt"] = 40,
+      ["splitter"] = 10,
       ["inserter"] = 150,
       ["small-electric-pole"] = 100,
       ["medium-electric-pole"] = 50,
@@ -287,9 +288,9 @@ function load_config(dummy_load)
       ["assembling-machine-2"] = 20,
       ["boiler"] = 10,
       ["steam-engine"] = 20,
-      ["chemical-plant"] = 15,
-      ["oil-refinery"] = 3,
-      ["pumpjack"] = 4,
+      ["chemical-plant"] = 10,
+      ["oil-refinery"] = 2,
+      ["pumpjack"] = 3,
       ["offshore-pump"] = 2,
       ["raw-wood"] = 50
     },
@@ -303,8 +304,8 @@ function load_config(dummy_load)
       ["electronic-circuit"] = 200,
       ["iron-gear-wheel"] = 100,
       ["transport-belt"] = 400,
-      ["underground-belt"] = 40,
-      ["splitter"] = 40,
+      ["underground-belt"] = 60,
+      ["splitter"] = 20,
       ["repair-pack"] = 20,
       ["inserter"] = 200,
       ["burner-inserter"] = 20,
@@ -324,9 +325,9 @@ function load_config(dummy_load)
       ["big-electric-pole"] = 10,
       ["boiler"] = 10,
       ["steam-engine"] = 20,
-      ["chemical-plant"] = 20,
-      ["oil-refinery"] = 5,
-      ["pumpjack"] = 8,
+      ["chemical-plant"] = 15,
+      ["oil-refinery"] = 4,
+      ["pumpjack"] = 6,
       ["offshore-pump"] = 2,
       ["raw-wood"] = 50
     }
@@ -448,6 +449,31 @@ function parse_config_from_gui(gui, config)
   return true
 end
 
+local localised_names =
+{
+  peaceful_mode = {"gui-map-generator.peaceful-mode"},
+  map_height = {"gui-map-generator.map-width-simple"},
+  map_width = {"gui-map-generator.map-height-simple"},
+  map_seed = {"gui-map-generator.map-seed-simple"},
+  starting_area_size = {"gui-map-generator.starting-area"},
+  technology_price_multiplier = {"gui-map-generator.technology-price-multiplier"}
+}
+
+-- "" for no tooltip
+local localised_tooltips =
+{
+  friendly_fire = "",
+  map_width = "",
+  map_height = "",
+  always_day = "",
+  peaceful_mode = "",
+  evolution_factor = "",
+  starting_area_size = "",
+  duplicate_starting_area_entities = "",
+  friendly_fire = "",
+  technology_price_multiplier = ""
+}
+
 function make_config_table(gui, config)
   local config_table = gui.config_table
   if config_table then
@@ -458,35 +484,29 @@ function make_config_table(gui, config)
   end
   local items = game.item_prototypes
   for k, name in pairs (config) do
-    local label
+    local label = config_table.add{type = "label", name = k}
     if name == "dummy" then
-      label = config_table.add{type = "label", name = k, tooltip = {k.."_tooltip"}}
       config_table.add{type = "label", name = k.."_dummy"}
     elseif tonumber(name) or tostring(name):find("^%d+%%$") then
-      label = config_table.add{type = "label", name = k, tooltip = {k.."_tooltip"}}
       local input = config_table.add{type = "textfield", name = k.."_box"}
       input.text = name
       input.style.maximal_width = 100
     elseif tostring(type(name)) == "boolean" then
-      label = config_table.add{type = "label", name = k, tooltip = {k.."_tooltip"}}
-      config_table.add{type = "checkbox", name = k.."_"..tostring(type(name)), state = name}
+      config_table.add{type = "checkbox", name = k.."_boolean", state = name}
     else
-      label = config_table.add{type = "label", name = k, tooltip = {k.."_tooltip"}}
       local menu = config_table.add{type = "drop-down", name = k.."_dropdown"}
       local index
       for j, option in pairs (name.options) do
         if items[option] then
           menu.add_item(items[option].localised_name)
         else
-          menu.add_item({option})
+          menu.add_item(localised_names[option] or {option})
         end
         if option == name.selected then index = j end
       end
       menu.selected_index = index or 1
-      if name.tooltip then
-        label.tooltip = name.tooltip
-      end
     end
-    label.caption = {"", {k}, {"colon"}}
+    label.caption = {"", localised_names[k] or {k}, {"colon"}}
+    label.tooltip = localised_tooltips[k] or {k.."_tooltip"}
   end
 end

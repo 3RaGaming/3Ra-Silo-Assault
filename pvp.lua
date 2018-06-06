@@ -138,6 +138,12 @@ function create_next_surface()
   else
     settings.seed = global.map_config.map_seed
   end
+  if global.map_config.map_height < 1 then
+    global.map_config.map_height = 2000000
+  end
+  if global.map_config.map_width < 1 then
+    global.map_config.map_width = 2000000
+  end
   settings.height = global.map_config.map_height
   settings.width = global.map_config.map_width
   settings.starting_points = create_spawn_positions()
@@ -397,6 +403,7 @@ function prepare_next_round()
   setup_teams()
   chart_starting_area_for_force_spawns()
   set_evolution_factor()
+  set_difficulty()
 end
 
 function set_mode_input(player)
@@ -1176,6 +1183,10 @@ function set_evolution_factor()
   end
   game.forces.enemy.evolution_factor = n
   global.map_config.evolution_factor = n
+end
+
+function set_difficulty()
+  game.difficulty_settings.technology_price_multiplier = global.map_config.technology_price_multiplier
 end
 
 function random_join(player)
@@ -1993,12 +2004,12 @@ function check_starting_area_chunks_are_generated()
   if not global.check_starting_area_generation then return end
   if game.tick % (#global.teams) ~= 0 then return end
   local surface = global.surface
+  local width = surface.map_gen_settings.width / 2
+  local height = surface.map_gen_settings.height / 2
   local size = global.map_config.starting_area_size.selected
   local check_radius = get_starting_area_radius() + global.map_config.chunks_to_extend_duplication
   local total = 0
   local generated = 0
-  local width = surface.map_gen_settings.width/2
-  local height = surface.map_gen_settings.height/2
   local abs = math.abs
   for k, team in pairs (global.teams) do
     local name = team.name
@@ -2594,8 +2605,8 @@ function create_starting_turrets(force)
   if not game.entity_prototypes[turret_name] then return end
   if not game.item_prototypes[ammo_name] then return end
   local surface = global.surface
-  local height = global.map_config.map_height/2
-  local width = global.map_config.map_width/2
+  local height = surface.map_gen_settings.height / 2
+  local width = surface.map_gen_settings.width / 2
   local origin = force.get_spawn_position(surface)
   local radius = get_starting_area_radius(true) - 18 --[[radius in tiles]]
   local limit = math.min(width - math.abs(origin.x), height - math.abs(origin.y)) - 6
@@ -2667,8 +2678,8 @@ function create_starting_artillery(force)
   local ammo_name = "artillery-shell"
   if not game.item_prototypes[ammo_name] then return end
   local surface = global.surface
-  local height = global.map_config.map_height/2
-  local width = global.map_config.map_width/2
+  local height = surface.map_gen_settings.height / 2
+  local width = surface.map_gen_settings.width / 2
   local origin = force.get_spawn_position(surface)
   local size = global.map_config.starting_area_size.selected
   local radius = get_starting_area_radius() - 1 --[[radius in chunks]]
@@ -2734,13 +2745,14 @@ function create_wall_for_force(force)
   if not global.map_config.team_walls then return end
   if not force.valid then return end
   local surface = global.surface
-  local height = global.map_config.map_height/2
-  local width = global.map_config.map_width/2
+  local height = surface.map_gen_settings.height / 2
+  local width = surface.map_gen_settings.width / 2
   local origin = force.get_spawn_position(surface)
   local size = global.map_config.starting_area_size.selected
   local radius = get_starting_area_radius(true) - 13 --[[radius in tiles]]
   local limit = math.min(width - math.abs(origin.x), height - math.abs(origin.y)) - 1
   radius = math.min(radius, limit)
+  if radius < 2 then return end
   local perimeter_top = {}
   local perimeter_bottom = {}
   local perimeter_left = {}
