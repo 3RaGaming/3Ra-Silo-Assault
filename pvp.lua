@@ -414,6 +414,11 @@ function set_mode_input(player)
       if not option then return end
       return not option.state
     end,
+    evolution_factor = function(gui)
+      local option = gui.biters_disabled_boolean
+      if not option then return end
+      return not option.state
+    end,
     chunks_to_extend_duplication = function(gui)
       local option = gui.duplicate_starting_area_entities_boolean
       if not option then return end
@@ -471,9 +476,16 @@ function set_mode_input(player)
       return option.state
     end,
     defcon_timer = function(gui)
-      local option = gui.defcon_mode_boolean
-      if not option then return end
-      return option.state
+      local defcon_option = gui.defcon_mode_boolean
+      local defcon_random = gui.defcon_random_boolean
+      if not (defcon_option and defcon_random) then return end
+      return defcon_option.state and defcon_random.state
+    end,
+    defcon_random_multiplier = function(gui)
+      local defcon_option = gui.defcon_mode_boolean
+      local defcon_random = gui.defcon_random_boolean
+      if not (defcon_option and defcon_random) then return end
+      return defcon_option.state and not defcon_random.state
     end,
     starting_chest_multiplier = function(gui)
       local dropdown = gui.starting_chest_dropdown
@@ -1186,7 +1198,7 @@ function set_evolution_factor()
 end
 
 function set_difficulty()
-  game.difficulty_settings.technology_price_multiplier = global.map_config.technology_price_multiplier
+  game.difficulty_settings.technology_price_multiplier = global.team_config.technology_price_multiplier
 end
 
 function random_join(player)
@@ -2420,9 +2432,9 @@ function start_match()
   end
   if global.team_config.defcon_mode then
     if global.team_config.defcon_random then
-      game.print({"defcon-random-begins"})
       defcon_research()
     else
+      game.print({"defcon-non-random-begins"})
       if global.game_config.nuclear_research_buff then
         game.print({"nuclear-research-buff-alert"})
       end
@@ -3616,7 +3628,7 @@ function check_defcon()
             end
           end
           local progress = force.research_progress
-          local increment = (force.laboratory_speed_modifier + 1) * global.science_units_per_period * global.science_speedup / (cost * global.team_config.defcon_timer * 60)
+          local increment = (force.laboratory_speed_modifier + 1) * global.science_speedup * global.team_config.defcon_random_multiplier / cost
           progress = math.min(1, progress + increment)
           force.research_progress = progress
           if global.research_time_wasted then global.research_time_wasted[team.name] = 100 end
@@ -3639,7 +3651,7 @@ function check_defcon()
     local match_ticks = math.max(0, game.tick - global.round_start_tick)
     local minutes = match_ticks / 60 / 60
     local minutes_squared = minutes * minutes
-    global.science_speedup = 1 + 0.03 * minutes + 0.0015 * minutes_squared + 0.0000002 * minutes_squared * minutes_squared
+    global.science_speedup = 2.8 + 0.083 * minutes + 0.0042 * minutes_squared + 0.00000056 * minutes_squared * minutes_squared
   end
 end
 
@@ -4197,6 +4209,15 @@ pvp.on_player_display_resolution_changed = function(event)
   if player and player.valid then
     update_team_list_frame(player)
   end
+end
+
+pvp.on_player_driving_changed_state = function(event)
+  local player = game.players[event.player_index]
+  local vehicle = player.vehicle
+  if not (vehicle and vehicle.valid) then return end
+  if vehicle.name ~= "tank" then return end
+  local tank_speed_multiplier = string.match(global.game_config.tank_speed, "^([^%%]+)%%?$") / 100
+  vehicle.friction_modifier = 1 / (tank_speed_multiplier * tank_speed_multiplier)
 end
 
 pvp.on_research_finished = function(event)

@@ -32,7 +32,6 @@ function load_config(dummy_load)
     peaceful_mode = true,
     evolution_factor = 0,
     duplicate_starting_area_entities = true,
-    technology_price_multiplier = 1,
     chunks_to_extend_duplication = 10,
     allow_spectators = false,
     spectator_fog_of_war = false,
@@ -70,6 +69,7 @@ function load_config(dummy_load)
     fast_blueprinting_time = 20,
     disable_starting_blueprints = false,
     character_speed_when_hurt = "80%",
+    tank_speed = "100%",
     neutral_chests = true,
     neutral_vehicles = true,
     vehicle_wreckage = true,
@@ -140,9 +140,11 @@ function load_config(dummy_load)
       selected = "none"
     },
     unlock_combat_research = false,
+    technology_price_multiplier = 1,
     defcon_mode = true,
     defcon_random = false,
-    defcon_timer = 0.6,
+    defcon_timer = 2,
+    defcon_random_multiplier = 1,
     starting_equipment =
     {
       options = {"none", "small", "medium", "large"},
@@ -218,8 +220,6 @@ function load_config(dummy_load)
     {name = game.backer_names[math.random(#game.backer_names)], color = "purple", team = "-"}
   }
 
-  config.science_units_per_period = 100
-  
   --values calculated based on solid raw materials being worth 1 and crude oil being worth 0.2
   --source is the second table on this page: https://wiki.factorio.com/Science_pack
   config.science_pack_costs =
@@ -462,7 +462,6 @@ local localised_names =
 -- "" for no tooltip
 local localised_tooltips =
 {
-  friendly_fire = "",
   map_width = "",
   map_height = "",
   always_day = "",
@@ -471,7 +470,8 @@ local localised_tooltips =
   starting_area_size = "",
   duplicate_starting_area_entities = "",
   friendly_fire = "",
-  technology_price_multiplier = ""
+  technology_price_multiplier = "",
+  defcon_random_multiplier = ""
 }
 
 function make_config_table(gui, config)

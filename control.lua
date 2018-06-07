@@ -84,6 +84,10 @@ Event.register(defines.events.on_player_display_resolution_changed, function(eve
   pvp.on_player_display_resolution_changed(event)
 end)
 
+Event.register(defines.events.on_player_driving_changed_state, function(event)
+  pvp.on_player_driving_changed_state(event)
+end)
+
 Event.register(defines.events.on_research_finished, function(event)
   pvp.on_research_finished(event)
 end)
