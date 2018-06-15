@@ -120,9 +120,9 @@ Event.register(defines.events.on_forces_merged, function(event)
   pvp.on_forces_merged(event)
 end)
 
---script.on_nth_tick(5, function(event)
---  pvp.on_nth_tick[5](event)
---end)
+script.on_nth_tick(5, function(event)
+  pvp.on_nth_tick[5](event)
+end)
 
 script.on_nth_tick(20, function(event)
   pvp.on_nth_tick[20](event)

@@ -397,7 +397,7 @@ end
 function prepare_next_round()
   global.setup_finished = false
   global.team_won = false
-  --check_game_speed()
+  check_game_speed()
   game.speed = 3
   create_next_surface()
   setup_teams()
@@ -4005,7 +4005,9 @@ end
 
 pvp.on_player_joined_game = function(event)
   local player = game.players[event.player_index]
-  --check_game_speed(true)
+  if global.setup_finished == true then
+    check_game_speed(true)
+  end
   if not (player and player.valid) then return end
   if player.force.name ~= "player" then
     --If they are not on the player force, they have already picked a team this round.
@@ -4108,11 +4110,11 @@ pvp.on_tick = function(event)
 end
 
 pvp.on_nth_tick = {
-  --[5] = function(event)
-  --  if global.setup_finished == true then
-  --    check_game_speed()
-  --  end
-  --end,
+  [5] = function(event)
+    if global.setup_finished == true then
+      check_game_speed()
+    end
+  end,
   [20] = function(event)
     if global.setup_finished == true and global.match_started == true then
       check_damaged_players()
