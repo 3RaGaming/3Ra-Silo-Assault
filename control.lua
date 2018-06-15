@@ -10,6 +10,7 @@ local silo_script = require("silo-script")
 local pvp = require("pvp")
 require "event"
 require "bot"
+require "bot_pvp"
 
 silo_script.add_remote_interface()
 
