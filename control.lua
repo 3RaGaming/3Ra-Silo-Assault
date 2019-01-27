@@ -13,6 +13,7 @@ require "bot"
 require "bot_pvp"
 
 silo_script.add_remote_interface()
+pvp.add_remote_interface()
 
 Event.register(-1, function()
   silo_script.on_init()
@@ -119,6 +120,10 @@ end)
 
 Event.register(defines.events.on_forces_merged, function(event)
   pvp.on_forces_merged(event)
+end)
+
+Event.register(defines.events.on_player_changed_position, function(event)
+  pvp.on_player_changed_position(event)
 end)
 
 script.on_nth_tick(5, function(event)

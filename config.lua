@@ -260,7 +260,7 @@ function load_config(dummy_load)
       ["boiler"] = 5,
       ["steam-engine"] = 10,
       ["offshore-pump"] = 2,
-      ["raw-wood"] = 50
+      ["wood"] = 50
     },
     medium =
     {
@@ -292,7 +292,7 @@ function load_config(dummy_load)
       ["oil-refinery"] = 2,
       ["pumpjack"] = 3,
       ["offshore-pump"] = 2,
-      ["raw-wood"] = 50
+      ["wood"] = 50
     },
     large =
     {
@@ -329,73 +329,139 @@ function load_config(dummy_load)
       ["oil-refinery"] = 4,
       ["pumpjack"] = 6,
       ["offshore-pump"] = 2,
-      ["raw-wood"] = 50
+      ["wood"] = 50
     }
   }
+
+  config.equipment_list =
+  {
+    none =
+    {
+      items =
+      {
+        ["pistol"] = 1,
+        ["firearm-magazine"] = 10,
+      }
+    },
+    small =
+    {
+      items =
+      {
+        ["submachine-gun"] = 1,
+        ["piercing-rounds-magazine"] = 30,
+        ["shotgun"] = 1,
+        ["shotgun-shell"] = 20,
+        ["steel-axe"] = 1,
+        ["heavy-armor"] = 1
+      }
+    },
+    medium =
+    {
+      items =
+      {
+        ["steel-axe"] = 3,
+        ["submachine-gun"] = 1,
+        ["piercing-rounds-magazine"] = 40,
+        ["shotgun"] = 1,
+        ["shotgun-shell"] = 20,
+        ["heavy-armor"] = 1
+      },
+      fast_blueprinting =
+      {
+        items = 
+        {
+          ["construction-robot"] = 10,
+          ["deconstruction-planner"] = 1
+        },
+        armor = "modular-armor",
+        equipment =
+        {
+          ["personal-roboport-equipment"] = 1
+        }
+      }
+    },
+    large =
+    {
+      items =
+      {
+        ["steel-axe"] = 3,
+        ["submachine-gun"] = 1,
+        ["piercing-rounds-magazine"] = 40,
+        ["combat-shotgun"] = 1,
+        ["piercing-shotgun-shell"] = 20,
+        ["rocket-launcher"] = 1,
+        ["rocket"] = 80,
+        ["construction-robot"] = 25,
+        ["car"] = 1,
+      },
+      armor = "power-armor",
+      equipment =
+      {
+        ["fusion-reactor-equipment"] = 1,
+        ["exoskeleton-equipment"] = 1,
+        ["energy-shield-equipment"] = 2,
+        ["personal-roboport-mk2-equipment"] = 1
+      }
+    }
+  }
+
+  config.prototypes =
+  {
+    chest = "steel-chest",
+    wall = "stone-wall",
+    gate = "gate",
+    turret = "gun-turret",
+    artillery = "artillery-turret",
+    artillery_ammo = "artillery-shell",
+    silo = "rocket-silo",
+    tile_1 = "refined-concrete",
+    tile_2 = "refined-hazard-concrete-left",
+    artillery_remote = "artillery-targeting-remote"
+  }
+
+  config.silo_offset = {x = 0, y = 0}
+
   if dummy_load then
     return config
   end
 end
 
+
+
 function give_equipment(player, respawn)
-
+  if not global.equipment_list then return end
   local setting = global.team_config.starting_equipment.selected
-
-  if setting == "none" then
-    player.insert{name = "pistol", count = 1}
-    player.insert{name = "firearm-magazine", count = 10}
-    return
-  end
-
-  if setting == "small" then
-    player.insert{name = "submachine-gun", count = 1}
-    player.insert{name = "piercing-rounds-magazine", count = 30}
-    player.insert{name = "shotgun", count = 1}
-    player.insert{name = "shotgun-shell", count = 20}
-    player.insert{name = "steel-axe", count = 1}
-    player.insert{name = "heavy-armor", count = 1}
-    return
-  end
-
-  if setting == "medium" then
-    player.insert{name = "steel-axe", count = 3}
-    player.insert{name = "submachine-gun", count = 1}
-    player.insert{name = "piercing-rounds-magazine", count = 40}
-    player.insert{name = "shotgun", count = 1}
-    player.insert{name = "shotgun-shell", count = 20}
-    player.insert{name = "deconstruction-planner", count = 1}
-    if not respawn and global.end_fast_blueprinting ~= nil then
-      player.insert{name = "modular-armor", count = 1}
-      local armor = player.get_inventory(defines.inventory.player_armor)[1]
-      armor.grid.put({name = "personal-roboport-equipment"})
-      player.insert{name = "construction-robot", count = 10}
+  if not setting then return end
+  local player_gear = global.equipment_list[setting]
+  for equipment = player_gear, not respawn and player_gear.fast_blueprinting do
+    if equipment then
+      if equipment.items then
+        util.insert_safe(player, equipment.items)
+      end
+      if equipment.armor then
+        local stack = player.get_inventory(defines.inventory.player_armor)[1]
+        local item = game.item_prototypes[equipment.armor]
+        if item and item.type == "armor" then
+          stack.set_stack{name = item.name}
+        end
+        if equipment.equipment then
+          local grid = stack.grid
+          if grid then
+            local prototypes = game.equipment_prototypes
+            for name, count in pairs (equipment.equipment) do
+              if prototypes[name] then
+                for k = 1, count do
+                  grid.put{name = name}
+                end
+              end
+            end
+          end
+        end
+      end
     end
-    player.insert{name = "heavy-armor", count = 1}
-    return
   end
-
-  if setting == "large" then
-    player.insert{name = "steel-axe", count = 3}
-    player.insert{name = "submachine-gun", count = 1}
-    player.insert{name = "piercing-rounds-magazine", count = 40}
-    player.insert{name = "combat-shotgun", count = 1}
-    player.insert{name = "piercing-shotgun-shell", count = 20}
-    player.insert{name = "rocket-launcher", count = 1}
-    player.insert{name = "rocket", count = 80}
-    player.insert{name = "power-armor", count = 1}
-    local armor = player.get_inventory(defines.inventory.player_armor)[1].grid
-    armor.put({name = "fusion-reactor-equipment"})
-    armor.put({name = "exoskeleton-equipment"})
-    armor.put({name = "energy-shield-equipment"})
-    armor.put({name = "energy-shield-equipment"})
-    armor.put({name = "personal-roboport-mk2-equipment"})
-    player.insert{name = "construction-robot", count = 25}
-    player.insert{name = "deconstruction-planner", count = 1}
-    player.insert{name = "car", count = 1}
-    return
-  end
-
 end
+
 function get_starting_area_radius(as_tiles)
   if not global.map_config.starting_area_size then return 0 end
   local starting_area_chunk_radius =
@@ -451,7 +517,7 @@ end
 
 local localised_names =
 {
-  peaceful_mode = {"gui-map-generator.peaceful-mode"},
+  peaceful_mode = {"gui-map-generator.peaceful-mode-checkbox"},
   map_height = {"gui-map-generator.map-width-simple"},
   map_width = {"gui-map-generator.map-height-simple"},
   map_seed = {"gui-map-generator.map-seed-simple"},
@@ -490,7 +556,8 @@ function make_config_table(gui, config)
     elseif tonumber(name) or tostring(name):find("^%d+%%$") then
       local input = config_table.add{type = "textfield", name = k.."_box"}
       input.text = name
-      input.style.maximal_width = 100
+      input.style.horizontally_stretchable = true
+      --input.style.maximal_width = 100
     elseif tostring(type(name)) == "boolean" then
       config_table.add{type = "checkbox", name = k.."_boolean", state = name}
     else
