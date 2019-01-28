@@ -351,7 +351,6 @@ config.get_config = function()
         ["piercing-rounds-magazine"] = 30,
         ["shotgun"] = 1,
         ["shotgun-shell"] = 20,
-        ["steel-axe"] = 1,
         ["heavy-armor"] = 1
       }
     },
@@ -359,7 +358,6 @@ config.get_config = function()
     {
       items =
       {
-        ["steel-axe"] = 3,
         ["submachine-gun"] = 1,
         ["piercing-rounds-magazine"] = 40,
         ["shotgun"] = 1,
@@ -384,7 +382,6 @@ config.get_config = function()
     {
       items =
       {
-        ["steel-axe"] = 3,
         ["submachine-gun"] = 1,
         ["piercing-rounds-magazine"] = 40,
         ["combat-shotgun"] = 1,

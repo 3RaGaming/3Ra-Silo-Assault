@@ -477,6 +477,31 @@ local visibility_map = {
     local option = gui.diplomacy_enabled_boolean
     if not option then return end
     return option.state
+  end,
+  space_race = function(gui)
+    local item = game.item_prototypes[script_data.prototypes.satellite or ""]
+    if item then return true end
+    script_data.game_config.space_race = false
+    local option = gui.space_race_boolean
+    if option then option.state = false end
+    return false
+  end,
+  last_silo_standing = function(gui)
+    local item = game.entity_prototypes[script_data.prototypes.silo or ""]
+    if item then return true end
+    script_data.game_config.last_silo_standing = false
+    local option = gui.last_silo_standing_boolean
+    if option then option.state = false end
+    return false
+  end,
+  oil_harvest = function(gui)
+    local fluid = game.fluid_prototypes[script_data.prototypes.oil or ""]
+    local entity = game.entity_prototypes[script_data.prototypes.oil_resource or ""]
+    if fluid and entity then return true end
+    script_data.game_config.oil_harvest = false
+    local option = gui.oil_harvest_boolean
+    if option then option.state = false end
+    return false
   end
 }
 
@@ -1108,6 +1133,7 @@ function set_balance_settings(player)
       end
     end
   end
+  balance.script_data = script_data
   return true
 end
 
@@ -1123,6 +1149,7 @@ function parse_config(player)
   if not config.parse_config_from_gui(frame.map_config_gui, script_data.map_config) then return end
   if not config.parse_config_from_gui(frame.game_config_gui, script_data.game_config) then return end
   if not config.parse_config_from_gui(frame.team_config_gui, script_data.team_config) then return end
+  config.script_data = script_data
   return true
 end
 
@@ -2259,8 +2286,12 @@ end
 function check_update_oil_harvest_score()
   if script_data.team_won then return end
   if not script_data.game_config.oil_harvest then return end
-  local fluid_to_check = script_data.prototypes.oil
-  if not game.fluid_prototypes[fluid_to_check] then return end
+  local fluid_to_check = script_data.prototypes.oil or ""
+  if not game.fluid_prototypes[fluid_to_check] then
+    log("Disabling oil harvest check as "..fluid_to_check.." is not a valid fluid")
+    script_data.game_config.oil_harvest = false
+    return
+  end
   local scores = {}
   for force_name, force in pairs (game.forces) do
     local statistics = force.fluid_production_statistics
@@ -2296,8 +2327,12 @@ end
 function check_update_space_race_score()
   if script_data.team_won then return end
   if not script_data.game_config.space_race then return end
-  local item_to_check = "satellite"
-  if not game.item_prototypes[item_to_check] then error("Playing space race when satellites don't exist") end
+  local item_to_check = script_data.prototypes.satellite or ""
+  if not game.item_prototypes[item_to_check] then
+    log("Disabling space race as "..item_to_check.." is not a valiud item")
+    script_data.game_config.space_race = false
+    return
+  end
   local scores = {}
   for k, team in pairs (script_data.teams) do
     local force = game.forces[team.name]
@@ -2529,16 +2564,15 @@ function create_silo_for_force(force)
   local silo_position = {x = origin.x + (offset.x or offset[1]), y = origin.y + (offset.y or offset[2])}
   local silo_name = script_data.prototypes.silo
   if not game.entity_prototypes[silo_name] then log("Silo not created as "..silo_name.." is not a valid entity prototype") return end
-  local silo = surface.create_entity{name = silo_name, position = silo_position, force = force}
+  local silo = surface.create_entity{name = silo_name, position = silo_position, force = force, raise_built = true}
+
+  --Event is sent, so some mod could kill the silo
+  if not (silo and silo.valid) then return end
 
   silo.minable = false
-
   if silo.supports_backer_name() then
     silo.backer_name = tostring(force.name)
   end
-
-  script.raise_event(defines.events.script_raised_built, {created_entity = silo})
-
   if not script_data.silos then script_data.silos = {} end
   script_data.silos[force.name] = silo
 
@@ -2648,7 +2682,7 @@ function create_starting_turrets(force)
     local turret = surface.create_entity{name = turret_name, position = position, force = force, direction = position.direction}
     local box = turret.bounding_box
     for k, entity in pairs (surface.find_entities_filtered{area = turret.bounding_box, force = "neutral"}) do
-      entity.destroy(true)
+      entity.destroy({do_cliff_correction = true})
     end
     if ammo_name ~= "laser-turret" then
       turret.insert(stack)
@@ -2662,7 +2696,7 @@ function create_starting_turrets(force)
   for k, position in pairs (pole_positions) do
     local pole = surface.create_entity{name = "medium-electric-pole", position = position, force = force}
     for k, entity in pairs (surface.find_entities_filtered{area = pole.bounding_box, force = "neutral"}) do
-      entity.destroy()
+      entity.destroy({do_cliff_correction = true})
     end
     table.insert(tiles, {name = tile_name, position = {x = position.x, y = position.y}})
   end
@@ -2730,7 +2764,7 @@ function create_starting_artillery(force)
     local turret = surface.create_entity{name = turret_name, position = position, force = force, direction = position.direction}
     local box = turret.bounding_box
     for k, entity in pairs (surface.find_entities_filtered{area = turret.bounding_box, force = "neutral"}) do
-      entity.destroy(true)
+      entity.destroy({do_cliff_correction = true})
     end
     turret.insert(stack)
     for x = floor(box.left_top.x), floor(box.right_bottom.x) do
@@ -2750,7 +2784,7 @@ function create_wall_for_force(force)
   local width = surface.map_gen_settings.width / 2
   local origin = force.get_spawn_position(surface)
   local size = script_data.map_config.starting_area_size.selected
-  local radius = config.get_starting_area_radius(true) - 13 --[[radius in tiles]]
+  local radius = config.get_starting_area_radius(true) - 11 --[[radius in tiles]]
   local limit = math.min(width - math.abs(origin.x), height - math.abs(origin.y)) - 1
   radius = math.min(radius, limit)
   if radius < 2 then return end
@@ -2778,7 +2812,7 @@ function create_wall_for_force(force)
   }
   for k, area in pairs (areas) do
     for i, entity in pairs(surface.find_entities_filtered({area = area})) do
-      entity.destroy(true)
+      entity.destroy({do_cliff_correction = true})
     end
   end
   local wall_name = script_data.prototypes.wall
@@ -2791,14 +2825,22 @@ function create_wall_for_force(force)
     log("Setting walls cancelled as "..gate_name.." is not a valid entity prototype")
     return
   end
-
+  local should_gate = {
+    [12] = true,
+    [13] = true,
+    [14] = true,
+    [15] = true,
+    [16] = true,
+    [17] = true,
+    [18] = true,
+    [19] = true
+  }
   for k, position in pairs (perimeter_left) do
     if (k ~= 1) and (k ~= #perimeter_left) then
       insert(tiles, {name = tile_name, position = {position.x + 2, position.y}})
       insert(tiles, {name = tile_name, position = {position.x + 1, position.y}})
     end
-    local mod = position.y % 32
-    if (mod == 14) or (mod == 15) or (mod == 16) or (mod == 17) then
+    if should_gate[position.y % 32] then
       surface.create_entity{name = gate_name, position = position, direction = 0, force = force}
     else
       surface.create_entity{name = wall_name, position = position, force = force}
@@ -2809,8 +2851,7 @@ function create_wall_for_force(force)
       insert(tiles, {name = tile_name, position = {position.x - 2, position.y}})
       insert(tiles, {name = tile_name, position = {position.x - 1, position.y}})
     end
-    local mod = position.y % 32
-    if (mod == 14) or (mod == 15) or (mod == 16) or (mod == 17) then
+    if should_gate[position.y % 32] then
       surface.create_entity{name = gate_name, position = position, direction = 0, force = force}
     else
       surface.create_entity{name = wall_name, position = position, force = force}
@@ -2821,8 +2862,7 @@ function create_wall_for_force(force)
       insert(tiles, {name = tile_name, position = {position.x, position.y + 2}})
       insert(tiles, {name = tile_name, position = {position.x, position.y + 1}})
     end
-    local mod = position.x % 32
-    if (mod == 14) or (mod == 15) or (mod == 16) or (mod == 17) then
+    if should_gate[position.x % 32] then
       surface.create_entity{name = gate_name, position = position, direction = 2, force = force}
     else
       surface.create_entity{name = wall_name, position = position, force = force}
@@ -2833,8 +2873,7 @@ function create_wall_for_force(force)
       insert(tiles, {name = tile_name, position = {position.x, position.y - 2}})
       insert(tiles, {name = tile_name, position = {position.x, position.y - 1}})
     end
-    local mod = position.x % 32
-    if (mod == 14) or (mod == 15) or (mod == 16) or (mod == 17) then
+    if should_gate[position.x % 32] then
       surface.create_entity{name = gate_name, position = position, direction = 2, force = force}
     else
       surface.create_entity{name = wall_name, position = position, force = force}
@@ -3915,7 +3954,7 @@ pvp.on_rocket_launched = function(event)
 
   if not script_data.game_config.space_race then return end
 
-  local item = game.item_prototypes[script_data.prototypes.satellite]
+  local item = game.item_prototypes[script_data.prototypes.satellite or ""]
   if not item then log("Failed to check space race victory, invalid item: "..script_data.prototypes.satellite) return end
 
   if event.rocket.get_item_count(item.name) == 0 then
@@ -3974,7 +4013,7 @@ pvp.on_entity_died = function(event)
         end
       end
     end
-  elseif dying_entity.name == "rocket-silo" then
+  elseif dying_entity.name == (script_data.prototypes.silo or "") then
     if not script_data.game_config.last_silo_standing then return end
     local killing_force = event.force
     if not script_data.silos then return end
@@ -4198,11 +4237,7 @@ pvp.on_player_respawned = function(event)
 end
 
 pvp.on_configuration_changed = function(event)
-  recursive_data_check(config.give_equipment(), script_data)
-end
-
-pvp.on_player_crafted_item = function(event)
-  production_score.on_player_crafted_item(event)
+  recursive_data_check(config.get_config(), script_data)
 end
 
 pvp.on_player_display_resolution_changed = function(event)
@@ -4295,6 +4330,8 @@ pvp.add_remote_interface = function()
     set_config = function(array)
       log("pvp global config set by remote call - Can expect script errors after this point.")
       script_data = array
+      balance.script_data = script_data
+      config.script_data = script_data
     end
   })
 end
@@ -4318,7 +4355,6 @@ local script_events =
   [defines.events.on_gui_selection_state_changed] = pvp.on_gui_selection_state_changed,
   [defines.events.on_player_changed_position] = pvp.on_player_changed_position,
   [defines.events.on_player_driving_changed_state] = pvp.on_player_driving_changed_state,
-  [defines.events.on_player_crafted_item] = pvp.on_player_crafted_item,
   [defines.events.on_player_cursor_stack_changed] = pvp.on_player_cursor_stack_changed,
   [defines.events.on_player_display_resolution_changed] = pvp.on_player_display_resolution_changed,
   [defines.events.on_player_joined_game] = pvp.on_player_joined_game,
