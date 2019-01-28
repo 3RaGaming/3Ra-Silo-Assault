@@ -19,8 +19,10 @@ local combat_technologies =
     "artillery-shell-speed"
   }
 
-function disable_combat_technologies(force)
-  if global.team_config.unlock_combat_research then return end --If true, then we want them to stay unlocked
+local balance = {script_data = {}}
+
+balance.disable_combat_technologies = function(force)
+  if balance.script_data.team_config.unlock_combat_research then return end --If true, then we want them to stay unlocked
   local tech = force.technologies
   for k, name in pairs (combat_technologies) do
     local i = 1
@@ -34,23 +36,23 @@ function disable_combat_technologies(force)
   end
 end
 
-function apply_character_modifiers(player)
+balance.apply_character_modifiers = function(player)
   local apply = function(player, name, modifier)
     player[name] = modifier
   end
   --Because some things want greater than 0, others wants greater than -1.
   --Better to just catch the error than making some complicated code.
-  for name, modifier in pairs (global.modifier_list.character_modifiers) do
+  for name, modifier in pairs (balance.script_data.modifier_list.character_modifiers) do
     local status, error = pcall(apply, player, name, modifier)
     if not status then
       log(name)
       log(error)
-      global.modifier_list.character_modifiers[name] = 0
+      balance.script_data.modifier_list.character_modifiers[name] = 0
     end
   end
 end
 
-function init_balance_modifiers()
+balance.init = function()
   local modifier_list =
   {
     character_modifiers =
@@ -86,39 +88,41 @@ function init_balance_modifiers()
   modifier_list.ammo_damage_modifier["biological"] = 1
   modifier_list.ammo_damage_modifier["electric"] = -0.5
   modifier_list.ammo_damage_modifier["shotgun-shell"] = 3
-  global.modifier_list = modifier_list
+  balance.script_data.modifier_list = modifier_list
 end
 
-function apply_combat_modifiers(force)
+balance.apply_combat_modifiers = function(force)
 
   local entities = game.entity_prototypes
 
-  for name, modifier in pairs (global.modifier_list.turret_attack_modifier) do
+  for name, modifier in pairs (balance.script_data.modifier_list.turret_attack_modifier) do
     if entities[name] then
       force.set_turret_attack_modifier(name, force.get_turret_attack_modifier(name) + modifier)
     else
       log(name.." removed from turret attack modifiers, as it is not a valid turret prototype")
-      global.modifier_list.turret_attack_modifier[name] = nil
+      balance.script_data.modifier_list.turret_attack_modifier[name] = nil
     end
   end
 
   local ammo = game.ammo_category_prototypes
 
-  for name, modifier in pairs (global.modifier_list.ammo_damage_modifier) do
+  for name, modifier in pairs (balance.script_data.modifier_list.ammo_damage_modifier) do
     if ammo[name] then
       force.set_ammo_damage_modifier(name, force.get_ammo_damage_modifier(name) + modifier)
     else
       log(name.." removed from ammo damage modifiers, as it is not a valid turret prototype")
-      global.modifier_list.ammo_damage_modifier[name] = nil
+      balance.script_data.modifier_list.ammo_damage_modifier[name] = nil
     end
   end
 
-  for name, modifier in pairs (global.modifier_list.gun_speed_modifier) do
+  for name, modifier in pairs (balance.script_data.modifier_list.gun_speed_modifier) do
     if ammo[name] then
       force.set_gun_speed_modifier(name, force.get_gun_speed_modifier(name) + modifier)
     else
-      global.modifier_list.gun_speed_modifier[name] = nil
+      balance.script_data.modifier_list.gun_speed_modifier[name] = nil
     end
   end
 
 end
+
+return balance

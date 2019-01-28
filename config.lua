@@ -1,22 +1,22 @@
-function load_config(dummy_load)
-  local config = global
-  if dummy_load then
-    config = {}
-  end
+local config = {script_data = {}}
 
-  config.setup_finished = false
-  config.match_started = false
+config.get_config = function()
 
-  config.game_speed = 1
+  local data = {}
 
-  config.disabled_items =
+  data.setup_finished = false
+  data.match_started = false
+
+  data.game_speed = 1
+
+  data.disabled_items =
   {
     ["artillery-targeting-remote"] = 209,
     ["programmable-speaker"] = 264,
     ["raw-fish"] = 346
   }
   
-  config.map_config =
+  data.map_config =
   {
     average_team_displacement = 1024,
     map_height = 2048,
@@ -51,7 +51,7 @@ function load_config(dummy_load)
     enemy_building_restriction = true
   }
 
-  config.game_config = 
+  data.game_config =
   {
     game_mode = "dummy",
     time_limit = 180,
@@ -62,7 +62,7 @@ function load_config(dummy_load)
     space_race = true,
     required_satellites_sent = 1,
     oil_harvest = false,
-    required_oil_barrels = 1000,
+    required_oil = 10000000,
     oil_only_in_center = true,
     no_rush_time = 20,
     base_exclusion_time = 0,
@@ -87,8 +87,8 @@ function load_config(dummy_load)
   local bullet_prototype = game.entity_prototypes[bullet_entity_name]
   local laser_prototype = game.entity_prototypes[laser_entity_name]
   if not bullet_prototype and not laser_prototype then
-    config.map_config.team_turrets = nil
-    config.map_config.turret_ammunition = nil
+    data.map_config.team_turrets = nil
+    data.map_config.turret_ammunition = nil
   else
     local ammos = {}
     if bullet_prototype then
@@ -107,13 +107,13 @@ function load_config(dummy_load)
     if laser_prototype then
       table.insert(ammos, laser_entity_name)
     end
-    config.map_config.turret_ammunition.options = ammos
+    data.map_config.turret_ammunition.options = ammos
     if not items["piercing-rounds-magazine"] then
-      config.map_config.turret_ammunition.selected = ammos[1] or ""
+      data.map_config.turret_ammunition.selected = ammos[1] or ""
     end
   end
 
-  config.team_config =
+  data.team_config =
   {
     max_players = 0,
     friendly_fire = true,
@@ -182,17 +182,17 @@ function load_config(dummy_load)
   end
 
   for k, t in pairs (sorted_packs) do
-    table.insert(config.team_config.research_level.options, t.name)
+    table.insert(data.team_config.research_level.options, t.name)
   end
   local selected_tier = config.team_config.research_level.options[2]
   if selected_tier then config.team_config.research_level.selected = selected_tier end
 
-  config.research_ingredient_list = {}
-  for k, research in pairs (config.team_config.research_level.options) do
-    config.research_ingredient_list[research] = false
+  data.research_ingredient_list = {}
+  for k, research in pairs (data.team_config.research_level.options) do
+    data.research_ingredient_list[research] = false
   end
 
-  config.colors =
+  data.colors =
   {
     { name = "orange" , color = { r = 0.869, g = 0.5  , b = 0.130, a = 0.5 }},
     { name = "purple" , color = { r = 0.485, g = 0.111, b = 0.659, a = 0.5 }},
@@ -208,13 +208,13 @@ function load_config(dummy_load)
     { name = "cyan"   , color = { r = 0.275, g = 0.755, b = 0.712, a = 0.5 }},
     { name = "acid"   , color = { r = 0.559, g = 0.761, b = 0.157, a = 0.5 }},
   }
-  
-  config.color_map = {}
-  for k, color in pairs (config.colors) do
-    config.color_map[color.name] = k
+
+  data.color_map = {}
+  for k, color in pairs (data.colors) do
+    data.color_map[color.name] = k
   end
 
-  config.teams =
+  data.teams =
   {
     {name = game.backer_names[math.random(#game.backer_names)], color = "orange", team = "-"},
     {name = game.backer_names[math.random(#game.backer_names)], color = "purple", team = "-"}
@@ -222,18 +222,18 @@ function load_config(dummy_load)
 
   --values calculated based on solid raw materials being worth 1 and crude oil being worth 0.2
   --source is the second table on this page: https://wiki.factorio.com/Science_pack
-  config.science_pack_costs =
+  data.science_pack_costs =
   {
-    ["science-pack-1"] = 3, -- 2 + 1
-    ["science-pack-2"] = 7, -- 5.5 + 1.5
-    ["science-pack-3"] = 48.94, -- 34 + 9.5 + 1 + 22.2 / 5
-    ["military-science-pack"] = 39.5, -- 27 + 7.5 + 5
-    ["production-science-pack"] = 74.18, -- 35.5 + 14 + 2.5 + 60.9 / 5 + 10
-    ["high-tech-science-pack"] = 164.48, -- 44.4 + 84.3 + 5.5 + 151.4 / 5
-    ["space-science-pack"] = 261.74, -- 101.5 + 85.3 + 10 + 324.7 / 5
+    ["automation-science-pack"] = 3,      -- 2 + 1
+    ["logistic-science-pack"]   = 7,      -- 5.5 + 1.5
+    ["chemical-science-pack"]   = 48.94,  -- 34 + 9.5 + 1 + 22.2 / 5
+    ["military-science-pack"]   = 39.5,   -- 27 + 7.5 + 5
+    ["production-science-pack"] = 74.18,  -- 35.5 + 14 + 2.5 + 60.9 / 5 + 10
+    ["high-tech-science-pack"]  = 164.48, -- 44.4 + 84.3 + 5.5 + 151.4 / 5
+    ["space-science-pack"]      = 261.74, -- 101.5 + 85.3 + 10 + 324.7 / 5
   }
 
-  config.inventory_list =
+  data.inventory_list =
   {
     none =
     {
@@ -333,7 +333,7 @@ function load_config(dummy_load)
     }
   }
 
-  config.equipment_list =
+  data.equipment_list =
   {
     none =
     {
@@ -405,7 +405,7 @@ function load_config(dummy_load)
     }
   }
 
-  config.prototypes =
+  data.prototypes =
   {
     chest = "steel-chest",
     wall = "stone-wall",
@@ -416,23 +416,24 @@ function load_config(dummy_load)
     silo = "rocket-silo",
     tile_1 = "refined-concrete",
     tile_2 = "refined-hazard-concrete-left",
-    artillery_remote = "artillery-targeting-remote"
+    artillery_remote = "artillery-targeting-remote",
+    oil = "crude-oil",
+    oil_resource = "crude-oil",
+    satellite = "satellite"
   }
 
-  config.silo_offset = {x = 0, y = 0}
+  data.silo_offset = {x = 0, y = 0}
 
-  if dummy_load then
-    return config
-  end
+  return data
 end
 
 
 
-function give_equipment(player, respawn)
-  if not global.equipment_list then return end
-  local setting = global.team_config.starting_equipment.selected
+config.give_equipment = function(player, respawn)
+  if not config.script_data.equipment_list then return end
+  local setting = config.script_data.team_config.starting_equipment.selected
   if not setting then return end
-  local player_gear = global.equipment_list[setting]
+  local player_gear = config.script_data.equipment_list[setting]
   for equipment = player_gear, not respawn and player_gear.fast_blueprinting do
     if equipment then
       if equipment.items then
@@ -462,8 +463,8 @@ function give_equipment(player, respawn)
   end
 end
 
-function get_starting_area_radius(as_tiles)
-  if not global.map_config.starting_area_size then return 0 end
+config.get_starting_area_radius = function(as_tiles)
+  if not config.script_data.map_config.starting_area_size then return 0 end
   local starting_area_chunk_radius =
   {
     ["none"] = 3,
@@ -473,10 +474,10 @@ function get_starting_area_radius(as_tiles)
     ["high"] = 6,
     ["very-high"] = 7
   }
-  return as_tiles and starting_area_chunk_radius[global.map_config.starting_area_size.selected] * 32 or starting_area_chunk_radius[global.map_config.starting_area_size.selected]
+  return as_tiles and starting_area_chunk_radius[config.script_data.map_config.starting_area_size.selected] * 32 or starting_area_chunk_radius[config.script_data.map_config.starting_area_size.selected]
 end
 
-function parse_config_from_gui(gui, config)
+config.parse_config_from_gui = function(gui, config)
   local config_table = gui.config_table
   if not config_table then
     error("Trying to parse config from gui with no config table present")
@@ -540,7 +541,7 @@ local localised_tooltips =
   defcon_random_multiplier = ""
 }
 
-function make_config_table(gui, config)
+config.make_config_table = function(gui, config)
   local config_table = gui.config_table
   if config_table then
     config_table.clear()
@@ -577,3 +578,5 @@ function make_config_table(gui, config)
     label.tooltip = localised_tooltips[k] or {k.."_tooltip"}
   end
 end
+
+return config

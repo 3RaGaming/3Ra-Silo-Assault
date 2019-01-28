@@ -1,8 +1,10 @@
-require("config")
-require("balance")
 local mod_gui = require("mod-gui")
-require("production-score")
 local util = require("util")
+local balance = require("balance")
+local config = require("config")
+local production_score = require("production-score")
+
+local script_data = {}
 
 local statistics_period = 150 -- Seconds
 local game_message_color = {r = 1, g = 0.2, b = 0.8, a = 1} --hot pink
@@ -15,20 +17,19 @@ local events =
   on_team_won = script.generate_event_name()
 }
 
-
 function create_spawn_positions()
-  local config = global.map_config
-  local width = config.map_width
-  local height = config.map_height
-  local displacement = math.max(config.average_team_displacement, 64)
+  local map_config = script_data.map_config
+  local width = map_config.map_width
+  local height = map_config.map_height
+  local displacement = math.max(map_config.average_team_displacement, 64)
   local horizontal_offset = (width/displacement) * 10
   local vertical_offset = (height/displacement) * 10
-  global.spawn_offset = {x = math.floor(0.5 + math.random(-horizontal_offset, horizontal_offset) / 32) * 32, y = math.floor(0.5 + math.random(-vertical_offset, vertical_offset) / 32) * 32}
+  script_data.spawn_offset = {x = math.floor(0.5 + math.random(-horizontal_offset, horizontal_offset) / 32) * 32, y = math.floor(0.5 + math.random(-vertical_offset, vertical_offset) / 32) * 32}
   local height_scale = height/width
-  local radius = get_starting_area_radius()
-  local count = #global.teams
-  local max_distance = get_starting_area_radius(true) * 2 + displacement
-  local min_distance = get_starting_area_radius(true) + (32 * (count - 1))
+  local radius = config.get_starting_area_radius()
+  local count = #script_data.teams
+  local max_distance = config.get_starting_area_radius(true) * 2 + displacement
+  local min_distance = config.get_starting_area_radius(true) + (32 * (count - 1))
   local edge_addition = (radius + 2) * 32
   local elevator_set = false
   if height_scale == 1 then
@@ -37,7 +38,7 @@ function create_spawn_positions()
     end
   end
   if height_scale < 1 then
-    if #global.teams == 2 then
+    if #script_data.teams == 2 then
       if max_distance > width then
         displacement = width - edge_addition
       end
@@ -48,7 +49,7 @@ function create_spawn_positions()
     end
   end
   if height_scale > 1 then
-    if #global.teams == 2 then
+    if #script_data.teams == 2 then
       if max_distance > height then
         displacement = height - edge_addition
       end
@@ -105,10 +106,10 @@ function create_spawn_positions()
     end
   end
   for k, position in pairs (positions) do
-    position.x = position.x + global.spawn_offset.x
-    position.y = position.y + global.spawn_offset.y
+    position.x = position.x + script_data.spawn_offset.x
+    position.y = position.y + script_data.spawn_offset.y
   end
-  global.spawn_positions = positions
+  script_data.spawn_positions = positions
   --error(serpent.block(positions))
   return positions
 end
@@ -118,29 +119,29 @@ function create_next_surface()
   if game.surfaces[name] ~= nil then
     name = "battle_surface_2"
   end
-  global.round_number = global.round_number + 1
+  script_data.round_number = script_data.round_number + 1
   local settings = game.surfaces[1].map_gen_settings
-  settings.starting_area = global.map_config.starting_area_size.selected
-  if global.map_config.biters_disabled then
+  settings.starting_area = script_data.map_config.starting_area_size.selected
+  if script_data.map_config.biters_disabled then
     settings.autoplace_controls["enemy-base"].size = "none"
   end
-  if global.map_config.map_seed == 0 then
+  if script_data.map_config.map_seed == 0 then
     settings.seed = math.random(4000000000)
   else
-    settings.seed = global.map_config.map_seed
+    settings.seed = script_data.map_config.map_seed
   end
-  if global.map_config.map_height < 1 then
-    global.map_config.map_height = 2000000
+  if script_data.map_config.map_height < 1 then
+    script_data.map_config.map_height = 2000000
   end
-  if global.map_config.map_width < 1 then
-    global.map_config.map_width = 2000000
+  if script_data.map_config.map_width < 1 then
+    script_data.map_config.map_width = 2000000
   end
-  settings.height = global.map_config.map_height
-  settings.width = global.map_config.map_width
+  settings.height = script_data.map_config.map_height
+  settings.width = script_data.map_config.map_width
   settings.starting_points = create_spawn_positions()
-  global.surface = game.create_surface(name, settings)
-  global.surface.daytime = 0
-  global.surface.always_day = global.map_config.always_day
+  script_data.surface = game.create_surface(name, settings)
+  script_data.surface.daytime = 0
+  script_data.surface.always_day = script_data.map_config.always_day
 end
 
 function destroy_player_gui(player)
@@ -187,10 +188,10 @@ function destroy_joining_guis(gui)
 end
 
 function make_color_dropdown(k, gui)
-  local team = global.teams[k]
+  local team = script_data.teams[k]
   local menu = gui.add{type = "drop-down", name = k.."_color"}
   local count = 1
-  for k, color in pairs (global.colors) do
+  for k, color in pairs (script_data.colors) do
     menu.add_item({"color."..color.name})
     if color.name == team.color then
       menu.selected_index = count
@@ -200,7 +201,7 @@ function make_color_dropdown(k, gui)
 end
 
 function add_team_to_team_table(gui, k)
-  local team = global.teams[k]
+  local team = script_data.teams[k]
   local textfield = gui.add{type = "textfield", name = k, text = team.name}
   textfield.style.minimal_width = 0
   textfield.style.horizontally_stretchable = true
@@ -227,7 +228,7 @@ function create_game_config_gui(gui)
   local name = "game_config_gui"
   local frame = gui[name] or gui.add{type = "frame", name = name, caption = {"game-config-gui"}, direction = "vertical", style = "inner_frame"}
   frame.clear()
-  make_config_table(frame, global.game_config)
+  config.make_config_table(frame, script_data.game_config)
   create_disable_frame(frame)
 end
 
@@ -243,11 +244,11 @@ function create_team_config_gui(gui)
   for k, name in pairs ({"team-name", "color", "team", "remove"}) do
     team_table.add{type = "label", caption = {name}}
   end
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     add_team_to_team_table(team_table, k)
   end
   set_button_style(frame.add{name = "add_team_button", type = "button", caption = {"add-team"}, tooltip = {"add-team-tooltip"}})
-  make_config_table(frame, global.team_config)
+  config.make_config_table(frame, script_data.team_config)
 end
 
 function get_config_holder(player)
@@ -318,7 +319,7 @@ function create_map_config_gui(gui)
   local name = "map_config_gui"
   local frame = gui[name] or gui.add{type = "frame", name = name, caption = {"map-config-gui"}, direction = "vertical", style = "inner_frame"}
   frame.clear()
-  make_config_table(frame, global.map_config)
+  config.make_config_table(frame, script_data.map_config)
 end
 
 function create_waiting_gui(player)
@@ -334,8 +335,8 @@ function player_join_lobby(player)
   if character then character.destroy() end
   player.set_controller{type = defines.controllers.spectator}
   player.teleport({0, 1000}, game.surfaces.Lobby)
-  player.color = global.colors[global.color_map["black"]].color
-  player.chat_color = global.colors[global.color_map["yellow"]].color
+  player.color = script_data.colors[script_data.color_map["black"]].color
+  player.chat_color = script_data.colors[script_data.color_map["yellow"]].color
 end
 
 function end_round(admin)
@@ -356,34 +357,34 @@ function end_round(admin)
       end
     end
   end
-  if global.surface ~= nil then
-    game.delete_surface(global.surface)
+  if script_data.surface ~= nil then
+    game.delete_surface(script_data.surface)
   end
   if admin then
     game.print({"admin-ended-round", admin.name})
   end
-  global.setup_finished = false
-  global.check_starting_area_generation = false
-  global.average_score = nil
-  global.scores = nil
-  global.exclusion_map = nil
-  global.protected_teams = nil
-  global.check_base_exclusion = nil
-  global.oil_harvest_scores = nil
-  global.production_scores = nil
-  global.space_race_scores = nil
-  global.last_defcon_tick = nil
-  global.next_defcon_tech = nil
-  global.research_time_wasted = nil
-  global.previous_tech = nil
-  global.silos = nil
-  global.wrecks = nil
+  script_data.setup_finished = false
+  script_data.check_starting_area_generation = false
+  script_data.average_score = nil
+  script_data.scores = nil
+  script_data.exclusion_map = nil
+  script_data.protected_teams = nil
+  script_data.check_base_exclusion = nil
+  script_data.oil_harvest_scores = nil
+  script_data.production_scores = nil
+  script_data.space_race_scores = nil
+  script_data.last_defcon_tick = nil
+  script_data.next_defcon_tech = nil
+  script_data.research_time_wasted = nil
+  script_data.previous_tech = nil
+  script_data.silos = nil
+  script_data.wrecks = nil
   script.raise_event(events.on_round_end, {})
 end
 
 function prepare_next_round()
-  global.setup_finished = false
-  global.team_won = false
+  script_data.setup_finished = false
+  script_data.team_won = false
   check_game_speed()
   game.speed = 3
   create_next_surface()
@@ -409,28 +410,12 @@ local visibility_map = {
     if not option then return end
     return option.state
   end,
-  time_limit = function(gui)
-    local score_option = gui.production_score_boolean
-    local oil_option = gui.oil_harvest_boolean
-    if not (score_option and oil_option) then return end
-    return score_option.state or oil_option.state
-  end,
-  disband_on_loss = function(gui)
-    local option = gui.last_silo_standing_boolean
-    if not option then return end
-    return option.state
-  end,
   required_production_score = function(gui)
     local option = gui.production_score_boolean
     if not option then return end
     return option.state
   end,
-  required_satellites_sent = function(gui)
-    local option = gui.space_race_boolean
-    if not option then return end
-    return option.state
-  end,
-  required_oil_barrels = function(gui)
+  required_oil = function(gui)
     local option = gui.oil_harvest_boolean
     if not option then return end
     return option.state
@@ -440,8 +425,19 @@ local visibility_map = {
     if not option then return end
     return option.state
   end,
-  turret_ammunition = function(gui)
-    local option = gui.team_turrets_boolean
+  time_limit = function(gui)
+    local oil = gui.oil_harvest_boolean
+    local production_score = gui.production_score_boolean
+    if not production_score or not oil then return end
+    return oil.state or production_score.state
+  end,
+  starting_chest_multiplier = function(gui)
+    local dropdown = gui.starting_chest_dropdown
+    local name = script_data.team_config.starting_chest.options[dropdown.selected_index]
+    return name ~= "none"
+  end,
+  disband_on_loss = function(gui)
+    local option = gui.last_silo_standing_boolean
     if not option then return end
     return option.state
   end,
@@ -450,8 +446,13 @@ local visibility_map = {
     if not option then return end
     return option.state
   end,
-  who_decides_diplomacy = function(gui)
-    local option = gui.diplomacy_enabled_boolean
+  turret_ammunition = function(gui)
+    local option = gui.team_turrets_boolean
+    if not option then return end
+    return option.state
+  end,
+  required_satellites_sent = function(gui)
+    local option = gui.space_race_boolean
     if not option then return end
     return option.state
   end,
@@ -463,21 +464,22 @@ local visibility_map = {
   defcon_timer = function(gui)
     local defcon_option = gui.defcon_mode_boolean
     local defcon_random = gui.defcon_random_boolean
-    if not (defcon_option and defcon_random) then return end
+    if not defcon_option or not defcon_random then return end
     return defcon_option.state and defcon_random.state
   end,
   defcon_random_multiplier = function(gui)
     local defcon_option = gui.defcon_mode_boolean
     local defcon_random = gui.defcon_random_boolean
-    if not (defcon_option and defcon_random) then return end
+    if not defcon_option or not defcon_random then return end
     return defcon_option.state and not defcon_random.state
   end,
-  starting_chest_multiplier = function(gui)
-    local dropdown = gui.starting_chest_dropdown
-    local name = global.team_config.starting_chest.options[dropdown.selected_index]
-    return name ~= "none"
-  end,
+  who_decides_diplomacy = function(gui)
+    local option = gui.diplomacy_enabled_boolean
+    if not option then return end
+    return option.state
+  end
 }
+
 function set_mode_input(player)
   if not (player and player.valid and player.gui.center.config_holding_frame) then return end
   local gui = get_config_holder(player)
@@ -541,38 +543,40 @@ function set_mode_input(player)
   end
 end
 
+game_mode_buttons = {
+  ["production_score"] = {type = "button", caption = {"production_score"}, name = "production_score_button", style = mod_gui.button_style},
+  ["oil_harvest"] = {type = "button", caption = {"oil_harvest"}, name = "oil_harvest_button", style = mod_gui.button_style},
+  ["space_race"] = {type = "button", caption = {"space_race"}, name = "space_race_button", style = mod_gui.button_style}
+}
+
 function init_player_gui(player)
   destroy_player_gui(player)
-  if not global.setup_finished then return end
+  if not script_data.setup_finished then return end
   local button_flow = mod_gui.get_button_flow(player)
   button_flow.add{type = "button", caption = {"objective"}, name = "objective_button", style = mod_gui.button_style}
   button_flow.add{type = "button", caption = {"teams"}, name = "list_teams_button", style = mod_gui.button_style}
-  if global.team_config.diplomacy_enabled then
+  if script_data.team_config.diplomacy_enabled then
     local button = button_flow.add{type = "button", caption = {"diplomacy"}, name = "diplomacy_button", style = mod_gui.button_style}
-    button.visible = #global.teams > 1 and player.force.name ~= "spectator"
+    button.visible = #script_data.teams > 1 and player.force.name ~= "spectator"
   end
-  if global.game_config.production_score then
-    button_flow.add{type = "button", caption = {"production_score"}, name = "production_score_button", style = mod_gui.button_style}
-  end
-  if global.game_config.space_race then
-    button_flow.add{type = "button", caption = {"space_race"}, name = "space_race_button", style = mod_gui.button_style}
-  end
-  if global.game_config.oil_harvest then
-    button_flow.add{type = "button", caption = {"oil_harvest"}, name = "oil_harvest_button", style = mod_gui.button_style}
+  for name, button in pairs (game_mode_buttons) do
+    if script_data.game_config[name] then
+      button_flow.add(button)
+    end
   end
   if player.admin then
     button_flow.add{type = "button", caption = {"admin"}, name = "admin_button", style = mod_gui.button_style}
   end
-  if player.force.name == "spectator" and not global.team_won then
+  if player.force.name == "spectator" and not script_data.team_won then
     button_flow.add{type = "button", caption = {"join-team"}, name = "spectator_join_team_button", style = mod_gui.button_style}
   end
-  if not global.match_started then
+  if not script_data.match_started then
     create_start_match_gui(player)
   end
 end
 
 function get_color(team, lighten)
-  local c = global.colors[global.color_map[team.color]].color
+  local c = script_data.colors[script_data.color_map[team.color]].color
   if lighten then
     return {r = 1 - (1 - c.r) * 0.5, g = 1 - (1 - c.g) * 0.5, b = 1 - (1 - c.b) * 0.5, a = 1}
   end
@@ -644,7 +648,7 @@ function update_diplomacy_frame(player)
     local label = diplomacy_table.add{type = "label", name = name, caption = {name}}
     label.style.font = "default-bold"
   end
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     local force = game.forces[team.name]
     if force and force ~= player.force then
       local label = diplomacy_table.add{type = "label", name = team.name.."_name", caption = team.name}
@@ -672,7 +676,7 @@ end
 
 function place_player_on_battle_surface(player)
   local force = player.force
-  local surface = global.surface
+  local surface = script_data.surface
   if not surface.valid then return end
   local force_spawn = force.get_spawn_position(surface)
   local offset_spawn = {force_spawn.x, force_spawn.y + 15}
@@ -695,13 +699,13 @@ function place_player_on_battle_surface(player)
     character = surface.create_entity{name = "player", position = position, force = force}
   }
   player.spectator = false
-  local artillery_remote = global.prototypes.artillery_remote
-  if global.map_config.team_artillery and global.map_config.give_artillery_remote and game.item_prototypes[artillery_remote] then
+  local artillery_remote = script_data.prototypes.artillery_remote
+  if script_data.map_config.team_artillery and script_data.map_config.give_artillery_remote and game.item_prototypes[artillery_remote] then
     player.insert(artillery_remote)
   end
-  give_equipment(player)
+  config.give_equipment(player)
 
-  apply_character_modifiers(player)
+  balance.apply_character_modifiers(player)
   check_force_protection(force)
   init_player_gui(player)
   return true
@@ -713,7 +717,7 @@ function set_player(player, team)
   player.color = get_color(team)
   player.chat_color = get_color(team, true)
   player.tag = "["..force.name.."]"
-  if global.match_started then
+  if script_data.match_started then
     if not place_player_on_battle_surface(player) then return end
   end
   for k, other_player in pairs (game.connected_players) do
@@ -723,13 +727,13 @@ function set_player(player, team)
 end
 
 function choose_joining_gui(player)
-  if #global.teams == 1 then
-    local team = global.teams[1]
+  if #script_data.teams == 1 then
+    local team = script_data.teams[1]
     local force = game.forces[team.name]
     set_player(player, team)
     return
   end
-  local setting = global.team_config.team_joining.selected
+  local setting = script_data.team_config.team_joining.selected
   if setting == "random" then
     create_random_join_gui(player.gui.center)
     return
@@ -746,7 +750,7 @@ end
 
 function add_join_spectator_button(gui)
   local player = game.players[gui.player_index]
-  if (not global.map_config.allow_spectators) and (not player.admin) and (not global.team_won) then return end
+  if (not script_data.map_config.allow_spectators) and (not player.admin) and (not script_data.team_won) then return end
   set_button_style(gui.add{type = "button", name = "join_spectator", caption = {"join-spectator"}})
 end
 
@@ -754,7 +758,7 @@ function create_random_join_gui(gui)
   local name = "random_join_frame"
   local frame = gui[name] or gui.add{type = "frame", name = name, caption = {"random-join"}}
   frame.clear()
-  if not global.team_won then
+  if not script_data.team_won then
     set_button_style(frame.add{type = "button", name = "random_join_button", caption = {"random-join-button"}})
   end
   add_join_spectator_button(frame)
@@ -765,7 +769,7 @@ function create_auto_assign_gui(gui)
   local name = "auto_assign_frame"
   local frame = gui[name] or gui.add{type = "frame", name = name, caption = {"auto-assign"}}
   frame.clear()
-  if not global.team_won then
+  if not script_data.team_won then
     set_button_style(frame.add{type = "button", name = "auto_assign_button", caption = {"auto-assign-button"}})
   end
   add_join_spectator_button(frame)
@@ -775,7 +779,7 @@ function create_pick_join_gui(gui)
   local name = "pick_join_frame"
   local frame = gui[name] or gui.add{type = "frame", name = name, caption = {"pick-join"}, direction = "vertical"}
   frame.clear()
-  if not global.team_won then
+  if not script_data.team_won then
     local inner_frame = frame.add{type = "frame", style = "image_frame", name = "pick_join_inner_frame", direction = "vertical"}
     inner_frame.style.left_padding = 8
     inner_frame.style.top_padding = 8
@@ -791,7 +795,6 @@ function create_pick_join_gui(gui)
     pick_join_table.add{type = "label", name = "pick_join_table_player_count", caption = {"players"}}.style.font = "default-semibold"
     pick_join_table.add{type = "label", name = "pick_join_table_team", caption = {"team-number"}}.style.font = "default-semibold"
     pick_join_table.add{type = "label", name = "pick_join_table_pad"}.style.font = "default-semibold"
-    local limit = global.team_config.max_players
     local teams = get_eligible_teams(game.players[gui.player_index])
     if not teams then return end
     for k, team in pairs (teams) do
@@ -827,7 +830,7 @@ function on_pick_join_button_press(event)
   if not name:find(suffix) then return end
   team_name = name:gsub(suffix, "")
   local joined_team
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     if team_name == team.name then
       joined_team = team
       break
@@ -860,9 +863,9 @@ end
 
 function add_team_button_press(event)
   local gui = event.element
-  local index = #global.teams + 1
+  local index = #script_data.teams + 1
   for k = 1, index do
-    if not global.teams[k] then
+    if not script_data.teams[k] then
       index = k
       break
     end
@@ -874,10 +877,10 @@ function add_team_button_press(event)
     end
     return
   end
-  local color = global.colors[(1+index%(#global.colors))]
+  local color = script_data.colors[(1+index%(#script_data.colors))]
   local name = game.backer_names[math.random(#game.backer_names)]
   local team = {name = name, color = color.name, team = "-"}
-  global.teams[index] = team
+  script_data.teams[index] = team
   for k, player in pairs (game.players) do
     local gui = get_config_holder(player).team_config_gui
     if gui then
@@ -895,11 +898,11 @@ function trash_team_button_press(event)
   local team_index = gui.name:gsub("_trash_button", "")
   team_index = tonumber(team_index)
   local count = 0
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     count = count + 1
   end
   if count > 1 then
-    global.teams[team_index] = nil
+    script_data.teams[team_index] = nil
     remove_team_from_team_table(gui)
   else
     game.players[event.player_index].print({"cant-remove-only-team"})
@@ -953,7 +956,7 @@ function set_teams_from_gui(player)
       duplicates[text] = true
       local team = {}
       team.name = text
-      team.color = global.colors[team_table[index.."_color"].selected_index].name
+      team.color = script_data.colors[team_table[index.."_color"].selected_index].name
       local caption = team_table[index.."_next_team_button"].caption
       team.team = tonumber(caption) or caption
       table.insert(teams, team)
@@ -963,7 +966,7 @@ function set_teams_from_gui(player)
     player.print({"too-many-teams", 24})
     return
   end
-  global.teams = teams
+  script_data.teams = teams
   return true
 end
 
@@ -983,9 +986,9 @@ function on_team_button_press(event)
     if left_click then
       index = "-"
     else
-      index = #global.teams
+      index = #script_data.teams
     end
-  elseif index == tostring(#global.teams) then
+  elseif index == tostring(#script_data.teams) then
     if left_click then
       index = "?"
     else
@@ -1027,7 +1030,7 @@ function toggle_balance_options_gui(player)
   big_table.draw_vertical_lines = true
   local entities = game.entity_prototypes
   local ammos = game.ammo_category_prototypes
-  for modifier_name, array in pairs (global.modifier_list) do
+  for modifier_name, array in pairs (script_data.modifier_list) do
     local flow = big_table.add{type = "frame", name = modifier_name.."_flow", caption = {modifier_name}, style = "inner_frame"}
     local table = flow.add{name = modifier_name.."table", type = "table", column_count = 2}
     table.style.column_alignments[2] = "right"
@@ -1067,8 +1070,8 @@ function create_disable_frame(gui)
   disable_table.style.horizontal_spacing = 2
   disable_table.style.vertical_spacing = 2
   local items = game.item_prototypes
-  if global.disabled_items then
-    for item, bool in pairs (global.disabled_items) do
+  if script_data.disabled_items then
+    for item, bool in pairs (script_data.disabled_items) do
       if items[item] then
         local choose = disable_table.add{type = "choose-elem-button", elem_type = "item"}
         choose.elem_value = item
@@ -1083,7 +1086,7 @@ function set_balance_settings(player)
   local frame = gui.balance_options_frame
   local scroll = frame.balance_options_scrollpane
   local table = scroll.balance_options_big_table
-  for modifier_name, array in pairs (global.modifier_list) do
+  for modifier_name, array in pairs (script_data.modifier_list) do
     local flow = table[modifier_name.."_flow"]
     local modifier_table = flow[modifier_name.."table"]
     if modifier_table then
@@ -1100,7 +1103,7 @@ function set_balance_settings(player)
             player.print({"must-be-greater-than-0", {modifier_name}})
             return
           end
-          global.modifier_list[modifier_name][name] = (n - 100) / 100
+          script_data.modifier_list[modifier_name][name] = (n - 100) / 100
         end
       end
     end
@@ -1117,9 +1120,9 @@ end
 function parse_config(player)
   if not set_teams_from_gui(player) then return end
   local frame = get_config_holder(player)
-  if not parse_config_from_gui(frame.map_config_gui, global.map_config) then return end
-  if not parse_config_from_gui(frame.game_config_gui, global.game_config) then return end
-  if not parse_config_from_gui(frame.team_config_gui, global.team_config) then return end
+  if not config.parse_config_from_gui(frame.map_config_gui, script_data.map_config) then return end
+  if not config.parse_config_from_gui(frame.game_config_gui, script_data.game_config) then return end
+  if not config.parse_config_from_gui(frame.team_config_gui, script_data.team_config) then return end
   return true
 end
 
@@ -1143,9 +1146,9 @@ function auto_assign(player)
 end
 
 function get_eligible_teams(player)
-  local limit = global.team_config.max_players
+  local limit = script_data.team_config.max_players
   local teams = {}
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     local force = game.forces[team.name]
     if force then
       if limit <= 0 or #force.connected_players < limit or player.admin then
@@ -1174,7 +1177,7 @@ function destroy_config_for_all()
 end
 
 function set_evolution_factor()
-  local n = global.map_config.evolution_factor
+  local n = script_data.map_config.evolution_factor
   if n >= 1 then
     n = 1
   end
@@ -1182,11 +1185,11 @@ function set_evolution_factor()
     n = 0
   end
   game.forces.enemy.evolution_factor = n
-  global.map_config.evolution_factor = n
+  script_data.map_config.evolution_factor = n
 end
 
 function set_difficulty()
-  game.difficulty_settings.technology_price_multiplier = global.team_config.technology_price_multiplier
+  game.difficulty_settings.technology_price_multiplier = script_data.team_config.technology_price_multiplier
 end
 
 function random_join(player)
@@ -1201,17 +1204,17 @@ function spectator_join(player, winning_team)
   if winning_team ~= nil then
     local winning_team_name = winning_team[1] or winning_team
     if winning_team_name == "none" then
-      player.teleport(global.spawn_offset, global.surface)
+      player.teleport(script_data.spawn_offset, script_data.surface)
     else
-      local winning_spawn_position = game.forces[winning_team_name].get_spawn_position(global.surface)
-      player.teleport(winning_spawn_position, global.surface)
+      local winning_spawn_position = game.forces[winning_team_name].get_spawn_position(script_data.surface)
+      player.teleport(winning_spawn_position, script_data.surface)
     end
   else
     player.force = "spectator"
-    player.teleport(global.spawn_offset, global.surface)
+    player.teleport(script_data.spawn_offset, script_data.surface)
     player.tag = ""
-    player.color = global.colors[global.color_map["black"]].color
-    player.chat_color = global.colors[global.color_map["red"]].color
+    player.color = script_data.colors[script_data.color_map["black"]].color
+    player.chat_color = script_data.colors[script_data.color_map["red"]].color
     game.print({"joined-spectator", player.name})
   end
   player.spectator = true
@@ -1243,10 +1246,11 @@ function objective_button_press(event)
   big_label.style.font = "default-bold"
   big_label.style.top_padding = 0
   local is_freeplay = true
-  for mode, k in pairs (victory_conditions) do
-    if global.game_config[mode] then
-      label_table.add{type = "label", caption = {mode}, tooltip = {mode.."_tooltip"}}
-      label_table.add{type = "label", name = mode.."_dummy"}
+  for objective, k in pairs (victory_conditions) do
+    if script_data.game_config[objective] then
+      local label = label_table.add{type = "label", caption = {objective}, tooltip = {objective.."_tooltip"}}
+      label.style.font = "default-semibold"
+      label_table.add{type = "label", name = objective.."_dummy"}
       is_freeplay = false
     end
   end
@@ -1257,7 +1261,7 @@ function objective_button_press(event)
   label_table.add{type = "label", name = "game_mode_dummy"}
   for k, name in pairs ({"friendly_fire", "diplomacy_enabled", "team_joining", "spawn_position"}) do
     label_table.add{type = "label", caption = {"", {name}, {"colon"}}, tooltip = {name.."_tooltip"}}
-    local setting = global.team_config[name]
+    local setting = script_data.team_config[name]
     if setting ~= nil then
       if type(setting) == "table" then
         label_table.add{type = "label", caption = {setting.selected}}
@@ -1268,22 +1272,22 @@ function objective_button_press(event)
       end
     end
   end
-  if global.disabled_items then
+  if script_data.disabled_items then
     label_table.add{type = "label", caption = {"", {"disabled-items", {"colon"}}}}
     local flow = label_table.add{type = "table", column_count = 4}
     flow.style.horizontal_spacing = 2
     flow.style.vertical_spacing = 2
     local items = game.item_prototypes
-    for item, bool in pairs (global.disabled_items) do
+    for item, bool in pairs (script_data.disabled_items) do
       if items[item] then
         flow.add{type = "sprite", sprite = "item/"..item, tooltip = items[item].localised_name}
       end
     end
   end
   label_table.add{type = "label", caption = "Elapsed time:"}
-  label_table.add{type = "label", caption = formattime(game.tick - global.round_start_tick)}
+  label_table.add{type = "label", caption = formattime(game.tick - script_data.round_start_tick)}
   label_table.add{type = "label", caption = "Science multiplier:"}
-  label_table.add{type = "label", caption = string.format("%.2f", global.science_speedup)}
+  label_table.add{type = "label", caption = string.format("%.2f", script_data.science_speedup)}
 end
 
 function list_teams_button_press(event)
@@ -1319,7 +1323,7 @@ function update_team_list_frame(player)
   team_table.draw_vertical_lines = true
   team_table.add{type = "label", caption = {"team-name"}, style = "bold_label"}
   team_table.add{type = "label", caption = {"players"}, style = "bold_label"}
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     local force = game.forces[team.name]
     if force then
       local label = team_table.add{type = "label", caption = team.name, style = "description_label"}
@@ -1413,9 +1417,9 @@ function formattime(ticks)
 end
 
 function get_time_left()
-  if not global.round_start_tick then return "Invalid" end
-  if not global.game_config.time_limit then return "Invalid" end
-  return formattime((math.max(global.round_start_tick + (global.game_config.time_limit * 60 * 60) - game.tick, 0)))
+  if not script_data.round_start_tick then return "Invalid" end
+  if not script_data.game_config.time_limit then return "Invalid" end
+  return formattime((math.max(script_data.round_start_tick + (script_data.game_config.time_limit * 60 * 60) - game.tick, 0)))
 end
 
 function production_score_button_press(event)
@@ -1429,10 +1433,10 @@ function production_score_button_press(event)
   end
   frame = flow.add{type = "frame", name = "production_score_frame", caption = {"production_score"}, direction = "vertical"}
   frame.style.title_bottom_padding = 8
-  if global.game_config.required_production_score > 0 then
-    frame.add{type = "label", caption = {"", {"required_production_score"}, {"colon"}, " ", util.format_number(global.game_config.required_production_score)}}
+  if script_data.game_config.required_production_score > 0 then
+    frame.add{type = "label", caption = {"", {"required_production_score"}, {"colon"}, " ", util.format_number(script_data.game_config.required_production_score)}}
   end
-  if global.game_config.time_limit > 0 then
+  if script_data.game_config.time_limit > 0 then
     frame.add{type = "label", caption = {"time_left", get_time_left()}, name = "time_left"}
   end
   local inner_frame = frame.add{type = "frame", style = "image_frame", name = "production_score_inner_frame", direction = "vertical"}
@@ -1470,13 +1474,13 @@ function update_production_score_frame(player)
     label.style.font = "default-bold"
   end
   local team_map = {}
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     team_map[team.name] = team
   end
-  local average_score = global.average_score
+  local average_score = script_data.average_score
   if not average_score then return end
   local rank = 1
-  for name, score in spairs (global.production_scores, function(t, a, b) return t[b] < t[a] end) do
+  for name, score in spairs (script_data.production_scores, function(t, a, b) return t[b] < t[a] end) do
     if not average_score[name] then
       average_score = nil
       return
@@ -1514,8 +1518,8 @@ function oil_harvest_button_press(event)
   end
   frame = flow.add{type = "frame", name = "oil_harvest_frame", caption = {"oil_harvest"}, direction = "vertical"}
   frame.style.title_bottom_padding = 8
-  if global.game_config.required_oil_barrels > 0 then
-    frame.add{type = "label", caption = {"", {"required_oil_barrels"}, {"colon"}, " ", util.format_number(global.game_config.required_oil_barrels)}}
+  if script_data.game_config.required_oil > 0 then
+    frame.add{type = "label", caption = {"", {"required_oil"}, {"colon"}, " ", util.format_number(script_data.game_config.required_oil)}}
   end
   local inner_frame = frame.add{type = "frame", style = "image_frame", name = "oil_harvest_inner_frame", direction = "vertical"}
   inner_frame.style.left_padding = 8
@@ -1544,14 +1548,14 @@ function update_oil_harvest_frame(player)
     label.style.font = "default-bold"
   end
   local team_map = {}
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     team_map[team.name] = team
   end
-  if not global.oil_harvest_scores then
-    global.oil_harvest_scores = {}
+  if not script_data.oil_harvest_scores then
+    script_data.oil_harvest_scores = {}
   end
   local rank = 1
-  for name, score in spairs (global.oil_harvest_scores, function(t, a, b) return t[b] < t[a] end) do
+  for name, score in spairs (script_data.oil_harvest_scores, function(t, a, b) return t[b] < t[a] end) do
     if team_map[name] then
       local position = information_table.add{type = "label", caption = "#"..rank}
       if name == player.force.name then
@@ -1561,7 +1565,7 @@ function update_oil_harvest_frame(player)
       local label = information_table.add{type = "label", caption = name}
       label.style.font = "default-semibold"
       label.style.font_color = get_color(team_map[name], true)
-      information_table.add{type = "label", caption = util.format_number(score)}
+      information_table.add{type = "label", caption = util.format_number(math.floor(score))}
       rank = rank + 1
     end
   end
@@ -1580,8 +1584,8 @@ function space_race_button_press(event)
   end
   frame = flow.add{type = "frame", name = "space_race_frame", caption = {"space_race"}, direction = "vertical"}
   frame.style.title_bottom_padding = 8
-  if global.game_config.required_satellites_sent > 0 then
-    frame.add{type = "label", caption = {"", {"required_satellites_sent"}, {"colon"}, " ", util.format_number(global.game_config.required_satellites_sent)}}
+  if script_data.game_config.required_satellites_sent > 0 then
+    frame.add{type = "label", caption = {"", {"required_satellites_sent"}, {"colon"}, " ", util.format_number(script_data.game_config.required_satellites_sent)}}
   end
   local inner_frame = frame.add{type = "frame", style = "image_frame", name = "space_race_inner_frame", direction = "vertical"}
   inner_frame.style.left_padding = 8
@@ -1610,12 +1614,12 @@ function update_space_race_frame(player)
     label.style.font = "default-bold"
   end
   local colors = {}
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     colors[team.name] = get_color(team, true)
   end
   local rank = 1
 
-  for name, score in spairs (global.space_race_scores, function(t, a, b) return t[b] < t[a] end) do
+  for name, score in spairs (script_data.space_race_scores, function(t, a, b) return t[b] < t[a] end) do
     local position = information_table.add{type = "label", caption = "#"..rank}
     if name == player.force.name then
       position.style.font = "default-semibold"
@@ -1629,7 +1633,7 @@ function update_space_race_frame(player)
     progress.style.horizontally_squashable = true
     progress.style.horizontally_stretchable = true
     progress.style.color = colors[name]
-    local silo = global.silos[name]
+    local silo = script_data.silos[name]
     if silo and silo.valid then
       if silo.get_inventory(defines.inventory.rocket_silo_rocket) then
         progress.value = 1
@@ -1648,7 +1652,7 @@ function diplomacy_confirm(event)
   local gui = event.element
   local player = game.players[event.player_index]
   if not (player and player.valid and gui and gui.valid) then return end
-  if global.team_config.who_decides_diplomacy.selected == "team_leader" then
+  if script_data.team_config.who_decides_diplomacy.selected == "team_leader" then
     local team_leader =  player.force.connected_players[1]
     if player.name ~= team_leader.name then
       player.print({"not-team-leader", team_leader.name})
@@ -1776,9 +1780,9 @@ function get_stance(force, other_force)
 end
 
 function give_inventory(player)
-  if not global.inventory_list then return end
-  if not global.inventory_list[global.team_config.starting_inventory.selected] then return end
-  local list = global.inventory_list[global.team_config.starting_inventory.selected]
+  if not script_data.inventory_list then return end
+  if not script_data.inventory_list[script_data.team_config.starting_inventory.selected] then return end
+  local list = script_data.inventory_list[script_data.team_config.starting_inventory.selected]
   util.insert_safe(player, list)
 end
 
@@ -1789,7 +1793,7 @@ function setup_teams()
     spectator = game.create_force("spectator")
   end
   local names = {}
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     names[team.name] = true
   end
 
@@ -1799,7 +1803,7 @@ function setup_teams()
     end
   end
 
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     local new_team
     if game.forces[team.name] then
       new_team = game.forces[team.name]
@@ -1807,20 +1811,20 @@ function setup_teams()
       new_team = game.create_force(team.name)
     end
     new_team.reset()
-    set_spawn_position(k, new_team, global.surface)
+    set_spawn_position(k, new_team, script_data.surface)
     set_random_team(team)
   end
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     local force = game.forces[team.name]
     force.set_friend(spectator, true)
     spectator.set_friend(force, true)
     set_diplomacy(team)
     setup_research(force)
-    disable_combat_technologies(force)
+    balance.disable_combat_technologies(force)
     force.reset_technology_effects()
-    apply_combat_modifiers(force)
-    local starting_equipment = global.team_config.starting_equipment.selected
-    if global.game_config.fast_blueprinting_time > 0 then
+    balance.apply_combat_modifiers(force)
+    local starting_equipment = script_data.team_config.starting_equipment.selected
+    if script_data.game_config.fast_blueprinting_time > 0 then
       force.worker_robots_speed_modifier = -1
     end
   end
@@ -1828,7 +1832,7 @@ function setup_teams()
 end
 
 function disable_items_for_all()
-  if not global.disabled_items then return end
+  if not script_data.disabled_items then return end
   local items = game.item_prototypes
   local recipes = game.recipe_prototypes
   local product_map = {}
@@ -1842,7 +1846,7 @@ function disable_items_for_all()
   end
 
   local recipes_to_disable = {}
-  for name, k in pairs (global.disabled_items) do
+  for name, k in pairs (script_data.disabled_items) do
     local mapping = product_map[name]
     if mapping then
       for k, recipe in pairs (mapping) do
@@ -1858,8 +1862,8 @@ function disable_items_for_all()
 end
 
 function check_technology_for_disabled_items(event)
-  if not global.disabled_items then return end
-  local disabled_items = global.disabled_items
+  if not script_data.disabled_items then return end
+  local disabled_items = script_data.disabled_items
   local technology = event.research
   local recipes = technology.force.recipes
   for k, effect in pairs (technology.effects) do
@@ -1876,7 +1880,7 @@ end
 function set_random_team(team)
   if tonumber(team.team) then return end
   if team.team == "-" then return end
-  team.team = "?"..math.random(#global.teams)
+  team.team = "?"..math.random(#script_data.teams)
 end
 
 function set_diplomacy(team)
@@ -1891,7 +1895,7 @@ function set_diplomacy(team)
   else
     team_number = "Don't match me"
   end
-  for k, other_team in pairs (global.teams) do
+  for k, other_team in pairs (script_data.teams) do
     if game.forces[other_team.name] then
       local other_number
       if tonumber(other_team.team) then
@@ -1914,9 +1918,9 @@ function set_diplomacy(team)
 end
 
 function set_spawn_position(k, force, surface)
-  local setting = global.team_config.spawn_position.selected
+  local setting = script_data.team_config.spawn_position.selected
   if setting == "fixed" then
-    local position = global.spawn_positions[k]
+    local position = script_data.spawn_positions[k]
     force.set_spawn_position(position, surface)
     return
   end
@@ -1924,15 +1928,15 @@ function set_spawn_position(k, force, surface)
     local position
     local index
     repeat
-      index = math.random(1, #global.spawn_positions)
-      position = global.spawn_positions[index]
+      index = math.random(1, #script_data.spawn_positions)
+      position = script_data.spawn_positions[index]
     until position ~= nil
     force.set_spawn_position(position, surface)
-    table.remove(global.spawn_positions, index)
+    table.remove(script_data.spawn_positions, index)
     return
   end
   if setting == "team_together" then
-    if k == #global.spawn_positions then
+    if k == #script_data.spawn_positions then
       set_team_together_spawns(surface)
     end
   end
@@ -1940,7 +1944,7 @@ end
 
 function set_team_together_spawns(surface)
   local grouping = {}
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     local team_number
     if tonumber(team.team) then
       team_number = team.team
@@ -1967,7 +1971,7 @@ function set_team_together_spawns(surface)
     for j, team_name in pairs (group) do
       local force = game.forces[team_name]
       if force then
-        local position = global.spawn_positions[count]
+        local position = script_data.spawn_positions[count]
         if position then
           force.set_spawn_position(position, surface)
           count = count + 1
@@ -1978,10 +1982,10 @@ function set_team_together_spawns(surface)
 end
 
 function chart_starting_area_for_force_spawns()
-  local surface = global.surface
-  local radius = get_starting_area_radius() + global.map_config.chunks_to_extend_duplication
+  local surface = script_data.surface
+  local radius = config.get_starting_area_radius() + script_data.map_config.chunks_to_extend_duplication
   local size = radius*32
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     local name = team.name
     local force = game.forces[name]
     if force ~= nil then
@@ -1991,21 +1995,21 @@ function chart_starting_area_for_force_spawns()
       force.chart(surface, area)
     end
   end
-  global.check_starting_area_generation = true
+  script_data.check_starting_area_generation = true
 end
 
 function check_starting_area_chunks_are_generated()
-  if not global.check_starting_area_generation then return end
-  if game.tick % (#global.teams) ~= 0 then return end
-  local surface = global.surface
+  if not script_data.check_starting_area_generation then return end
+  if game.tick % (#script_data.teams) ~= 0 then return end
+  local surface = script_data.surface
   local width = surface.map_gen_settings.width / 2
   local height = surface.map_gen_settings.height / 2
-  local size = global.map_config.starting_area_size.selected
-  local check_radius = get_starting_area_radius() + global.map_config.chunks_to_extend_duplication
+  local size = script_data.map_config.starting_area_size.selected
+  local check_radius = config.get_starting_area_radius() + script_data.map_config.chunks_to_extend_duplication
   local total = 0
   local generated = 0
   local abs = math.abs
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     local name = team.name
     local force = game.forces[name]
     if force ~= nil then
@@ -2026,10 +2030,10 @@ function check_starting_area_chunks_are_generated()
       end
     end
   end
-  global.progress = generated/total
+  script_data.progress = generated/total
   if total == generated then
-    global.check_starting_area_generation = false
-    global.finish_setup = game.tick + (#global.teams)
+    script_data.check_starting_area_generation = false
+    script_data.finish_setup = game.tick + (#script_data.teams)
     update_progress_bar()
     return
   end
@@ -2037,7 +2041,7 @@ function check_starting_area_chunks_are_generated()
 end
 
 function check_player_color()
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     local force = game.forces[team.name]
     if force then
       local color = get_color(team)
@@ -2077,13 +2081,13 @@ function clear_inventory_of_fast_blueprinting_items(inventory)
 end
 
 function check_fast_blueprinting()
-  if not global.end_fast_blueprinting then return end
-  if game.tick > global.end_fast_blueprinting then
-    if global.game_config.fast_blueprinting_time > 0 then
+  if not script_data.end_fast_blueprinting then return end
+  if game.tick > script_data.end_fast_blueprinting then
+    if script_data.game_config.fast_blueprinting_time > 0 then
       game.print({"fast-blueprinting-ends"})
     end
-    global.end_fast_blueprinting = nil
-    local starting_equipment = global.team_config.starting_equipment.selected
+    script_data.end_fast_blueprinting = nil
+    local starting_equipment = script_data.team_config.starting_equipment.selected
     for force_name, force in pairs (game.forces) do
       if not is_ignored_force(force_name) then
         force.worker_robots_speed_modifier = 0
@@ -2100,17 +2104,17 @@ function check_fast_blueprinting()
           cursor.clear()
         end
       end
-      for k, item in pairs (global.surface.find_entities_filtered{name="item-on-ground"}) do
+      for k, item in pairs (script_data.surface.find_entities_filtered{name="item-on-ground"}) do
         if is_fast_blueprinting_item[item.stack.name] then
           item.destroy()
         end
       end
       -- for flying bots:
-      for k, item in pairs (global.surface.find_entities_filtered{name="construction-robot"}) do
+      for k, item in pairs (script_data.surface.find_entities_filtered{name="construction-robot"}) do
         item.destroy()
       end
       for k, container_type in pairs ({"container", "logistic-container", "character-corpse", "item-with-entity-data", "roboport", "assembling-machine"}) do
-        for j, container in pairs(global.surface.find_entities_filtered{type=container_type}) do
+        for j, container in pairs(script_data.surface.find_entities_filtered{type=container_type}) do
           local inventory = container.get_output_inventory() or container.get_inventory(defines.inventory.character_corpse)
           clear_inventory_of_fast_blueprinting_items(inventory)
         end
@@ -2120,7 +2124,7 @@ function check_fast_blueprinting()
     for k, player in pairs (game.connected_players) do
       if not is_ignored_force(player.force.name) and player.character then
         local pos = player.position
-        for k, bot in pairs (global.surface.find_entities_filtered{name="construction-robot", area={{pos.x-4, pos.y-4}, {pos.x+4, pos.y+4}}}) do
+        for k, bot in pairs (script_data.surface.find_entities_filtered{name="construction-robot", area={{pos.x-4, pos.y-4}, {pos.x+4, pos.y+4}}}) do
           bot.energy = 1500000
         end
         local armor_slot = player.get_inventory(defines.inventory.player_armor)
@@ -2140,66 +2144,65 @@ function check_fast_blueprinting()
 end
 
 function check_no_rush()
-  if not global.end_no_rush then return end
-  if game.tick > global.end_no_rush then
-    if global.game_config.no_rush_time > 0 then
+  if not script_data.end_no_rush then return end
+  if game.tick > script_data.end_no_rush then
+    if script_data.game_config.no_rush_time > 0 then
       game.print({"no-rush-ends"})
     end
-    global.end_no_rush = nil
-    global.surface.peaceful_mode = global.map_config.peaceful_mode
+    script_data.end_no_rush = nil
+    script_data.surface.peaceful_mode = script_data.map_config.peaceful_mode
     game.forces.enemy.kill_all_units()
     return
   end
 end
 
 function check_player_no_rush(player)
-  if not global.end_no_rush then return end
-    local force = player.force
-    if not is_ignored_force(force.name) then
+  if not script_data.end_no_rush then return end
+  local force = player.force
+  if not is_ignored_force(force.name) then
     local origin = force.get_spawn_position(player.surface)
-      local Xo = origin.x
-      local Yo = origin.y
-      local position = player.position
-    local radius = get_starting_area_radius(true)
-      local Xp = position.x
-      local Yp = position.y
-      if Xp > (Xo + radius) then
+    local Xo = origin.x
+    local Yo = origin.y
+    local position = player.position
+    local radius = config.get_starting_area_radius(true)
+    local Xp = position.x
+    local Yp = position.y
+    if Xp > (Xo + radius) then
       Xp = Xo + radius
-      elseif Xp < (Xo - radius) then
+    elseif Xp < (Xo - radius) then
       Xp = Xo - radius
-      end
-      if Yp > (Yo + radius) then
+    end
+    if Yp > (Yo + radius) then
       Yp = Yo + radius
-      elseif Yp < (Yo - radius) then
+    elseif Yp < (Yo - radius) then
       Yp = Yo - radius
-      end
-      if position.x ~= Xp or position.y ~= Yp then
-        local new_position = {x = Xp, y = Yp}
-        local vehicle = player.vehicle
-        if vehicle then
-          if not vehicle.teleport(new_position) then
-            player.driving = false
-          end
-          vehicle.orientation = vehicle.orientation + 0.5
-          player.teleport(new_position)
-        else
-          player.teleport(new_position)
+    end
+    if position.x ~= Xp or position.y ~= Yp then
+      local new_position = {x = Xp, y = Yp}
+      local vehicle = player.vehicle
+      if vehicle then
+        if not vehicle.teleport(new_position) then
+          player.driving = false
         end
-        local time_left = math.ceil((global.end_no_rush-game.tick)/3600)
-        player.print({"no-rush-teleport", time_left})
+        vehicle.orientation = vehicle.orientation + 0.5
+      else
+        player.teleport(new_position)
       end
+      local time_left = math.ceil((script_data.end_no_rush-game.tick) / 3600)
+      player.print({"no-rush-teleport", time_left})
     end
   end
+end
 
 function check_update_production_score()
-  if not global.game_config.production_score then return end
+  if not script_data.game_config.production_score then return end
   local tick = game.tick
-  if global.team_won then return end
-  local new_scores = production_score.get_production_scores(global.price_list)
+  if script_data.team_won then return end
+  local new_scores = production_score.get_production_scores(script_data.price_list)
   local scale = statistics_period / 60
   local index = tick % (60 * statistics_period)
 
-  if not (global.scores and global.average_score) then
+  if not (script_data.scores and script_data.average_score) then
     local average_score = {}
     local scores = {}
     for name, score in pairs (new_scores) do
@@ -2209,41 +2212,41 @@ function check_update_production_score()
         scores[name][k * 60] = score
       end
     end
-    global.scores = scores
-    global.average_score = average_score
+    script_data.scores = scores
+    script_data.average_score = average_score
   end
 
-  local scores = global.scores
-  local average_score = global.average_score
+  local scores = script_data.scores
+  local average_score = script_data.average_score
   for name, score in pairs (new_scores) do
     local old_amount = scores[name][index]
     if not old_amount then
       --Something went wrong, reinitialize it next update
-      global.scores = nil
-      global.average_score = nil
+      script_data.scores = nil
+      script_data.average_score = nil
       return
     end
     average_score[name] = (average_score[name] + score) - old_amount
     scores[name][index] = score
   end
 
-  global.production_scores = new_scores
+  script_data.production_scores = new_scores
 
   for k, player in pairs (game.connected_players) do
     update_production_score_frame(player)
   end
-  local required = global.game_config.required_production_score
+  local required = script_data.game_config.required_production_score
   if required > 0 then
-    for team_name, score in pairs (global.production_scores) do
+    for team_name, score in pairs (script_data.production_scores) do
       if score >= required then
         team_won(team_name)
       end
     end
   end
-  if global.game_config.time_limit > 0 and tick > global.round_start_tick + (global.game_config.time_limit * 60 * 60) then
+  if script_data.game_config.time_limit > 0 and tick > script_data.round_start_tick + (script_data.game_config.time_limit * 60 * 60) then
     local winner = {"none"}
     local winning_score = 0
-    for team_name, score in pairs (global.production_scores) do
+    for team_name, score in pairs (script_data.production_scores) do
       if score > winning_score then
         winner = team_name
         winning_score = score
@@ -2254,33 +2257,33 @@ function check_update_production_score()
 end
 
 function check_update_oil_harvest_score()
-  if global.team_won then return end
-  if not global.game_config.oil_harvest then return end
-  local item_to_check = "crude-oil-barrel"
-  if not game.item_prototypes[item_to_check] then error("Playing oil harvest game mode when crude oil barrels don't exist") end
+  if script_data.team_won then return end
+  if not script_data.game_config.oil_harvest then return end
+  local fluid_to_check = script_data.prototypes.oil
+  if not game.fluid_prototypes[fluid_to_check] then return end
   local scores = {}
   for force_name, force in pairs (game.forces) do
-    local statistics = force.item_production_statistics
-    local input = statistics.get_input_count(item_to_check)
-    local output = statistics.get_output_count(item_to_check)
+    local statistics = force.fluid_production_statistics
+    local input = statistics.get_input_count(fluid_to_check)
+    local output = statistics.get_output_count(fluid_to_check)
     scores[force_name] = input - output
   end
-  global.oil_harvest_scores = scores
+  script_data.oil_harvest_scores = scores
   for k, player in pairs (game.connected_players) do
     update_oil_harvest_frame(player)
   end
-  local required = global.game_config.required_oil_barrels
+  local required = script_data.game_config.required_oil
   if required > 0 then
-    for team_name, score in pairs (global.oil_harvest_scores) do
+    for team_name, score in pairs (script_data.oil_harvest_scores) do
       if score >= required then
         team_won(team_name)
       end
     end
   end
-  if global.game_config.time_limit > 0 and game.tick > (global.round_start_tick + (global.game_config.time_limit * 60 * 60)) then
+  if script_data.game_config.time_limit > 0 and game.tick > (script_data.round_start_tick + (script_data.game_config.time_limit * 60 * 60)) then
     local winner = {"none"}
     local winning_score = 0
-    for team_name, score in pairs (global.oil_harvest_scores) do
+    for team_name, score in pairs (script_data.oil_harvest_scores) do
       if score > winning_score then
         winner = team_name
         winning_score = score
@@ -2291,24 +2294,24 @@ function check_update_oil_harvest_score()
 end
 
 function check_update_space_race_score()
-  if global.team_won then return end
-  if not global.game_config.space_race then return end
+  if script_data.team_won then return end
+  if not script_data.game_config.space_race then return end
   local item_to_check = "satellite"
   if not game.item_prototypes[item_to_check] then error("Playing space race when satellites don't exist") end
   local scores = {}
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     local force = game.forces[team.name]
     if force then
       scores[team.name] = force.get_item_launched(item_to_check)
     end
   end
-  global.space_race_scores = scores
+  script_data.space_race_scores = scores
   for k, player in pairs (game.connected_players) do
     update_space_race_frame(player)
   end
-  local required = global.game_config.required_satellites_sent
+  local required = script_data.game_config.required_satellites_sent
   if required > 0 then
-    for team_name, score in pairs (global.space_race_scores) do
+    for team_name, score in pairs (script_data.space_race_scores) do
       if score >= required then
         team_won(team_name)
       end
@@ -2317,110 +2320,101 @@ function check_update_space_race_score()
 end
 
 function finish_setup()
-  if not global.finish_setup then return end
-  local index = global.finish_setup - game.tick
-  local surface = global.surface
+  if not script_data.finish_setup then return end
+  local index = script_data.finish_setup - game.tick
+  local surface = script_data.surface
   if index == 0 then
     final_setup_step()
-    global.match_started = false
+    script_data.match_started = false
     for k, player in pairs (game.players) do
       create_start_match_gui(player)
     end
     return
   end
-  local name = global.teams[index].name
+  local name = script_data.teams[index].name
   if not name then return end
   local force = game.forces[name]
   if not force then return end
-  if global.map_config.reveal_team_positions then
+  if script_data.map_config.reveal_team_positions then
     for name, other_force in pairs (game.forces) do
       if not is_ignored_force(name) then
         force.chart(surface, get_force_area(other_force))
       end
     end
   end
-  force.friendly_fire = global.team_config.friendly_fire
-  force.share_chart = global.team_config.share_chart
-  local hide_crude_recipe_in_stats = not global.game_config.oil_harvest
-  local fill_recipe = force.recipes["fill-crude-oil-barrel"]
-  if fill_recipe then
-    fill_recipe.hidden_from_flow_stats = hide_crude_recipe_in_stats
-  end
-  local empty_recipe = force.recipes["empty-crude-oil-barrel"]
-  if empty_recipe then
-    empty_recipe.hidden_from_flow_stats = hide_crude_recipe_in_stats
-  end
+  force.friendly_fire = script_data.team_config.friendly_fire
+  force.share_chart = script_data.team_config.share_chart
 end
 
 function final_setup_step()
-  local surface = global.surface
+  local surface = script_data.surface
   duplicate_starting_area_entities()
-  global.finish_setup = nil
-  if global.game_config.team_prep_time > 0 then
-    game.print({"map-ready-auto", global.game_config.team_prep_time})
+  script_data.finish_setup = nil
+  if script_data.game_config.team_prep_time > 0 then
+    game.print({"map-ready-auto", script_data.game_config.team_prep_time})
   else
     game.print({"map-ready"})
   end
 
-  global.map_prepared_tick = game.tick
-  global.setup_finished = true
+  script_data.map_prepared_tick = game.tick
+  script_data.setup_finished = true
   for k, player in pairs (game.connected_players) do
     destroy_player_gui(player)
     player.teleport({0, 1000}, "Lobby")
     choose_joining_gui(player)
   end
-  global.surface.peaceful_mode = true
+  script_data.surface.peaceful_mode = true
   game.forces.enemy.kill_all_units()
-  if global.map_config.reveal_map_center then
-    local radius = global.map_config.average_team_displacement/2
-    local origin = global.spawn_offset
+  if script_data.map_config.reveal_map_center then
+    local radius = script_data.map_config.average_team_displacement/2
+    local origin = script_data.spawn_offset
     local area = {{origin.x - radius, origin.y - radius}, {origin.x + (radius - 32), origin.y + (radius - 32)}}
     for k, force in pairs (game.forces) do
       force.chart(surface, area)
     end
   end
-  global.space_race_scores = {}
-  global.science_speedup = 1
-  global.elapsed_seconds = 0
-  global.oil_harvest_scores = {}
-  global.production_scores = {}
-  if global.game_config.production_score then
-    global.price_list = global.price_list or production_score.generate_price_list()
+  script_data.space_race_scores = {}
+  script_data.science_speedup = 1
+  script_data.elapsed_seconds = 0
+  script_data.oil_harvest_scores = {}
+  script_data.production_scores = {}
+  if script_data.game_config.production_score then
+    script_data.price_list = script_data.price_list or production_score.generate_price_list()
   end
-  global.research_time_wasted = {}
-  global.previous_tech = {}
+  script_data.research_time_wasted = {}
+  script_data.previous_tech = {}
 end
 
 function start_match()
-  global.match_started = true
-  global.round_start_tick = game.tick
+  script_data.match_started = true
+  script_data.round_start_tick = game.tick
   game.print({"match-started"})
-  global.end_no_rush = game.tick + (global.game_config.no_rush_time * 60 * 60)
-  if global.game_config.no_rush_time > 0 then
+  script_data.end_no_rush = game.tick + (script_data.game_config.no_rush_time * 60 * 60)
+  if script_data.game_config.no_rush_time > 0 then
     game.forces.enemy.kill_all_units()
-    game.print({"no-rush-begins", global.game_config.no_rush_time})
+    game.print({"no-rush-begins", script_data.game_config.no_rush_time})
   else
-    global.surface.peaceful_mode = global.map_config.peaceful_mode
+    script_data.surface.peaceful_mode = script_data.map_config.peaceful_mode
   end
-  local fast_bp_time = global.game_config.fast_blueprinting_time
-  global.end_fast_blueprinting = game.tick + (fast_bp_time * 60 * 60)
+  local fast_bp_time = script_data.game_config.fast_blueprinting_time
+  script_data.end_fast_blueprinting = game.tick + (fast_bp_time * 60 * 60)
   if fast_bp_time > 0 then
     game.print({"fast-blueprinting-begins", fast_bp_time})
   end
   create_exclusion_map()
-  if global.game_config.base_exclusion_time > 0 then
-    global.check_base_exclusion = true
-    game.print({"base-exclusion-begins", global.game_config.base_exclusion_time})
+  if script_data.game_config.base_exclusion_time > 0 then
+    script_data.check_base_exclusion = true
+    game.print({"base-exclusion-begins", script_data.game_config.base_exclusion_time})
   end
-  if global.team_config.defcon_mode then
-    if global.team_config.defcon_random then
+  if script_data.team_config.defcon_mode then
+    if script_data.team_config.defcon_random then
       defcon_research()
     else
       game.print({"defcon-non-random-begins"})
-      if global.game_config.nuclear_research_buff then
+      if script_data.game_config.nuclear_research_buff then
         game.print({"nuclear-research-buff-alert"})
       end
-      if global.game_config.tanks_research_nerf then
+      if script_data.game_config.tanks_research_nerf then
         game.print({"tanks-research-nerf-alert"})
       end
     end
@@ -2432,15 +2426,16 @@ function start_match()
       place_player_on_battle_surface(player)
     end
   end
+
   script.raise_event(events.on_round_start, {})
 end
 
 function check_force_protection(force)
-  if not global.map_config.protect_empty_teams then return end
+  if not script_data.map_config.protect_empty_teams then return end
   if not (force and force.valid) then return end
   if is_ignored_force(force.name) then return end
-  if not global.protected_teams then global.protected_teams = {} end
-  local protected = global.protected_teams[force.name] ~= nil
+  if not script_data.protected_teams then script_data.protected_teams = {} end
+  local protected = script_data.protected_teams[force.name] ~= nil
   local should_protect = #force.connected_players == 0
   if protected and should_protect then return end
   if (not protected) and (not should_protect) then return end
@@ -2456,8 +2451,8 @@ function check_force_protection(force)
 end
 
 function protect_force_area(force)
-  if not global.map_config.protect_empty_teams then return end
-  local surface = global.surface
+  if not script_data.map_config.protect_empty_teams then return end
+  local surface = script_data.surface
   if not (surface and surface.valid) then return end
   local non_destructible = {}
   for k, entity in pairs (surface.find_entities_filtered{force = force, area = get_force_area(force)}) do
@@ -2466,40 +2461,40 @@ function protect_force_area(force)
     end
     entity.destructible = false
   end
-  if not global.protected_teams then
-    global.protected_teams = {}
+  if not script_data.protected_teams then
+    script_data.protected_teams = {}
   end
-  global.protected_teams[force.name] = non_destructible
+  script_data.protected_teams[force.name] = non_destructible
 end
 
 function unprotect_force_area(force)
-  if not global.map_config.protect_empty_teams then return end
-  local surface = global.surface
+  if not script_data.map_config.protect_empty_teams then return end
+  local surface = script_data.surface
   if not (surface and surface.valid) then return end
-  if not global.protected_teams then
-    global.protected_teams = {}
+  if not script_data.protected_teams then
+    script_data.protected_teams = {}
   end
-  local entities = global.protected_teams[force.name] or {}
+  local entities = script_data.protected_teams[force.name] or {}
   for k, entity in pairs (surface.find_entities_filtered{force = force, area = get_force_area(force)}) do
     if (not entity.unit_number) or (not entities[entity.unit_number]) then
       entity.destructible = true
     end
   end
-  global.protected_teams[force.name] = nil
+  script_data.protected_teams[force.name] = nil
 end
 
 function get_force_area(force)
   if not (force and force.valid) then return end
-  local surface = global.surface
+  local surface = script_data.surface
   if not (surface and surface.valid) then return end
-  local radius = get_starting_area_radius(true)
+  local radius = config.get_starting_area_radius(true)
   local origin = force.get_spawn_position(surface)
   return {{origin.x - radius, origin.y - radius}, {origin.x + (radius - 1), origin.y + (radius - 1)}}
 end
 
 function update_progress_bar()
-  if not global.progress then return end
-  local percent = global.progress
+  if not script_data.progress then return end
+  local percent = script_data.progress
   local finished = (percent >=1)
   function update_bar_gui(gui)
     if gui.progress_bar then
@@ -2518,40 +2513,36 @@ function update_progress_bar()
     update_bar_gui(player.gui.center)
   end
   if finished then
-    global.progress = nil
-    global.setup_duration = nil
-    global.finish_tick = nil
+    script_data.progress = nil
+    script_data.setup_duration = nil
+    script_data.finish_tick = nil
   end
 end
 
 function create_silo_for_force(force)
-  if not (global.game_config.last_silo_standing or global.game_config.space_race) then return end
+  if not script_data.game_config.last_silo_standing then return end
   if not force then return end
   if not force.valid then return end
-  local surface = global.surface
+  local surface = script_data.surface
   local origin = force.get_spawn_position(surface)
-  local offset = global.silo_offset
+  local offset = script_data.silo_offset
   local silo_position = {x = origin.x + (offset.x or offset[1]), y = origin.y + (offset.y or offset[2])}
-  local silo_name = global.prototypes.silo
-
+  local silo_name = script_data.prototypes.silo
   if not game.entity_prototypes[silo_name] then log("Silo not created as "..silo_name.." is not a valid entity prototype") return end
   local silo = surface.create_entity{name = silo_name, position = silo_position, force = force}
 
   silo.minable = false
 
   if silo.supports_backer_name() then
-  silo.backer_name = tostring(force.name)
+    silo.backer_name = tostring(force.name)
   end
 
   script.raise_event(defines.events.script_raised_built, {created_entity = silo})
 
-  if not global.game_config.last_silo_standing then
-    silo.destructible = false
-  end
-  if not global.silos then global.silos = {} end
-  global.silos[force.name] = silo
+  if not script_data.silos then script_data.silos = {} end
+  script_data.silos[force.name] = silo
 
-  local tile_name = global.prototypes.tile_2
+  local tile_name = script_data.prototypes.tile_2
   if not game.tile_prototypes[tile_name] then tile_name = get_walkable_tile() end
 
   local tiles_2 = {}
@@ -2577,12 +2568,12 @@ end
 function setup_research(force)
   if not force then return end
   if not force.valid then return end
-  local tier = global.team_config.research_level.selected
+  local tier = script_data.team_config.research_level.selected
   local index
   local set = (tier ~= "none")
-  for k, name in pairs (global.team_config.research_level.options) do
-    if global.research_ingredient_list[name] ~= nil then
-      global.research_ingredient_list[name] = set
+  for k, name in pairs (script_data.team_config.research_level.options) do
+    if script_data.research_ingredient_list[name] ~= nil then
+      script_data.research_ingredient_list[name] = set
     end
     if name == tier then set = false end
   end
@@ -2590,7 +2581,7 @@ function setup_research(force)
   force.research_all_technologies()
   for k, technology in pairs (force.technologies) do
     for j, ingredient in pairs (technology.research_unit_ingredients) do
-      if not global.research_ingredient_list[ingredient.name] then
+      if not script_data.research_ingredient_list[ingredient.name] then
         technology.researched = false
         break
       end
@@ -2599,22 +2590,22 @@ function setup_research(force)
 end
 
 function create_starting_turrets(force)
-  if not global.map_config.team_turrets then return end
+  if not script_data.map_config.team_turrets then return end
   if not (force and force.valid) then return end
-  local ammo_name = global.map_config.turret_ammunition.selected or "firearm-magazine"
+  local ammo_name = script_data.map_config.turret_ammunition.selected or "firearm-magazine"
   local turret_name
   if ammo_name == "laser-turret" then
     turret_name = "laser-turret"
   else
-    turret_name = global.prototypes.turret
+    turret_name = script_data.prototypes.turret
   end
   if not game.entity_prototypes[turret_name] then return end
   if not game.item_prototypes[ammo_name] then return end
-  local surface = global.surface
+  local surface = script_data.surface
   local height = surface.map_gen_settings.height / 2
   local width = surface.map_gen_settings.width / 2
   local origin = force.get_spawn_position(surface)
-  local radius = get_starting_area_radius(true) - 18 --[[radius in tiles]]
+  local radius = config.get_starting_area_radius(true) - 18 --[[radius in tiles]]
   local limit = math.min(width - math.abs(origin.x), height - math.abs(origin.y)) - 6
   radius = math.min(radius, limit)
   local turret_positions = {}
@@ -2649,7 +2640,7 @@ function create_starting_turrets(force)
     end
   end
   local tiles = {}
-  local tile_name = global.prototypes.tile_2
+  local tile_name = script_data.prototypes.tile_2
   if not game.tile_prototypes[tile_name] then tile_name = get_walkable_tile() end
   local stack = {name = ammo_name, count = 20}
   local floor = math.floor
@@ -2679,18 +2670,18 @@ function create_starting_turrets(force)
 end
 
 function create_starting_artillery(force)
-  if not global.map_config.team_artillery then return end
+  if not script_data.map_config.team_artillery then return end
   if not (force and force.valid) then return end
-  local turret_name = global.prototypes.artillery
+  local turret_name = script_data.prototypes.artillery
   if not game.entity_prototypes[turret_name] then return end
-  local ammo_name = global.prototypes.artillery_ammo
+  local ammo_name = script_data.prototypes.artillery_ammo
   if not game.item_prototypes[ammo_name] then return end
-  local surface = global.surface
+  local surface = script_data.surface
   local height = surface.map_gen_settings.height / 2
   local width = surface.map_gen_settings.width / 2
   local origin = force.get_spawn_position(surface)
-  local size = global.map_config.starting_area_size.selected
-  local radius = get_starting_area_radius() - 1 --[[radius in chunks]]
+  local size = script_data.map_config.starting_area_size.selected
+  local radius = config.get_starting_area_radius() - 1 --[[radius in chunks]]
   if radius < 1 then return end
   local positions = {}
   local tile_positions = {}
@@ -2732,7 +2723,7 @@ function create_starting_artillery(force)
   end
   local stack = {name = ammo_name, count = 20}
   local tiles = {}
-  local tile_name = global.prototypes.tile_2
+  local tile_name = script_data.prototypes.tile_2
   if not game.tile_prototypes[tile_name] then tile_name = get_walkable_tile() end
   local floor = math.floor
   for k, position in pairs (positions) do
@@ -2752,14 +2743,14 @@ function create_starting_artillery(force)
 end
 
 function create_wall_for_force(force)
-  if not global.map_config.team_walls then return end
+  if not script_data.map_config.team_walls then return end
   if not force.valid then return end
-  local surface = global.surface
+  local surface = script_data.surface
   local height = surface.map_gen_settings.height / 2
   local width = surface.map_gen_settings.width / 2
   local origin = force.get_spawn_position(surface)
-  local size = global.map_config.starting_area_size.selected
-  local radius = get_starting_area_radius(true) - 13 --[[radius in tiles]]
+  local size = script_data.map_config.starting_area_size.selected
+  local radius = config.get_starting_area_radius(true) - 13 --[[radius in tiles]]
   local limit = math.min(width - math.abs(origin.x), height - math.abs(origin.y)) - 1
   radius = math.min(radius, limit)
   if radius < 2 then return end
@@ -2777,7 +2768,7 @@ function create_wall_for_force(force)
     insert(perimeter_left, {x = origin.x - radius, y = origin.y + Y})
     insert(perimeter_right, {x = origin.x + (radius-1), y = origin.y + Y})
   end
-  local tile_name = global.prototypes.tile_1
+  local tile_name = script_data.prototypes.tile_1
   if not game.tile_prototypes[tile_name] then tile_name = get_walkable_tile() end
   local areas = {
     {{perimeter_top[1].x, perimeter_top[1].y - 1}, {perimeter_top[#perimeter_top].x, perimeter_top[1].y + 3}},
@@ -2790,8 +2781,8 @@ function create_wall_for_force(force)
       entity.destroy(true)
     end
   end
-  local wall_name = global.prototypes.wall
-  local gate_name = global.prototypes.gate
+  local wall_name = script_data.prototypes.wall
+  local gate_name = script_data.prototypes.gate
   if not game.entity_prototypes[wall_name] then
     log("Setting walls cancelled as "..wall_name.." is not a valid entity prototype")
     return
@@ -2849,7 +2840,7 @@ function create_wall_for_force(force)
       surface.create_entity{name = wall_name, position = position, force = force}
     end
   end
-  if global.map_config.team_paved then
+  if script_data.map_config.team_paved then
     for X = origin.x - radius + 2, origin.x + radius - 2 do
       for Y = origin.y - radius + 2, origin.y + radius - 2 do
         local tile = surface.get_tile(X, Y)
@@ -2879,26 +2870,15 @@ function spairs(t, order)
   end
 end
 
-function verify_oil_harvest()
-  if game.item_prototypes["crude-oil-barrel"] and game.entity_prototypes["crude-oil"] and game.recipe_prototypes["fill-crude-oil-barrel"] and game.recipe_prototypes["empty-crude-oil-barrel"] then return end
-  for option, k in pairs (global.game_config) do
-    if option == "oil_harvest" then
-      table.remove(global.game_config, option)
-      log("Oil harvest mode removed from scenario, as oil barrels and crude oil were not present in this configuration.")
-      break
-    end
-  end
-end
-
 function oil_harvest_prune_oil(event)
-  if not global.game_config.oil_harvest then return end
-  if not global.game_config.oil_only_in_center then return end
+  if not script_data.game_config.oil_harvest then return end
+  if not script_data.game_config.oil_only_in_center then return end
   local area = event.area
   local center = {x = (area.left_top.x + area.right_bottom.x) / 2, y = (area.left_top.y + area.right_bottom.y) / 2}
-  local origin = global.spawn_offset
+  local origin = script_data.spawn_offset
   local distance_from_center = (((center.x - origin.x) ^ 2) + ((center.y - origin.y) ^ 2)) ^ 0.5
-  if distance_from_center > global.map_config.average_team_displacement/2.5 then
-    for k, entity in pairs (event.surface.find_entities_filtered{area = area, name = "crude-oil"}) do
+  if distance_from_center > script_data.map_config.average_team_displacement / 2.5 then
+    for k, entity in pairs (event.surface.find_entities_filtered{area = area, name = script_data.prototypes.oil_resource}) do
       entity.destroy()
     end
   end
@@ -2931,14 +2911,14 @@ button_press_functions = {
 }
 
 function duplicate_starting_area_entities()
-  if not global.map_config.duplicate_starting_area_entities then return end
-  local copy_team = global.teams[1]
+  if not script_data.map_config.duplicate_starting_area_entities then return end
+  local copy_team = script_data.teams[1]
   if not copy_team then return end
   local force = game.forces[copy_team.name]
   if not force then return end
-  local surface = global.surface
+  local surface = script_data.surface
   local origin_spawn = force.get_spawn_position(surface)
-  local starting_radius = get_starting_area_radius(true)
+  local starting_radius = config.get_starting_area_radius(true)
   local uranium_x = origin_spawn.x - starting_radius - 8 + 0.5
   local uranium_y = origin_spawn.y + starting_radius/2 + 0.5
   local uranium_radius = 17
@@ -2953,7 +2933,7 @@ function duplicate_starting_area_entities()
       end
     end
   end
-  local radius = starting_radius + global.map_config.chunks_to_extend_duplication * 32
+  local radius = starting_radius + script_data.map_config.chunks_to_extend_duplication * 32
   local area = {{origin_spawn.x - radius, origin_spawn.y - radius}, {origin_spawn.x + radius, origin_spawn.y + radius}}
   local entities = surface.find_entities_filtered{area = area, force = "neutral"}
   local insert = table.insert
@@ -2989,8 +2969,8 @@ function duplicate_starting_area_entities()
     end
   end
 
-  local mirror = #global.teams == 2
-  for k, team in pairs (global.teams) do
+  local mirror = #script_data.teams == 2
+  for k, team in pairs (script_data.teams) do
     local force = game.forces[team.name]
     if force then
       if team.name ~= copy_team.name then
@@ -3037,7 +3017,7 @@ function duplicate_starting_area_entities()
       end
     end
   end
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     local force = game.forces[team.name]
     if force then
       create_wall_for_force(force)
@@ -3051,17 +3031,17 @@ function duplicate_starting_area_entities()
 end
 
 function check_spectator_chart()
-  chart_all = function(force)
+  local chart_all = function(force)
     if not (force and force.valid) then return end
     if #force.connected_players > 0 then
-      force.chart_all(global.surface)
+      force.chart_all(script_data.surface)
     end
   end
-  if global.team_won or not global.map_config.spectator_fog_of_war then
+  if script_data.team_won or not script_data.map_config.spectator_fog_of_war then
     chart_all(game.forces.spectator)
   end
-  if global.team_won then
-    for k, team in pairs (global.teams) do
+  if script_data.team_won then
+    for k, team in pairs (script_data.teams) do
       local force = game.forces[team.name]
       chart_all(force)
     end
@@ -3070,14 +3050,14 @@ end
 
 function create_starting_chest(force)
   if not (force and force.valid) then return end
-  local value = global.team_config.starting_chest.selected
+  local value = script_data.team_config.starting_chest.selected
   if value == "none" then return end
-  local multiplier = global.team_config.starting_chest_multiplier
+  local multiplier = script_data.team_config.starting_chest_multiplier
   if not (multiplier > 0) then return end
-  local inventory = global.inventory_list[value]
+  local inventory = script_data.inventory_list[value]
   if not inventory then return end
-  local surface = global.surface
-  local chest_name = global.prototypes.chest
+  local surface = script_data.surface
+  local chest_name = script_data.prototypes.chest
   local prototype = game.entity_prototypes[chest_name]
   if not prototype then
     log("Starting chest "..chest_name.." is not a valid entity prototype, picking a new container from prototype list")
@@ -3101,27 +3081,27 @@ function create_starting_chest(force)
   end
   local tiles = {}
   local grass = {}
-  local tile_name = global.prototypes.tile_1
+  local tile_name = script_data.prototypes.tile_1
   if not game.tile_prototypes[tile_name] then tile_name = get_walkable_tile() end
   table.insert(tiles, {name = tile_name, position = {x = position.x, y = position.y}})
   chest.destructible = false
   local items = game.item_prototypes
   for name, count in pairs (inventory) do
     if items[name] then
-    local count_to_insert = math.ceil(count*multiplier)
-    local difference = count_to_insert - chest.insert{name = name, count = count_to_insert}
-    while difference > 0 do
-      index = index + 1
-      position = {x = origin.x + get_chest_offset(index).x * size, y = origin.y + get_chest_offset(index).y * size}
-      chest = surface.create_entity{name = chest_name, position = position, force = force}
-      for k, v in pairs (surface.find_entities_filtered{force = "neutral", area = chest.bounding_box}) do
-        v.destroy()
+      local count_to_insert = math.ceil(count*multiplier)
+      local difference = count_to_insert - chest.insert{name = name, count = count_to_insert}
+      while difference > 0 do
+        index = index + 1
+        position = {x = origin.x + get_chest_offset(index).x * size, y = origin.y + get_chest_offset(index).y * size}
+        chest = surface.create_entity{name = chest_name, position = position, force = force}
+        for k, v in pairs (surface.find_entities_filtered{force = "neutral", area = chest.bounding_box}) do
+          v.destroy()
+        end
+        table.insert(tiles, {name = tile_name, position = {x = position.x, y = position.y}})
+        chest.destructible = false
+        difference = difference - chest.insert{name = name, count = difference}
       end
-      table.insert(tiles, {name = tile_name, position = {x = position.x, y = position.y}})
-      chest.destructible = false
-      difference = difference - chest.insert{name = name, count = difference}
     end
-  end
   end
   set_tiles_safe(surface, tiles)
 end
@@ -3172,11 +3152,11 @@ function set_tiles_safe(surface, tiles)
 end
 
 function create_exclusion_map()
-  local surface = global.surface
+  local surface = script_data.surface
   if not (surface and surface.valid) then return end
   local exclusion_map = {}
-  local radius = get_starting_area_radius() --[[radius in chunks]]
-  for k, team in pairs (global.teams) do
+  local radius = config.get_starting_area_radius() --[[radius in chunks]]
+  for k, team in pairs (script_data.teams) do
     local name = team.name
     local force = game.forces[name]
     if force then
@@ -3193,29 +3173,29 @@ function create_exclusion_map()
       end
     end
   end
-  global.exclusion_map = exclusion_map
+  script_data.exclusion_map = exclusion_map
 end
 
 function check_base_exclusion()
-  if not (global.check_base_exclusion or global.protected_teams) then return end
+  if not (script_data.check_base_exclusion or script_data.protected_teams) then return end
 
-  if global.check_base_exclusion and game.tick > (global.round_start_tick + (global.game_config.base_exclusion_time * 60 * 60)) then
-    global.check_base_exclusion = nil
+  if script_data.check_base_exclusion and game.tick > (script_data.round_start_tick + (script_data.game_config.base_exclusion_time * 60 * 60)) then
+    script_data.check_base_exclusion = nil
     game.print({"base-exclusion-ends"})
   end
 
 end
 
 function check_player_base_exclusion(player)
-  if not (global.check_base_exclusion or global.protected_teams) then return end
+  if not (script_data.check_base_exclusion or script_data.protected_teams) then return end
 
-    if not is_ignored_force(player.force.name) then
-      check_player_exclusion(player, get_chunk_map_position(player.position))
-    end
+  if not is_ignored_force(player.force.name) then
+    check_player_exclusion(player, get_chunk_map_position(player.position))
   end
+end
 
 function get_chunk_map_position(position)
-  local map = global.exclusion_map
+  local map = script_data.exclusion_map
   local chunk_x = math.floor(position.x / 32)
   local chunk_y = math.floor(position.y / 32)
   if map[chunk_x] then
@@ -3241,10 +3221,10 @@ function check_player_exclusion(player, force_name)
   local force = game.forces[force_name]
   if not (force and force.valid and player and player.valid) then return end
   if force == player.force or force.get_friend(player.force) then return end
-  if not (global.check_base_exclusion or (global.protected_teams and global.protected_teams[force_name])) then return end
-  local surface = global.surface
+  if not (script_data.check_base_exclusion or (script_data.protected_teams and script_data.protected_teams[force_name])) then return end
+  local surface = script_data.surface
   local origin = force.get_spawn_position(surface)
-  local radius = get_starting_area_radius(true) --[[radius in tiles]]
+  local radius = config.get_starting_area_radius(true) --[[radius in tiles]]
   local position = {x = player.position.x, y = player.position.y}
   local vector = {x = 0, y = 0}
 
@@ -3277,8 +3257,8 @@ function check_player_exclusion(player, force_name)
     player.teleport(new_position)
   end
 
-  if global.check_base_exclusion then
-    local time_left = math.ceil((global.round_start_tick + (global.game_config.base_exclusion_time * 60 * 60) - game.tick) / 3600)
+  if script_data.check_base_exclusion then
+    local time_left = math.ceil((script_data.round_start_tick + (script_data.game_config.base_exclusion_time * 60 * 60) - game.tick) / 3600)
     player.print({"base-exclusion-teleport", time_left})
   else
     player.print({"protected-base-area"})
@@ -3294,24 +3274,24 @@ function set_button_style(button)
 end
 
 function check_start_match()
-  if global.game_config.team_prep_time <= 0 or game.tick < (global.game_config.team_prep_time * 60 * 60) + global.map_prepared_tick then return end
+  if script_data.game_config.team_prep_time <= 0 or game.tick < (script_data.game_config.team_prep_time * 60 * 60) + script_data.map_prepared_tick then return end
   start_match()
 end
 
 function check_restart_round()
-  if not global.team_won then return end
-  local new_round_time = global.game_config.auto_new_round_time
-  if not (new_round_time > 0) then return end
-  if game.tick < (new_round_time * 60 * 60) + global.team_won then return end
+  if not script_data.team_won then return end
+  local time = script_data.game_config.auto_new_round_time
+  if not (time > 0) then return end
+  if game.tick < (time * 60 * 60) + script_data.team_won then return end
   end_round()
   destroy_config_for_all()
   prepare_next_round()
 end
 
 function team_won(name)
-  global.team_won = game.tick
-  if global.game_config.auto_new_round_time > 0 then
-    game.print({"team-won-auto", name, global.game_config.auto_new_round_time}, game_message_color)
+  script_data.team_won = game.tick
+  if script_data.game_config.auto_new_round_time > 0 then
+    game.print({"team-won-auto", name, script_data.game_config.auto_new_round_time}, game_message_color)
   else
     game.print({"team-won", name}, game_message_color)
   end
@@ -3327,7 +3307,7 @@ function offset_respawn_position(player)
   if not (player and player.valid and player.character) then return end
   local surface = player.surface
   local origin = player.force.get_spawn_position(surface)
-  local radius = get_starting_area_radius(true) - 32
+  local radius = config.get_starting_area_radius(true) - 32
   if not (radius > 0) then return end
   local random_position = {origin.x + math.random(-radius, radius), origin.y + math.random(-radius, radius)}
   local position = surface.find_non_colliding_position(player.character.name, random_position, 32, 1)
@@ -3337,7 +3317,7 @@ end
 
 function disband_team(force, desination_force)
   local count = 0
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     if game.forces[team.name] then
       count = count + 1
     end
@@ -3347,11 +3327,11 @@ function disband_team(force, desination_force)
     return
   end
   force.print{"join-new-team"}
-  local players = global.players_to_disband or {}
+  local players = script_data.players_to_disband or {}
   for k, player in pairs (force.players) do
     players[player.name] = true
   end
-  global.players_to_disband = players
+  script_data.players_to_disband = players
   if desination_force and force ~= desination_force then
     game.merge_forces(force, desination_force)
   else
@@ -3370,13 +3350,13 @@ recursive_data_check = function(new_data, old_data)
 end
 
 check_cursor_for_disabled_items = function(event)
-  if not global.disabled_items then return end
+  if not script_data.disabled_items then return end
   local player = game.players[event.player_index]
   if not (player and player.valid) then return end
   local stack = player.cursor_stack
   if (stack and stack.valid_for_read) then
-    local disable_bp = global.game_config.disable_starting_blueprints and not player.force.technologies["construction-robotics"].researched
-    if global.disabled_items[stack.name] or disable_bp and (stack.name == "blueprint" or stack.name == "blueprint-book") then
+    local disable_bp = script_data.game_config.disable_starting_blueprints and not player.force.technologies["construction-robotics"].researched
+    if script_data.disabled_items[stack.name] or disable_bp and (stack.name == "blueprint" or stack.name == "blueprint-book") then
       stack.clear()
     end
   end
@@ -3387,10 +3367,10 @@ disable_items_elem_changed = function(event)
   local player = game.players[event.player_index]
   if not (player and player.valid and gui and gui.valid) then return end
   local parent = gui.parent
-  if not global.disabled_items then
-    global.disabled_items = {}
+  if not script_data.disabled_items then
+    script_data.disabled_items = {}
   end
-  local items = global.disabled_items
+  local items = script_data.disabled_items
   if parent.name ~= "disable_items_table" then return end
   local value = gui.elem_value
   if not value then
@@ -3417,7 +3397,7 @@ disable_items_elem_changed = function(event)
     items[value] = gui.index
     parent.add{type = "choose-elem-button", elem_type = "item"}
   end
-  global.disabled_items = items
+  script_data.disabled_items = items
 end
 
 recipe_picker_elem_changed = function(event)
@@ -3459,7 +3439,7 @@ function recipe_picker_elem_update(gui, player)
   table.add{type = "label", caption = {"products"}, style = "bold_label"}
   local ingredients = recipe.ingredients
   local products = recipe.products
-  local prices = global.price_list
+  local prices = script_data.price_list
   local cost = 0
   local gain = 0
   local prototypes = {
@@ -3551,7 +3531,7 @@ function add_pusher(gui)
 end
 
 function check_on_built_protection(event)
-  if not global.map_config.enemy_building_restriction then return end
+  if not script_data.map_config.enemy_building_restriction then return end
   local entity = event.created_entity
   local player = game.players[event.player_index]
   if not (entity and entity.valid and player and player.valid) then return end
@@ -3569,20 +3549,20 @@ function check_on_built_protection(event)
 end
 
 function check_defcon()
-  if not global.team_config.defcon_mode then return end
-  if global.team_config.defcon_random then
-    local defcon_tick = global.last_defcon_tick
+  if not script_data.team_config.defcon_mode then return end
+  if script_data.team_config.defcon_random then
+    local defcon_tick = script_data.last_defcon_tick
     if not defcon_tick then
-      global.last_defcon_tick = game.tick
+      script_data.last_defcon_tick = game.tick
       return
     end
-    local duration = math.max(60, (global.team_config.defcon_timer * 60 * 60))
+    local duration = math.max(60, (script_data.team_config.defcon_timer * 60 * 60))
     local tick_of_defcon = defcon_tick + duration
     local current_tick = game.tick
     local progress = math.max(0, math.min(1, 1 - (tick_of_defcon - current_tick) / duration))
-    local tech = global.next_defcon_tech
+    local tech = script_data.next_defcon_tech
     if tech and tech.valid then
-      for k, team in pairs (global.teams) do
+      for k, team in pairs (script_data.teams) do
         local force = game.forces[team.name]
         if force then
           if force.current_research ~= tech.name then
@@ -3594,74 +3574,74 @@ function check_defcon()
     end
     if current_tick >= tick_of_defcon then
       defcon_research()
-      global.last_defcon_tick = current_tick
+      script_data.last_defcon_tick = current_tick
     end
   else
-    local seconds = global.elapsed_seconds
+    local seconds = script_data.elapsed_seconds
     if seconds == nil then
       seconds = 0
     else
       seconds = seconds + 1
     end
-    global.elapsed_seconds = seconds
-    for k, team in pairs (global.teams) do
+    script_data.elapsed_seconds = seconds
+    for k, team in pairs (script_data.teams) do
       local force = game.forces[team.name]
       if force then
         local tech = force.current_research
         if tech and tech.valid then
           local cost = 0
           for j, ingredient in pairs (tech.research_unit_ingredients) do
-            local ingredient_cost = global.science_pack_costs[ingredient.name] * ingredient.amount * tech.research_unit_count
+            local ingredient_cost = script_data.science_pack_costs[ingredient.name] * ingredient.amount * tech.research_unit_count
             cost = cost + ingredient_cost
           end
-          if global.game_config.nuclear_research_buff and (tech.name == "atomic-bomb" or tech.name == "nuclear-power") then
+          if script_data.game_config.nuclear_research_buff and (tech.name == "atomic-bomb" or tech.name == "nuclear-power") then
             cost = cost / 4
-            if global.previous_tech[team.name] ~= tech.name then
+            if script_data.previous_tech[team.name] ~= tech.name then
               force.print({"nuclear-research-buff-alert"})
             end
           end
-          if global.game_config.tanks_research_nerf and tech.name == "tanks" then
+          if script_data.game_config.tanks_research_nerf and tech.name == "tanks" then
             cost = cost * 8
-            if global.previous_tech[team.name] ~= tech.name then
+            if script_data.previous_tech[team.name] ~= tech.name then
               force.print({"tanks-research-nerf-alert"})
             end
           end
           local progress = force.research_progress
-          local increment = (force.laboratory_speed_modifier + 1) * global.science_speedup * global.team_config.defcon_random_multiplier / cost
+          local increment = (force.laboratory_speed_modifier + 1) * script_data.science_speedup * script_data.team_config.defcon_random_multiplier / cost
           progress = math.min(1, progress + increment)
           force.research_progress = progress
-          if global.research_time_wasted then global.research_time_wasted[team.name] = 100 end
-          if global.previous_tech then global.previous_tech[team.name] = tech.name end
+          if script_data.research_time_wasted then script_data.research_time_wasted[team.name] = 100 end
+          if script_data.previous_tech then script_data.previous_tech[team.name] = tech.name end
         else
-          if global.previous_tech then 
-            global.previous_tech[team.name] = "none"
-            if global.research_time_wasted then 
-              local time_wasted = global.research_time_wasted[team.name]
+          if script_data.previous_tech then 
+            script_data.previous_tech[team.name] = "none"
+            if script_data.research_time_wasted then 
+              local time_wasted = script_data.research_time_wasted[team.name]
               if not time_wasted then time_wasted = 100 end
               if time_wasted % 120 == 0 then
                 force.print({"defcon-select-research-warning"}, game_message_color)
               end
-              global.research_time_wasted[team.name] = time_wasted + 1
+              script_data.research_time_wasted[team.name] = time_wasted + 1
             end
           end
         end
       end
     end
-    local match_ticks = math.max(0, game.tick - global.round_start_tick)
+    local match_ticks = math.max(0, game.tick - script_data.round_start_tick)
     local minutes = match_ticks / 60 / 60
     local minutes_squared = minutes * minutes
-    global.science_speedup = 2.8 + 0.083 * minutes + 0.0042 * minutes_squared + 0.00000056 * minutes_squared * minutes_squared
+    script_data.science_speedup = 2.8 + 0.083 * minutes + 0.0042 * minutes_squared + 0.00000056 * minutes_squared * minutes_squared
   end
 end
 
 function check_game_speed(wakeup)
   if game.tick % 300 ~= 0 and game.speed == 1 then return end
   if wakeup then
-    game.speed = global.game_speed
+    game.speed = script_data.game_speed
     return
   end
   local game_slowed
-  if not global.setup_finished then
+  if not script_data.setup_finished then
     game_slowed = false
   else
     game_slowed = true
@@ -3674,13 +3654,13 @@ function check_game_speed(wakeup)
   end
   if game_slowed then
     if game.speed == 0.05 then
-      global.game_speed = 1
+      script_data.game_speed = 1
     else
-      global.game_speed = game.speed
+      script_data.game_speed = game.speed
     end
     game.speed = 0.05
   else
-    game.speed = global.game_speed
+    game.speed = script_data.game_speed
   end
 end
 
@@ -3694,9 +3674,10 @@ recursive_technology_prerequisite = function(tech)
 end
 
 function defcon_research()
-  local tech = global.next_defcon_tech
+
+  local tech = script_data.next_defcon_tech
   if tech and tech.valid then
-    for k, team in pairs (global.teams) do
+    for k, team in pairs (script_data.teams) do
       local force = game.forces[team.name]
       if force then
         local tech = force.technologies[tech.name]
@@ -3713,7 +3694,7 @@ function defcon_research()
   end
 
   local force
-  for k, team in pairs (global.teams) do
+  for k, team in pairs (script_data.teams) do
     force = game.forces[team.name]
     if force and force.valid then
       break
@@ -3730,8 +3711,8 @@ function defcon_research()
   local random_tech = available_techs[math.random(#available_techs)]
   if not random_tech then return end
   random_tech = recursive_technology_prerequisite(random_tech)
-  global.next_defcon_tech = game.technology_prototypes[random_tech.name]
-  for k, team in pairs (global.teams) do
+  script_data.next_defcon_tech = game.technology_prototypes[random_tech.name]
+  for k, team in pairs (script_data.teams) do
     local force = game.forces[team.name]
     if force then
       force.current_research = random_tech.name
@@ -3742,16 +3723,16 @@ end
 function check_neutral_chests_and_vehicles(event)
   local entity = event.created_entity
   if not (entity and entity.valid) then return end
-  local neutralize_chest = global.game_config.neutral_chests and entity.type == "container"
-  local neutralize_vehicle = global.game_config.neutral_vehicles and entity.type == "item-with-entity-data" and entity.name ~= "locomotive"
+  local neutralize_chest = script_data.game_config.neutral_chests and entity.type == "container"
+  local neutralize_vehicle = script_data.game_config.neutral_vehicles and entity.type == "item-with-entity-data" and entity.name ~= "locomotive"
   if neutralize_chest or neutralize_vehicle then
     entity.force = "neutral"
   end
 end
 
 function check_wrecks_corpse_timer()
-  if not global.wrecks then return end
-  for wreck, tick in pairs(global.wrecks) do
+  if not script_data.wrecks then return end
+  for wreck, tick in pairs(script_data.wrecks) do
     if wreck and wreck.valid then
       local wreck_inventory = wreck.get_inventory(defines.inventory.item_main)
       if wreck_inventory.is_empty() or game.tick > tick + 15 * 60 * 60 then
@@ -3774,12 +3755,12 @@ function export_button_press(player)
   textfield.style.width = player.display_resolution.width * 0.6
   local data =
   {
-    game_config = global.game_config,
-    team_config = global.team_config,
-    map_config = global.map_config,
-    modifier_list = global.modifier_list,
-    teams = global.teams,
-    disabled_items = global.disabled_items
+    game_config = script_data.game_config,
+    team_config = script_data.team_config,
+    map_config = script_data.map_config,
+    modifier_list = script_data.modifier_list,
+    teams = script_data.teams,
+    disabled_items = script_data.disabled_items
   }
   textfield.text = util.encode(serpent.dump(data))
   local button = frame.add{type = "button", caption = {"gui.close"}, name = "pvp_export_close"}
@@ -3821,7 +3802,7 @@ function import_confirm(player)
     return
   end
   for k, v in pairs (new_config) do
-    global[k] = v
+    script_data[k] = v
   end
   gui.clear()
   create_config_gui(player)
@@ -3881,24 +3862,26 @@ function on_calculator_button_press(event)
   recipe_picker_elem_update(elem_button, player)
 end
 
-pvp = {}
+local pvp = {}
 
 pvp.on_init = function()
-  load_config()
-  init_balance_modifiers()
-  verify_oil_harvest()
+  script_data = config.get_config()
+  global.pvp = script_data
+  balance.script_data = script_data
+  config.script_data = script_data
+  balance.init()
   local surface = game.surfaces[1]
   --local settings = surface.map_gen_settings
-  --global.map_config.starting_area_size.selected = settings.starting_area
-  --global.map_config.map_height = settings.height
-  --global.map_config.map_width = settings.width
-  --global.map_config.starting_area_size.selected = settings.starting_area
-  global.round_number = 0
+  --script_data.map_config.starting_area_size.selected = settings.starting_area
+  --script_data.map_config.map_height = settings.height
+  --script_data.map_config.map_width = settings.width
+  --script_data.map_config.starting_area_size.selected = settings.starting_area
+  script_data.round_number = 0
 
-  --global variables for the server host info spam
-  global.timer_value = 0
-  global.timer_wait = 600
-  global.timer_display = 1
+  --constants for the server host info spam
+  script_data.timer_value = 0
+  script_data.timer_wait = 600
+  script_data.timer_display = 1
 
   local surface = game.create_surface("Lobby",{width = 1, height = 1})
   surface.set_tiles({{name = "out-of-map",position = {1,1}}})
@@ -3916,23 +3899,43 @@ pvp.on_rocket_launched = function(event)
   production_score.on_rocket_launched(event)
   local is_freeplay = true
   for mode, k in pairs(victory_conditions) do
-    if global.game_config[mode] then
+    if script_data.game_config[mode] then
       is_freeplay = false
       break
     end
   end
-  if is_freeplay and silo_script then
-      silo_script.on_rocket_launched(event)
+  local force = event.rocket.force
+  if is_freeplay then
+    local item_to_check = "satellite"
+    if not game.item_prototypes[item_to_check] then error("Playing space race when satellites don't exist") end
+    if force.get_item_launched(item_to_check) == 1 then
+      game.print({"freeplay_launch", force.name})
+    end
   end
+
+  if not script_data.game_config.space_race then return end
+
+  local item = game.item_prototypes[script_data.prototypes.satellite]
+  if not item then log("Failed to check space race victory, invalid item: "..script_data.prototypes.satellite) return end
+
+  if event.rocket.get_item_count(item.name) == 0 then
+    force.print({"rocket-launched-without-satellite"})
+    return
+  end
+
+  --I think the following is incorrect. -JuicyJuuce
+  --if not script_data.team_won then
+  --  team_won(force.name)
+  --end
 end
 
 pvp.on_entity_died = function(event)
   local dying_entity = event.entity
   if not (dying_entity and dying_entity.valid) then return end
   local force = dying_entity.force
-  if global.game_config.vehicle_wreckage and dying_entity.type == "car" then
+  if script_data.game_config.vehicle_wreckage and dying_entity.type == "car" then
     local pos = dying_entity.position
-    local wreck = global.surface.create_entity{name = "big-ship-wreck-2", position = pos, force = "neutral"}
+    local wreck = script_data.surface.create_entity{name = "big-ship-wreck-2", position = pos, force = "neutral"}
     wreck.destructible = false
     wreck_inventory = wreck.get_inventory(defines.inventory.item_main)
     for k, inventory_type in pairs ({"car_ammo", "fuel", "car_trunk"}) do
@@ -3944,17 +3947,17 @@ pvp.on_entity_died = function(event)
         end
       end
     end
-    if not global.wrecks then
-      global.wrecks = {}
+    if not script_data.wrecks then
+      script_data.wrecks = {}
     end
-    global.wrecks[wreck] = game.tick
+    script_data.wrecks[wreck] = game.tick
     local area = {left_top = {x = pos.x - 3, y = pos.y - 3}, right_bottom = {x = pos.x + 3, y = pos.y + 3}}
     for k, player in pairs(game.connected_players) do
       if not is_ignored_force(player.force.name) then
         local posx = player.position.x
         local posy = player.position.y
         if posx > area.left_top.x and posx < area.right_bottom.x and posy > area.left_top.y and posy < area.right_bottom.y then
-          local non_collide = global.surface.find_non_colliding_position("player", player.position, 32, 1)
+          local non_collide = script_data.surface.find_non_colliding_position("player", player.position, 32, 1)
           if non_collide then
             if player.vehicle then
               player.vehicle.set_driver(nil)
@@ -3972,23 +3975,23 @@ pvp.on_entity_died = function(event)
       end
     end
   elseif dying_entity.name == "rocket-silo" then
-    if not global.game_config.last_silo_standing then return end
+    if not script_data.game_config.last_silo_standing then return end
     local killing_force = event.force
-    if not global.silos then return end
-    global.silos[force.name] = nil
+    if not script_data.silos then return end
+    script_data.silos[force.name] = nil
     if killing_force then
       game.print({"silo-destroyed", force.name, killing_force.name}, game_message_color)
     else
       game.print({"silo-destroyed", force.name, {"neutral"}}, game_message_color)
     end
     script.raise_event(events.on_team_lost, {name = force.name})
-    if global.game_config.disband_on_loss then
+    if script_data.game_config.disband_on_loss then
       disband_team(force, killing_force)
     end
-    if not global.team_won then
+    if not script_data.team_won then
       local index = 0
       local winner_name = {"none"}
-      for name, listed_silo in pairs (global.silos) do
+      for name, listed_silo in pairs (script_data.silos) do
         if listed_silo ~= nil then
           index = index + 1
           winner_name = name
@@ -4003,7 +4006,7 @@ end
 
 pvp.on_player_joined_game = function(event)
   local player = game.players[event.player_index]
-  if global.setup_finished == true then
+  if script_data.setup_finished == true then
     check_game_speed(true)
   end
   if not (player and player.valid) then return end
@@ -4017,9 +4020,9 @@ pvp.on_player_joined_game = function(event)
   end
   player_join_lobby(player)
   player.gui.center.clear()
-  if global.setup_finished then
+  if script_data.setup_finished then
     choose_joining_gui(player)
-    if not global.match_started then
+    if not script_data.match_started then
       create_start_match_gui(player)
     end
   else
@@ -4054,7 +4057,7 @@ pvp.on_player_left_game = function(event)
       update_team_list_frame(player)
     end
   end
-  if global.map_config.protect_empty_teams then
+  if script_data.map_config.protect_empty_teams then
     local player = game.players[event.player_index]
     local force = player.force
     check_force_protection(force)
@@ -4101,7 +4104,7 @@ pvp.on_gui_closed = function(event)
 end
 
 pvp.on_tick = function(event)
-  if global.setup_finished == false then
+  if script_data.setup_finished == false then
     check_starting_area_chunks_are_generated()
     finish_setup()
   end
@@ -4109,25 +4112,25 @@ end
 
 pvp.on_nth_tick = {
   [5] = function(event)
-    if global.setup_finished == true then
+    if script_data.setup_finished == true then
       check_game_speed()
     end
   end,
   [20] = function(event)
-    if global.setup_finished == true and global.match_started == true then
+    if script_data.setup_finished == true and script_data.match_started == true then
       check_damaged_players()
-      check_no_rush()
-      check_base_exclusion()
     end
   end,
   [60] = function(event)
-    if global.setup_finished == true then
-      if global.match_started == true then
+    if script_data.setup_finished == true then
+      if script_data.match_started == true then
+        check_no_rush()
         check_fast_blueprinting()
         check_update_production_score()
         check_update_oil_harvest_score()
         check_update_space_race_score()
         check_restart_round()
+        check_base_exclusion()
         check_defcon()
         check_wrecks_corpse_timer()
       else
@@ -4136,16 +4139,16 @@ pvp.on_nth_tick = {
     end
   end,
   [300] = function(event)
-    if global.setup_finished == true then
+    if script_data.setup_finished == true then
       check_player_color()
       check_spectator_chart()
     end
   end,
   [54000] = function(event)
-    if global.setup_finished == true then
-      game.print({"msg-announce"..global.timer_display})
-      global.timer_display = global.timer_display + 1
-      if global.timer_display == 6 then global.timer_display = 1 end
+    if script_data.setup_finished == true then
+      game.print({"msg-announce"..script_data.timer_display})
+      script_data.timer_display = script_data.timer_display + 1
+      if script_data.timer_display == 6 then script_data.timer_display = 1 end
     end
   end
 }
@@ -4156,8 +4159,8 @@ function check_damaged_players()
 			local index = player.index
 			local health_missing = 1 - math.ceil(player.character.health) / (250 + player.character.character_health_bonus)
       if health_missing > 0 then
-        current_modifier = global.modifier_list.character_modifiers.character_running_speed_modifier
-        local hurt_speed_percent = string.match(global.game_config.character_speed_when_hurt, "^([^%%]+)%%?$")
+        current_modifier = script_data.modifier_list.character_modifiers.character_running_speed_modifier
+        local hurt_speed_percent = string.match(script_data.game_config.character_speed_when_hurt, "^([^%%]+)%%?$")
         local reduction = 1 - hurt_speed_percent / 100
         player.character_running_speed_modifier = (1 - health_missing * reduction) * (current_modifier + 1) - 1
       end
@@ -4166,7 +4169,7 @@ function check_damaged_players()
 end
 
 kill_cowards = function(event)
-  if not global.game_config.kill_cowards then return end
+  if not script_data.game_config.kill_cowards then return end
   local player = game.players[event.player_index]
   if not player and player.valid then return end
   if not player.in_combat then return end
@@ -4183,10 +4186,10 @@ end
 pvp.on_player_respawned = function(event)
   local player = game.players[event.player_index]
   if not (player and player.valid) then return end
-  if global.setup_finished == true and global.match_started == true then
-    give_equipment(player, true)
+  if script_data.setup_finished == true and script_data.match_started == true then
+    config.give_equipment(player, true)
     offset_respawn_position(player)
-    apply_character_modifiers(player)
+    balance.apply_character_modifiers(player)
   else
     if player.character then
       player.character.destroy()
@@ -4195,7 +4198,7 @@ pvp.on_player_respawned = function(event)
 end
 
 pvp.on_configuration_changed = function(event)
-  recursive_data_check(load_config(true), global)
+  recursive_data_check(config.give_equipment(), script_data)
 end
 
 pvp.on_player_crafted_item = function(event)
@@ -4216,7 +4219,7 @@ pvp.on_player_driving_changed_state = function(event)
   local vehicle = player.vehicle
   if not (vehicle and vehicle.valid) then return end
   if vehicle.name ~= "tank" then return end
-  local tank_speed_multiplier = string.match(global.game_config.tank_speed, "^([^%%]+)%%?$") / 100
+  local tank_speed_multiplier = string.match(script_data.game_config.tank_speed, "^([^%%]+)%%?$") / 100
   vehicle.friction_modifier = 1 / (tank_speed_multiplier * tank_speed_multiplier)
 end
 
@@ -4238,8 +4241,8 @@ pvp.on_robot_built_entity = function(event)
 end
 
 pvp.on_research_started = function(event)
-  if global.team_config.defcon_mode then
-    local tech = global.next_defcon_tech
+  if script_data.team_config.defcon_mode then
+    local tech = script_data.next_defcon_tech
     if tech and tech.valid and event.research.name ~= tech.name then
       event.research.force.current_research = nil
     end
@@ -4252,8 +4255,8 @@ pvp.on_player_promoted = function(event)
 end
 
 pvp.on_forces_merged = function (event)
-  if not global.players_to_disband then return end
-  for name, k in pairs (global.players_to_disband) do
+  if not script_data.players_to_disband then return end
+  for name, k in pairs (script_data.players_to_disband) do
     local player = game.players[name]
     if player and player.valid then
       player.force = game.forces.player
@@ -4264,7 +4267,7 @@ pvp.on_forces_merged = function (event)
       end
     end
   end
-  global.players_to_disband = nil
+  script_data.players_to_disband = nil
   create_exclusion_map()
 end
 
@@ -4284,16 +4287,60 @@ pvp.add_remote_interface = function()
       return events
     end,
     get_teams = function()
-      return global.teams
+      return script_data.teams
     end,
     get_config = function()
-      return global
+      return script_data
     end,
     set_config = function(array)
       log("pvp global config set by remote call - Can expect script errors after this point.")
-      global = array
+      script_data = array
     end
   })
+end
+
+pvp.on_load = function()
+  script_data = global.pvp or config.get_config()
+  balance.script_data = script_data
+  config.script_data = script_data
+end
+
+local script_events =
+{
+  [defines.events.on_built_entity] = pvp.on_built_entity,
+  [defines.events.on_chunk_generated] = pvp.on_chunk_generated,
+  [defines.events.on_entity_died] = pvp.on_entity_died,
+  [defines.events.on_forces_merged] = pvp.on_forces_merged,
+  [defines.events.on_gui_checked_state_changed] = pvp.on_gui_checked_state_changed,
+  [defines.events.on_gui_click] = pvp.on_gui_click,
+  [defines.events.on_gui_closed] = pvp.on_gui_closed,
+  [defines.events.on_gui_elem_changed] = pvp.on_gui_elem_changed,
+  [defines.events.on_gui_selection_state_changed] = pvp.on_gui_selection_state_changed,
+  [defines.events.on_player_changed_position] = pvp.on_player_changed_position,
+  [defines.events.on_player_driving_changed_state] = pvp.on_player_driving_changed_state,
+  [defines.events.on_player_crafted_item] = pvp.on_player_crafted_item,
+  [defines.events.on_player_cursor_stack_changed] = pvp.on_player_cursor_stack_changed,
+  [defines.events.on_player_display_resolution_changed] = pvp.on_player_display_resolution_changed,
+  [defines.events.on_player_joined_game] = pvp.on_player_joined_game,
+  [defines.events.on_pre_player_left_game] = pvp.on_pre_player_left_game,
+  [defines.events.on_player_left_game] = pvp.on_player_left_game,
+  [defines.events.on_player_promoted] = pvp.on_player_promoted,
+  [defines.events.on_player_respawned] = pvp.on_player_respawned,
+  [defines.events.on_research_finished] = pvp.on_research_finished,
+  [defines.events.on_research_started] = pvp.on_research_started,
+  [defines.events.on_robot_built_entity] = pvp.on_robot_built_entity,
+  [defines.events.on_rocket_launched] = pvp.on_rocket_launched,
+  [defines.events.on_tick] = pvp.on_tick
+}
+
+pvp.on_event = function(event)
+  local action = script_events[event.name]
+  if not action then return end
+  return action(event)
+end
+
+pvp.get_event_handler = function(name)
+  return script_events[name]
 end
 
 return pvp
