@@ -25,6 +25,10 @@ script.on_configuration_changed(function()
   pvp.on_configuration_changed()
 end)
 
+script.on_event(defines.events, function(event)
+  pvp.on_event(event)
+end)
+
 script.on_nth_tick(5, function(event)
   pvp.on_nth_tick[5](event)
 end)

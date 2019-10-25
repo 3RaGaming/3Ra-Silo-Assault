@@ -305,7 +305,7 @@ function create_config_gui(player)
   if not frame.config_holder_button_flow then
     local button_flow = frame.add{type = "flow", direction = "horizontal", name = "config_holder_button_flow"}
     button_flow.style.horizontally_stretchable = true
-    button_flow.style.align = "right"
+    button_flow.style.horizontal_align = "right"
     button_flow.style.vertical_align = "bottom"
     button_flow.add{type = "button", name = "balance_options", caption = {"balance-options"}, style = "dialog_button"}
     button_flow.add{type = "sprite-button", name = "pvp_export_button", sprite = "utility/export_slot", tooltip = {"gui.export-to-string"}, style = "slot_button"}
@@ -1077,7 +1077,7 @@ function toggle_balance_options_gui(player)
   end
   local flow = frame.add{type = "flow", direction = "horizontal"}
   flow.style.horizontally_stretchable = true
-  flow.style.align = "right"
+  flow.style.horizontal_align = "right"
   flow.add{type = "button", name = "balance_options_cancel", caption = {"cancel"}, style = "back_button"}
   add_pusher(flow)
   flow.add{type = "button", name = "balance_options_confirm", caption = {"balance-confirm"}, style = "confirm_button"}
@@ -2122,7 +2122,7 @@ function check_fast_blueprinting()
     end
     if starting_equipment == "medium" then
       for k, player in pairs (game.players) do
-        for j, inventory_type in pairs ({"player_main", "player_quickbar", "player_armor"}) do
+        for j, inventory_type in pairs ({"player_main", "player_armor"}) do
           local inventory = player.get_inventory(defines.inventory[inventory_type])
           clear_inventory_of_fast_blueprinting_items(inventory)
         end
@@ -3460,7 +3460,7 @@ function recipe_picker_elem_update(gui, player)
   local recipe = player.force.recipes[gui.elem_value]
   local recipe_frame = frame.add{type = "frame", direction = "vertical", style = "image_frame", name = "recipe_check_frame"}
   local title_flow = recipe_frame.add{type = "flow"}
-  title_flow.style.align = "center"
+  title_flow.style.horizontal_align = "center"
   title_flow.style.horizontally_stretchable = true
   title_flow.add{type = "label", caption = recipe.localised_name, style = "frame_caption_label"}
   local table = recipe_frame.add{type = "table", column_count = 2, name = "recipe_checker_table"}

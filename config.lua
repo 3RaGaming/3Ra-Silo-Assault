@@ -66,7 +66,7 @@ config.get_config = function()
     oil_only_in_center = true,
     no_rush_time = 20,
     base_exclusion_time = 0,
-    fast_blueprinting_time = 20,
+    fast_blueprinting_time = 0,
     disable_starting_blueprints = false,
     character_speed_when_hurt = "80%",
     tank_speed = "100%",
@@ -184,8 +184,8 @@ config.get_config = function()
   for k, t in pairs (sorted_packs) do
     table.insert(data.team_config.research_level.options, t.name)
   end
-  local selected_tier = config.team_config.research_level.options[2]
-  if selected_tier then config.team_config.research_level.selected = selected_tier end
+  local selected_tier = data.team_config.research_level.options[2]
+  if selected_tier then data.team_config.research_level.selected = selected_tier end
 
   data.research_ingredient_list = {}
   for k, research in pairs (data.team_config.research_level.options) do
@@ -368,8 +368,7 @@ config.get_config = function()
       {
         items = 
         {
-          ["construction-robot"] = 10,
-          ["deconstruction-planner"] = 1
+          ["construction-robot"] = 10
         },
         armor = "modular-armor",
         equipment =
@@ -431,22 +430,26 @@ config.give_equipment = function(player, respawn)
   local setting = config.script_data.team_config.starting_equipment.selected
   if not setting then return end
   local player_gear = config.script_data.equipment_list[setting]
-  for equipment = player_gear, not respawn and player_gear.fast_blueprinting do
-    if equipment then
-      if equipment.items then
-        util.insert_safe(player, equipment.items)
+  if config.script_data.game_config.fast_blueprinting_time > 0 and player_gear.fast_blueprinting then
+    player_gear = player_gear.fast_blueprinting
+  end
+  --for equipment = player_gear, not respawn and player_gear.fast_blueprinting do
+  if not respawn then
+    if player_gear then
+      if player_gear.items then
+        util.insert_safe(player, player_gear.items)
       end
-      if equipment.armor then
+      if player_gear.armor then
         local stack = player.get_inventory(defines.inventory.player_armor)[1]
-        local item = game.item_prototypes[equipment.armor]
+        local item = game.item_prototypes[player_gear.armor]
         if item and item.type == "armor" then
           stack.set_stack{name = item.name}
         end
-        if equipment.equipment then
+        if player_gear.equipment then
           local grid = stack.grid
           if grid then
             local prototypes = game.equipment_prototypes
-            for name, count in pairs (equipment.equipment) do
+            for name, count in pairs (player_gear.equipment) do
               if prototypes[name] then
                 for k = 1, count do
                   grid.put{name = name}
@@ -519,8 +522,7 @@ local localised_names =
   map_height = {"gui-map-generator.map-width-simple"},
   map_width = {"gui-map-generator.map-height-simple"},
   map_seed = {"gui-map-generator.map-seed-simple"},
-  starting_area_size = {"gui-map-generator.starting-area"},
-  technology_price_multiplier = {"gui-map-generator.technology-price-multiplier"}
+  starting_area_size = {"gui-map-generator.starting-area-size"}
 }
 
 -- "" for no tooltip
