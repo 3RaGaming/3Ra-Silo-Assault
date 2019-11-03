@@ -705,7 +705,7 @@ function place_player_on_battle_surface(player)
   if not surface.valid then return end
   local force_spawn = force.get_spawn_position(surface)
   local offset_spawn = {force_spawn.x, force_spawn.y + 15}
-  local position = surface.find_non_colliding_position("player", offset_spawn, 320, 1)
+  local position = surface.find_non_colliding_position("character", offset_spawn, 320, 1)
   if position then
     player.teleport(position, surface)
   else
@@ -721,7 +721,7 @@ function place_player_on_battle_surface(player)
   player.set_controller
   {
     type = defines.controllers.character,
-    character = surface.create_entity{name = "player", position = position, force = force}
+    character = surface.create_entity{name = "character", position = position, force = force}
   }
   player.spectator = false
   local artillery_remote = script_data.prototypes.artillery_remote
@@ -963,7 +963,7 @@ function set_teams_from_gui(player)
   local team_table = gui.team_config_gui_scroll.team_table
   local children = team_table.children
   for index = 1, 25 do
-    local element = team_table[index]
+    local element = team_table[tostring(index)]
     if element and element.valid then
       local text = element.text
       if is_ignored_force(text) then
@@ -2122,7 +2122,7 @@ function check_fast_blueprinting()
     end
     if starting_equipment == "medium" then
       for k, player in pairs (game.players) do
-        for j, inventory_type in pairs ({"player_main", "player_armor"}) do
+        for j, inventory_type in pairs ({"character_main", "character_armor"}) do
           local inventory = player.get_inventory(defines.inventory[inventory_type])
           clear_inventory_of_fast_blueprinting_items(inventory)
         end
